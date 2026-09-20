@@ -1,0 +1,44 @@
+[
+  {
+    "id": "REV-101",
+    "customerName": "Anh Đặng Văn Long",
+    "customerAvatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
+    "productName": "Bình Chữa Cháy Bột ABC 4kg MFZL4",
+    "rating": 5,
+    "occasion": "Trang Bị Chung Cư",
+    "comment": "Bình mới tinh 100%, có đầy đủ tem kiểm định của Cục Cảnh Sát PCCC Bộ Công An. Đồng hồ áp suất chỉ đúng vạch xanh. Nhân viên giao hàng hỏa tốc trong 45 phút, còn hướng dẫn tận tình cách giật chốt an toàn cho cả nhà.",
+    "proofImage": "/images/abc-powder-4kg.jpg",
+    "verified": true,
+    "createdAt": "2026-09-18",
+    "isVisible": true,
+    "likes": 38
+  },
+  {
+    "id": "REV-102",
+    "customerName": "Chị Mai Phương",
+    "customerAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+    "productName": "Mặt Nạ Chống Khói Độc Thoát Hiểm TZL30",
+    "rating": 5,
+    "occasion": "An Toàn Gia Đình",
+    "comment": "Mua combo 4 chiếc mặt nạ cho 4 thành viên trong nhà. Đóng gói hộp thiếc hút chân không chắc chắn, hạn sử dụng tới 3 năm. Sống ở chung cư tầng cao thì đây thực sự là bảo bối an tâm nhất mỗi khi đi ngủ.",
+    "proofImage": "/images/smoke-mask-tzl30.jpg",
+    "verified": true,
+    "createdAt": "2026-09-15",
+    "isVisible": true,
+    "likes": 29
+  },
+  {
+    "id": "REV-103",
+    "customerName": "Anh Trần Quang Huy",
+    "customerAvatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80",
+    "productName": "Bình Cứu Hỏa Khí CO2 3kg MT3",
+    "rating": 5,
+    "occasion": "Phòng Máy Chủ IT",
+    "comment": "Rất ưng ý với dòng khí CO2 này, xịt thử nghiệm dập lửa cực kỳ sạch sẽ, không hề có bụi bột bám vào bo mạch điện tử. Shop cung cấp đầy đủ giấy chứng nhận kiểm định phục vụ đoàn kiểm tra PCCC cơ quan.",
+    "proofImage": "/images/co2-extinguisher-3kg.jpg",
+    "verified": true,
+    "createdAt": "2026-09-12",
+    "isVisible": true,
+    "likes": 22
+  }
+]

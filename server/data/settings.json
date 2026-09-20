@@ -1,0 +1,24 @@
+{
+  "shopZaloPhone": "0843066604",
+  "telegramBotToken": "8879386786:AAEavHnm4SCLNtc8cOFofnbtRsV6zVK_nks",
+  "telegramChatId": "5686726439",
+  "isSoundEnabled": true,
+  "shippingSettings": {
+    "standardFee": 35000,
+    "expressFee": 60000,
+    "freeShippingThreshold": 1000000,
+    "isFreeShippingEnabled": true,
+    "freeShippingNote": "Miễn phí giao hàng hỏa tốc thiết bị PCCC cho đơn từ 1.000.000đ"
+  },
+  "facebookSettings": {
+    "pageId": "flameguardpccc",
+    "pageName": "FLAMEGUARD PRO - Thiết Bị Cứu Hỏa & PCCC Chuẩn Kiểm Định",
+    "pageAccessToken": "",
+    "verifyToken": "flameguard_webhook_secret_2026",
+    "adminRecipientId": "",
+    "isEnabled": false,
+    "welcomeMessage": "Chào bạn! FLAMEGUARD PRO sẵn sàng tư vấn giải pháp trang bị PCCC và thiết bị cứu hỏa chuẩn kiểm định cho gia đình và doanh nghiệp.",
+    "autoReplyEnabled": true
+  },
+  "updatedAt": "2026-09-20T00:35:00.000Z"
+}

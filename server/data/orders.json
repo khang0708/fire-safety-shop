@@ -1,0 +1,83 @@
+[
+  {
+    "id": "FG-89241",
+    "orderCode": "FG-89241",
+    "customerName": "Công Ty Cổ Phần Công Nghệ FPT",
+    "customerPhone": "0909 888 114",
+    "receiverName": "Anh Tuấn - Trưởng Ban QL Tòa Nhà",
+    "receiverPhone": "0909 888 114",
+    "receiverAddress": "Tầng 8, Tòa nhà FPT Tower, Số 10 Phạm Văn Bạch, Cầu Giấy, Hà Nội",
+    "isAnonymous": false,
+    "productName": "Bình Cứu Hỏa Khí CO2 3kg MT3 (Chuyên Dụng Phòng Server)",
+    "cardMessage": "Yêu cầu kiểm tra kỹ van xả, đồng hồ áp suất và tem kiểm định Cục PCCC BCA trước khi bàn giao.",
+    "senderSign": "Phòng Quản Trị Hạ Tầng IT",
+    "deliverySlot": "Hỏa tốc 60 phút • Trong ngày hôm nay",
+    "totalAmount": 1440000,
+    "status": "ARRANGING",
+    "florist": "Kỹ sư kiểm định: Trần Đình Trọng (Xưởng PCCC 01)",
+    "floristAvatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
+    "proofPhotoUrl": "/images/co2-extinguisher-3kg.jpg",
+    "isApproved": true,
+    "createdAt": "09:30",
+    "items": [
+      {
+        "name": "Bình Cứu Hỏa Khí CO2 3kg MT3 [Kèm Kệ Đặt Sàn Chống Gỉ] [Tem BCA] ×3",
+        "price": 1440000
+      }
+    ]
+  },
+  {
+    "id": "FG-77215",
+    "orderCode": "FG-77215",
+    "customerName": "Nguyễn Hoàng Nam",
+    "customerPhone": "0912 345 678",
+    "receiverName": "Chị Thảo (Căn hộ gia đình)",
+    "receiverPhone": "0988 765 432",
+    "receiverAddress": "Căn hộ 1804, Chung cư Vinhomes Central Park, Bình Thạnh, TP.HCM",
+    "isAnonymous": false,
+    "productName": "Combo An Toàn Chung Cư: 2 Bình Bột ABC 4kg + 2 Mặt Nạ Chống Khói TZL30",
+    "cardMessage": "Trang bị an toàn cho gia đình nhỏ. Hướng dẫn các con cách giật chốt khi cần thiết.",
+    "senderSign": "Gia đình an tâm",
+    "deliverySlot": "Khung giờ vàng: 14:00 - 16:00",
+    "totalAmount": 920000,
+    "status": "NEW",
+    "florist": "Kỹ thuật viên trực ban: Lê Văn Hùng",
+    "floristAvatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80",
+    "proofPhotoUrl": "/images/abc-powder-4kg.jpg",
+    "isApproved": false,
+    "createdAt": "10:15",
+    "items": [
+      {
+        "name": "Bình Chữa Cháy Bột ABC 4kg MFZL4 ×2 + Mặt Nạ Chống Khói Độc TZL30 ×2",
+        "price": 920000
+      }
+    ]
+  },
+  {
+    "id": "FG-65102",
+    "orderCode": "FG-65102",
+    "customerName": "Nhà Hàng Lẩu Nướng Gyu-Kaku",
+    "customerPhone": "0933 222 114",
+    "receiverName": "Bếp Trưởng Nguyễn Thành",
+    "receiverPhone": "0933 222 114",
+    "receiverAddress": "Khu ẩm thực Tầng 4, TTTM Vincom Center, Quận 1, TP.HCM",
+    "isAnonymous": false,
+    "productName": "Chăn Dập Lửa Sợi Thủy Tinh 1.8M + Bình Bọt Foam Sinh Học 6L",
+    "cardMessage": "Bàn giao kèm biên bản hướng dẫn dập cháy dầu mỡ bếp ăn.",
+    "senderSign": "Ban An Toàn Bếp",
+    "deliverySlot": "Giao ngay trước 11:30 chuẩn bị giờ trưa",
+    "totalAmount": 840000,
+    "status": "COMPLETED",
+    "florist": "Kỹ sư kiểm định: Hoàng Minh",
+    "floristAvatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=80",
+    "proofPhotoUrl": "/images/foam-extinguisher-6l.jpg",
+    "isApproved": true,
+    "createdAt": "08:15",
+    "items": [
+      {
+        "name": "Bình Cứu Hỏa Bọt Foam Sinh Học 6L ×1 + Chăn Dập Lửa Sợi Thủy Tinh ×1",
+        "price": 840000
+      }
+    ]
+  }
+]

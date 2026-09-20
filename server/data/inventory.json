@@ -1,0 +1,56 @@
+[
+  {
+    "id": "inv-01",
+    "name": "Bình Chữa Cháy Bột ABC 4kg MFZL4",
+    "category": "Bình Dập Lửa",
+    "quantity": 120,
+    "unit": "bình",
+    "minThreshold": 30,
+    "status": "in_stock"
+  },
+  {
+    "id": "inv-02",
+    "name": "Bình Cứu Hỏa Khí CO2 3kg MT3",
+    "category": "Bình Dập Lửa",
+    "quantity": 65,
+    "unit": "bình",
+    "minThreshold": 20,
+    "status": "in_stock"
+  },
+  {
+    "id": "inv-03",
+    "name": "Mặt Nạ Chống Khói Độc Thoát Hiểm TZL30",
+    "category": "Cứu Hộ & Thoát Hiểm",
+    "quantity": 250,
+    "unit": "hộp",
+    "minThreshold": 50,
+    "status": "in_stock"
+  },
+  {
+    "id": "inv-04",
+    "name": "Bộ Dây Thoát Hiểm Tự Cứu Nhà Cao Tầng 15M",
+    "category": "Cứu Hộ & Thoát Hiểm",
+    "quantity": 40,
+    "unit": "bộ",
+    "minThreshold": 15,
+    "status": "in_stock"
+  },
+  {
+    "id": "inv-05",
+    "name": "Chăn Dập Lửa Khẩn Cấp Sợi Thủy Tinh 1.8M",
+    "category": "Vật Tư Bếp & Xưởng",
+    "quantity": 18,
+    "unit": "chiếc",
+    "minThreshold": 25,
+    "status": "low_stock"
+  },
+  {
+    "id": "inv-06",
+    "name": "Đầu Báo Khói Độc Lập Không Dây Chuông 85dB",
+    "category": "Cảnh Báo Thông Minh",
+    "quantity": 85,
+    "unit": "chiếc",
+    "minThreshold": 20,
+    "status": "in_stock"
+  }
+]

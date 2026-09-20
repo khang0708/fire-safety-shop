@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# LLMs & AI Agent Specifications
+# https://llmstxt.org/
+LLM-Full: https://florabloom.vn/llms.txt
+
+Sitemap: https://florabloom.vn/sitemap.xml

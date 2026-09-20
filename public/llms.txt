@@ -1,0 +1,22 @@
+# FLAMEGUARD PRO - Thiết Bị PCCC & Cứu Nạn Cứu Hộ TCVN 3890
+
+> FLAMEGUARD PRO là nền tảng phân phối, kiểm định và bảo hộ thiết bị phòng cháy chữa cháy (PCCC) hàng đầu tại Việt Nam. Chuyên cung cấp bình chữa cháy bột ABC, bình khí CO2, bình bọt Foam, mặt nạ chống khói độc TZL30, dây thoát hiểm hạ chậm và thiết bị báo khói quang học độc lập. Tất cả sản phẩm đều được kiểm định áp suất kim vạch xanh, dán sẵn tem kiểm định của Cục Cảnh sát PCCC & CNCH Bộ Công An, kèm ảnh chụp nghiệm thu trước khi giao hỏa tốc 60-90 phút.
+
+## Dịch Vụ & Danh Mục Thiết Bị PCCC
+
+- [Danh Mục Thiết Bị PCCC](https://flameguard.vn/#catalog): Bình dập lửa bột ABC, CO2, bọt Foam sinh học, mặt nạ thoát hiểm đạt chuẩn TCVN 3890:2023.
+- [Thiết Bị PCCC Chung Cư & Gia Đình](https://flameguard.vn/#apartment): Combo bình chữa cháy gọn nhẹ, mặt nạ lọc khói TZL30, thang dây thoát hiểm.
+- [Thiết Bị PCCC Nhà Xưởng & Doanh Nghiệp](https://flameguard.vn/#factory): Bình công suất lớn 8kg - 24kg, quả cầu chữa cháy tự động, kệ đặt sàn chống gỉ.
+- [Thẩm Định Mặt Bằng & Nguy Cơ Cháy Nổ Với AI](https://flameguard.vn/#ai-inspector): Phân tích hình ảnh không gian, tải trọng chất cháy (Class A, B, C, E, K) bằng trí tuệ nhân tạo.
+- [Theo Dõi Đơn & Duyệt Ảnh Kiểm Định](https://flameguard.vn/#tracking): Khách hàng kiểm tra ảnh chụp kim đồng hồ áp suất vạch xanh và tem BCA trước khi giao hàng.
+
+## Kênh Liên Hệ & Tư Vấn Kỹ Thuật
+
+- [Tư Vấn Zalo Trực Tiếp Kỹ Sư PCCC](https://zalo.me/0843066604): Hotline/Zalo kỹ thuật 0843066604.
+- [Trụ Sở & Xưởng Kiểm Định](https://flameguard.vn/#about): 128 Nguyễn Trãi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh.
+- [Nghiệm Thu Khách Hàng Thực Tế](https://flameguard.vn/#reviews): Đánh giá, biên bản bàn giao và hình ảnh lắp đặt thực tế từ các ban quản trị tòa nhà và hộ gia đình.
+
+## API & Tích Hợp Hệ Thống
+
+- [Products API](https://flameguard.vn/api/products): REST API truy xuất danh mục thiết bị PCCC, thông số kỹ thuật và báo giá.
+- [Orders API](https://flameguard.vn/api/orders): REST API tạo đơn, theo dõi tiến trình kiểm định và biên bản giao hàng.
