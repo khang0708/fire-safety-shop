@@ -766,10 +766,10 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
           <div className="p-4 border-t border-slate-800 space-y-3 bg-slate-900">
             <button
               onClick={onBackToStore}
-              className="w-full flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-emerald-100 hover:text-white py-2 rounded-xl text-xs font-bold transition-all"
+              className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white py-2 rounded-xl text-xs font-bold transition-all border border-slate-700"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>← Về Cửa Hàng</span>
+              <span>Về Cửa Hàng</span>
             </button>
 
             {/* Nút xem trực tiếp Cẩm Nang PDF */}
