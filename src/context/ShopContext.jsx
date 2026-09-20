@@ -1227,7 +1227,7 @@ export const ShopProvider = ({ children }) => {
     });
     setActiveOrder(newOrder);
 
-    // Tự động trừ hoa nguyên liệu tương ứng trong kho
+    // Tự động trừ thiết bị PCCC và khí dập lửa tương ứng trong kho
     deductInventoryOnOrder(cart);
 
     setCart([]);

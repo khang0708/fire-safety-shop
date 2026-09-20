@@ -38,20 +38,22 @@ export const OrderTrackingModal = () => {
     generateMessengerOrderInquiry(facebookSettings?.pageId, activeOrder.orderCode || activeOrder.id);
   };
 
-  const hasRealPhoto = Boolean(activeOrder.proofPhotoUrl);
-  const isDelivering = Boolean(activeOrder.isApproved || activeOrder.status === 'DELIVERING' || activeOrder.status === 'COMPLETED');
+  const isPending = true;
+  const isInspecting = activeOrder.status !== 'NEW';
+  const hasRealPhoto = Boolean(activeOrder.proofPhotoUrl || activeOrder.status === 'PHOTO_READY' || activeOrder.status === 'DELIVERING' || activeOrder.status === 'COMPLETED');
+  const isDelivering = Boolean(activeOrder.status === 'DELIVERING' || activeOrder.status === 'COMPLETED');
   const isCompleted = activeOrder.status === 'COMPLETED';
 
   const steps = [
-    { key: 'PENDING', label: 'Tiếp nhận đơn', done: true },
-    { key: 'INSPECTING', label: 'Đo áp suất & dán tem BCA', done: true },
-    { key: 'PHOTO_READY', label: 'Ảnh đồng hồ áp suất vạch xanh', done: hasRealPhoto },
-    { key: 'DELIVERING', label: 'Giao hàng & bàn giao', done: isDelivering },
-    { key: 'COMPLETED', label: 'Hoàn tất nghiệm thu', done: isCompleted },
+    { key: 'NEW', label: 'Tiếp nhận đơn', done: isPending },
+    { key: 'INSPECTING', label: 'Đo áp suất & Dán tem BCA', done: isInspecting },
+    { key: 'PHOTO_READY', label: 'Ảnh áp kế vạch xanh', done: hasRealPhoto },
+    { key: 'DELIVERING', label: 'Vận chuyển chuyên dụng', done: isDelivering },
+    { key: 'COMPLETED', label: 'Nghiệm thu hoàn tất', done: isCompleted },
   ];
 
   // Tính % tiến trình thanh bar
-  const progressPercent = isCompleted ? 100 : isDelivering ? 75 : hasRealPhoto ? 50 : 25;
+  const progressPercent = isCompleted ? 100 : isDelivering ? 75 : hasRealPhoto ? 50 : isInspecting ? 30 : 15;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">

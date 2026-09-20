@@ -66,6 +66,13 @@ import {
   Gauge
 } from 'lucide-react';
 
+export const ORDER_STATUS_MAP = {
+  'NEW': { label: 'Tiếp Nhận Đơn', bg: 'bg-blue-100 text-blue-900 border-blue-300' },
+  'ARRANGING': { label: 'Đo Áp Suất & Dán Tem BCA', bg: 'bg-amber-100 text-amber-900 border-amber-300' },
+  'PHOTO_READY': { label: 'Chờ Duyệt Ảnh Áp Suất', bg: 'bg-purple-100 text-purple-900 border-purple-300' },
+  'DELIVERING': { label: 'Đang Vận Chuyển PCCC', bg: 'bg-indigo-100 text-indigo-900 border-indigo-300' },
+  'COMPLETED': { label: 'Đã Nghiệm Thu Hoàn Tất', bg: 'bg-emerald-100 text-emerald-900 border-emerald-300' }
+};
 
 export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
   const { 
@@ -552,6 +559,16 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
       status: 'DELIVERING',
       isApproved: true
     });
+    setCopyToast('🚚 Đã bàn giao thiết bị cho đội vận chuyển PCCC!');
+    setTimeout(() => setCopyToast(''), 3500);
+  };
+
+  const handleCompleteOrder = (orderId) => {
+    updateOrderByAdmin(orderId, {
+      status: 'COMPLETED'
+    });
+    setCopyToast('✓ Đã cập nhật đơn hàng: ĐÃ NGHIỆM THU & BÀN GIAO HOÀN TẤT!');
+    setTimeout(() => setCopyToast(''), 3500);
   };
 
   const filteredOrders = orders.filter(o => {
@@ -959,35 +976,42 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-[#E8EFEA]">
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-[#5C8A70]" />
-                <span className="text-xs font-bold text-gray-700">Trạng thái:</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Filter className="w-4 h-4 text-slate-500" />
+                <span className="text-xs font-bold text-slate-700">Trạng thái:</span>
                 {[
-                  { id: 'all', label: 'Tất cả' },
-                  { id: 'ARRANGING', label: 'Đang cắm' },
-                  { id: 'PHOTO_READY', label: 'Chờ duyệt ảnh' },
-                  { id: 'DELIVERING', label: 'Đang ship' }
+                  { id: 'all', label: 'Tất cả đơn' },
+                  { id: 'NEW', label: 'Mới tiếp nhận' },
+                  { id: 'ARRANGING', label: 'Đo áp suất & Dán tem' },
+                  { id: 'PHOTO_READY', label: 'Chờ duyệt áp suất' },
+                  { id: 'DELIVERING', label: 'Đang vận chuyển' },
+                  { id: 'COMPLETED', label: 'Đã nghiệm thu' }
                 ].map((f) => (
                   <button
                     key={f.id}
                     onClick={() => setSelectedOrderFilter(f.id)}
-                    className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all ${
-                      selectedOrderFilter === f.id ? 'bg-[#1B3B2B] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    className={`text-xs px-3 py-1.5 rounded-xl font-bold transition-all ${
+                      selectedOrderFilter === f.id ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                     }`}
                   >
                     {f.label}
                   </button>
                 ))}
               </div>
-              <span className="text-xs text-gray-500">Hiển thị <strong>{filteredOrders.length}</strong> đơn hàng</span>
+              <span className="text-xs text-slate-500 font-medium">Hiển thị <strong>{filteredOrders.length}</strong> đơn hàng</span>
             </div>
 
             <div className="space-y-4">
               {filteredOrders.map((order) => (
-                <div key={order.id} className="bg-white p-6 rounded-3xl border border-[#E8EFEA] shadow-sm space-y-4">
-                  <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-                    <span className="font-serif text-lg font-bold text-[#1B3B2B]">#{order.orderCode || order.id}</span>
-                    <span className="text-xs font-bold text-[#1B3B2B] font-sans">{Number(order.totalAmount || 0).toLocaleString('vi-VN')}đ</span>
+                <div key={order.id} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
+                  <div className="flex justify-between items-center pb-3 border-b border-slate-200">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-heading text-lg font-bold text-slate-950">#{order.orderCode || order.id}</span>
+                      <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${ORDER_STATUS_MAP[order.status]?.bg || 'bg-slate-100 text-slate-800 border-slate-200'}`}>
+                        {ORDER_STATUS_MAP[order.status]?.label || order.status}
+                      </span>
+                    </div>
+                    <span className="text-sm font-black text-red-600 font-mono">{Number(order.totalAmount || 0).toLocaleString('vi-VN')}đ</span>
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -1191,21 +1215,41 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                             <span>📸 Tải Ảnh Áp Suất & Tem BCA Lên Hệ Thống</span>
                           </button>
                         ) : (
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleOpenProofModal(order)}
-                              className="flex-1 bg-white hover:bg-gray-100 text-slate-900 border border-slate-300 text-xs font-bold py-2.5 rounded-xl flex items-center justify-center gap-1 active:scale-95"
-                              title="Tải ảnh khác hoặc chụp lại"
-                            >
-                              <Camera className="w-3.5 h-3.5 text-[#C4685A]" />
-                              <span>Đổi Ảnh</span>
-                            </button>
-                            <button 
-                              onClick={() => handleSendToShipper(order.id)} 
-                              className="flex-1 bg-[#2E7D32] hover:bg-[#256629] text-white text-xs font-bold py-2.5 rounded-xl active:scale-95"
-                            >
-                              Bàn Giao Shipper
-                            </button>
+                          <div className="space-y-2">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleOpenProofModal(order)}
+                                className="flex-1 bg-white hover:bg-gray-100 text-slate-900 border border-slate-300 text-xs font-bold py-2.5 rounded-xl flex items-center justify-center gap-1 active:scale-95"
+                                title="Tải ảnh khác hoặc chụp lại"
+                              >
+                                <Camera className="w-3.5 h-3.5 text-red-600" />
+                                <span>Đổi Ảnh</span>
+                              </button>
+                              {order.status !== 'DELIVERING' && order.status !== 'COMPLETED' && (
+                                <button 
+                                  onClick={() => handleSendToShipper(order.id)} 
+                                  className="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold py-2.5 rounded-xl active:scale-95 flex items-center justify-center gap-1 shadow-xs"
+                                >
+                                  <Truck className="w-3.5 h-3.5" />
+                                  <span>Xuất Kho & Giao</span>
+                                </button>
+                              )}
+                            </div>
+                            {order.status === 'DELIVERING' && (
+                              <button
+                                onClick={() => handleCompleteOrder(order.id)}
+                                className="w-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-xs active:scale-95"
+                              >
+                                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                                <span>✓ Nghiệm Thu Hoàn Tất</span>
+                              </button>
+                            )}
+                            {order.status === 'COMPLETED' && (
+                              <div className="text-center py-2 px-3 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-800 font-bold flex items-center justify-center gap-1.5">
+                                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                                <span>✓ Đã Nghiệm Thu & Bàn Giao Xong</span>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1514,7 +1558,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                           ⚡ Phí Giao Hỏa Tốc (60 - 90 phút)
                         </label>
                         <p className="text-gray-500 text-[11px] mt-0.5">
-                          Áp dụng khi khách yêu cầu cắm gấp ưu tiên và giao xe máy chuyên dụng cấp tốc
+                          Áp dụng khi khách yêu cầu kiểm định gấp ưu tiên và giao xe chuyên dụng hỏa tốc
                         </p>
                       </div>
                       <span className="font-mono text-base font-extrabold text-[#C4685A]">
@@ -3231,7 +3275,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Đã cắm vào đơn (Used) *</label>
+                  <label className="block font-bold text-gray-700 mb-1">Đã xuất cho đơn hàng (Used) *</label>
                   <input
                     type="number"
                     min="0"

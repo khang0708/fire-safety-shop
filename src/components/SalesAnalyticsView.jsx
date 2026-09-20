@@ -257,9 +257,10 @@ export const SalesAnalyticsView = ({ orders = [], products = [] }) => {
     const dateFileStr = now.toISOString().slice(0, 10);
 
     const statusLabels = {
-      'ARRANGING': 'Đang đo áp suất',
-      'PHOTO_READY': 'Chờ duyệt áp suất',
-      'DELIVERING': 'Đang giao hàng',
+      'NEW': 'Tiếp nhận đơn',
+      'ARRANGING': 'Đo áp suất & Dán tem BCA',
+      'PHOTO_READY': 'Chờ duyệt ảnh áp suất',
+      'DELIVERING': 'Đang vận chuyển PCCC',
       'COMPLETED': 'Đã hoàn tất nghiệm thu'
     };
 
@@ -484,9 +485,10 @@ export const SalesAnalyticsView = ({ orders = [], products = [] }) => {
                 className="w-full p-2.5 rounded-xl border border-gray-300 focus:outline-none focus:border-[#1B3B2B] bg-[#FAF8F5]"
               >
                 <option value="all">Tất cả trạng thái</option>
-                <option value="ARRANGING">Đang đo áp suất</option>
-                <option value="PHOTO_READY">Chờ duyệt áp suất</option>
-                <option value="DELIVERING">Đang giao hàng</option>
+                <option value="NEW">Tiếp nhận đơn</option>
+                <option value="ARRANGING">Đo áp suất & Dán tem BCA</option>
+                <option value="PHOTO_READY">Chờ duyệt ảnh áp suất</option>
+                <option value="DELIVERING">Đang vận chuyển PCCC</option>
                 <option value="COMPLETED">Đã hoàn tất nghiệm thu</option>
               </select>
             </div>
@@ -792,13 +794,12 @@ export const SalesAnalyticsView = ({ orders = [], products = [] }) => {
                     </td>
                     <td className="p-3 text-center">
                       <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                        o.status === 'NEW' ? 'bg-blue-100 text-blue-800' :
                         o.status === 'ARRANGING' ? 'bg-amber-100 text-amber-800' :
                         o.status === 'PHOTO_READY' ? 'bg-purple-100 text-purple-800' :
-                        o.status === 'DELIVERING' ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800'
+                        o.status === 'DELIVERING' ? 'bg-indigo-100 text-indigo-800' : 'bg-emerald-100 text-emerald-800'
                       }`}>
-                        {o.status === 'ARRANGING' ? 'Đang cắm' :
-                         o.status === 'PHOTO_READY' ? 'Chờ duyệt ảnh' :
-                         o.status === 'DELIVERING' ? 'Đang giao' : 'Hoàn tất'}
+                        {statusLabels[o.status] || o.status || 'Đang xử lý'}
                       </span>
                     </td>
                   </tr>
