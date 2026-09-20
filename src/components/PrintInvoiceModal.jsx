@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useShop } from '../context/ShopContext';
-import { Printer, X, ShieldCheck, FileCheck, QrCode } from 'lucide-react';
+import { Printer, X, ShieldCheck, FileCheck, QrCode, Download } from 'lucide-react';
 
 export const PrintInvoiceModal = ({ isOpen, onClose, order }) => {
   const { shopZaloPhone } = useShop();
@@ -9,7 +9,95 @@ export const PrintInvoiceModal = ({ isOpen, onClose, order }) => {
   if (!isOpen || !order) return null;
 
   const handlePrint = () => {
-    window.print();
+    const printArea = document.getElementById('invoice-printable-content');
+    if (!printArea) {
+      window.print();
+      return;
+    }
+
+    // In chuyên nghiệp qua invisible iframe để không bị lỗi cắt trang, lỗi trắng trang hoặc xung đột layout
+    try {
+      const existingIframe = document.getElementById('print-invoice-iframe');
+      if (existingIframe) existingIframe.remove();
+
+      const iframe = document.createElement('iframe');
+      iframe.id = 'print-invoice-iframe';
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = 'none';
+      iframe.style.zIndex = '-9999';
+      document.body.appendChild(iframe);
+
+      const doc = iframe.contentWindow.document;
+      const orderCode = order.orderCode || order.id || 'PCCC';
+
+      // Lấy toàn bộ styles từ tài liệu hiện tại
+      const styleTags = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+        .map(el => el.outerHTML)
+        .join('\n');
+
+      doc.open();
+      doc.write(`
+        <!DOCTYPE html>
+        <html lang="vi">
+        <head>
+          <meta charset="UTF-8">
+          <title>Bien_Ban_Nghiem_Thu_PCCC_${orderCode}</title>
+          ${styleTags}
+          <style>
+            @page {
+              size: A4 portrait;
+              margin: 10mm 12mm;
+            }
+            * {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              box-sizing: border-box;
+            }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+              color: #0f172a;
+              background: #ffffff !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              font-size: 12px;
+            }
+            .printable-wrapper {
+              width: 100%;
+              max-width: 100%;
+              margin: 0 auto;
+            }
+            .print-avoid-break {
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+            }
+            .print-page-break {
+              page-break-before: always !important;
+              break-before: page !important;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="printable-wrapper">
+            ${printArea.innerHTML}
+          </div>
+        </body>
+        </html>
+      `);
+      doc.close();
+
+      setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setTimeout(() => iframe.remove(), 2500);
+      }, 350);
+    } catch (err) {
+      console.warn('Lỗi iframe print, fallback sang window.print:', err);
+      window.print();
+    }
   };
 
   const formattedAmount = Number(order.totalAmount || 0).toLocaleString('vi-VN');
@@ -27,17 +115,25 @@ export const PrintInvoiceModal = ({ isOpen, onClose, order }) => {
             margin: 10mm 12mm;
           }
           
-          body * {
-            visibility: hidden !important;
+          html, body {
+            background: #ffffff !important;
+            height: auto !important;
+            min-height: auto !important;
+            overflow: visible !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
 
-          #invoice-printable-content,
-          #invoice-printable-content * {
-            visibility: visible !important;
+          body > *:not(#invoice-print-modal-container),
+          #root > *:not(#invoice-print-modal-container),
+          .no-print {
+            display: none !important;
           }
 
           #invoice-print-modal-container {
-            position: absolute !important;
+            position: static !important;
             left: 0 !important;
             top: 0 !important;
             width: 100% !important;
@@ -47,6 +143,8 @@ export const PrintInvoiceModal = ({ isOpen, onClose, order }) => {
             margin: 0 !important;
             overflow: visible !important;
             display: block !important;
+            visibility: visible !important;
+            backdrop-filter: none !important;
           }
 
           #invoice-modal-card {
@@ -57,10 +155,21 @@ export const PrintInvoiceModal = ({ isOpen, onClose, order }) => {
             max-width: 100% !important;
             padding: 0 !important;
             margin: 0 !important;
+            overflow: visible !important;
+            visibility: visible !important;
           }
 
-          .no-print {
-            display: none !important;
+          #invoice-printable-content {
+            max-height: none !important;
+            height: auto !important;
+            overflow: visible !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            visibility: visible !important;
+          }
+
+          #invoice-printable-content * {
+            visibility: visible !important;
           }
 
           .print-avoid-break {
@@ -82,64 +191,75 @@ export const PrintInvoiceModal = ({ isOpen, onClose, order }) => {
       >
         
         {/* Modal Header Controls (Ẩn hoàn toàn khi In) */}
-        <div className="bg-slate-900 text-white px-6 py-4 flex flex-wrap items-center justify-between gap-3 no-print border-b border-slate-800">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-red-600/30 border border-red-500/50 flex items-center justify-center text-red-400">
-              <Printer className="w-4 h-4" />
+        <div className="bg-slate-900 text-white px-6 py-4 space-y-3 no-print border-b border-slate-800">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-red-600/30 border border-red-500/50 flex items-center justify-center text-red-400">
+                <Printer className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="font-heading text-base font-bold leading-tight">
+                  In Phiếu Bàn Giao & Biên Bản Nghiệm Thu PCCC
+                </h3>
+                <p className="text-[11px] text-red-300">Đơn hàng: #{order.orderCode || order.id} • {order.customerName}</p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-heading text-base font-bold leading-tight">
-                In Phiếu Bàn Giao & Biên Bản Nghiệm Thu PCCC
-              </h3>
-              <p className="text-[11px] text-red-300">Đơn hàng: #{order.orderCode || order.id} • {order.customerName}</p>
+
+            <div className="flex items-center gap-2">
+              {/* Bộ chọn phần in */}
+              <div className="flex bg-slate-800 p-1 rounded-xl text-xs font-bold text-white border border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => setPrintSection('all')}
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                    printSection === 'all' ? 'bg-red-600 text-white shadow-xs' : 'hover:bg-slate-700 text-slate-300'
+                  }`}
+                >
+                  Trọn Bộ A4
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPrintSection('invoice_only')}
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                    printSection === 'invoice_only' ? 'bg-red-600 text-white shadow-xs' : 'hover:bg-slate-700 text-slate-300'
+                  }`}
+                >
+                  Chỉ Biên Bản
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPrintSection('card_only')}
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                    printSection === 'card_only' ? 'bg-red-600 text-white shadow-xs' : 'hover:bg-slate-700 text-slate-300'
+                  }`}
+                >
+                  Chỉ Thẻ PASS
+                </button>
+              </div>
+
+              <button
+                onClick={handlePrint}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-all shadow-md shadow-red-600/30 active:scale-95 ml-1"
+                title="Mở hộp thoại in và lưu file PDF tiêu chuẩn"
+              >
+                <Printer className="w-4 h-4" />
+                <span>In / Xuất PDF</span>
+              </button>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white text-base transition-colors"
+              >
+                ✕
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Bộ chọn phần in */}
-            <div className="flex bg-slate-800 p-1 rounded-xl text-xs font-bold text-white border border-slate-700">
-              <button
-                type="button"
-                onClick={() => setPrintSection('all')}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
-                  printSection === 'all' ? 'bg-red-600 text-white shadow-xs' : 'hover:bg-slate-700 text-slate-300'
-                }`}
-              >
-                In Trọn Bộ (A4)
-              </button>
-              <button
-                type="button"
-                onClick={() => setPrintSection('invoice_only')}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
-                  printSection === 'invoice_only' ? 'bg-red-600 text-white shadow-xs' : 'hover:bg-slate-700 text-slate-300'
-                }`}
-              >
-                Chỉ Biên Bản Bàn Giao
-              </button>
-              <button
-                type="button"
-                onClick={() => setPrintSection('card_only')}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
-                  printSection === 'card_only' ? 'bg-red-600 text-white shadow-xs' : 'hover:bg-slate-700 text-slate-300'
-                }`}
-              >
-                Chỉ Thẻ Dạ Quang
-              </button>
-            </div>
-
-            <button
-              onClick={handlePrint}
-              className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all shadow-sm active:scale-95 ml-1"
-            >
-              <Printer className="w-4 h-4" />
-              <span>In Ngay</span>
-            </button>
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white text-base transition-colors"
-            >
-              ✕
-            </button>
+          <div className="bg-slate-800/80 border border-slate-700/80 rounded-xl px-3 py-1.5 flex items-center justify-between text-[11px] text-slate-300">
+            <span className="flex items-center gap-1.5">
+              <FileCheck className="w-3.5 h-3.5 text-emerald-400" />
+              💡 <strong>Cách lưu file PDF:</strong> Tại hộp thoại in, chọn mục <em>"Máy in đích" (Destination)</em> &rarr; Chọn <strong>"Lưu dưới dạng PDF" (Save as PDF)</strong> để tải file về máy.
+            </span>
+            <span className="font-mono text-red-300 hidden sm:inline-block">Khổ giấy: A4 Portrait</span>
           </div>
         </div>
 
