@@ -60,7 +60,7 @@ async function main() {
 
   // 1. Home Page & Announcement
   console.log('1. Tải trang chủ FlameGuard Pro...');
-  await page.goto('http://localhost:4173', { waitUntil: 'networkidle2' });
+  await page.goto('https://fire-safety-shop.vercel.app', { waitUntil: 'networkidle2' });
   await delay(1200);
   await checkOverflow('Home Top / Header');
   await page.screenshot({ path: path.join(outDir, '01_mobile_home.png') });
@@ -154,7 +154,7 @@ async function main() {
       provider: 'pin'
     }));
   });
-  await page.goto('http://localhost:4173/#admin', { waitUntil: 'networkidle2' });
+  await page.goto('https://fire-safety-shop.vercel.app/#admin', { waitUntil: 'networkidle2' });
   await delay(1200);
   await checkOverflow('Admin Dashboard (Mobile)');
   await page.screenshot({ path: path.join(outDir, '09_mobile_admin_dashboard.png') });
