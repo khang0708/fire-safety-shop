@@ -60,25 +60,25 @@ export const OrderTrackingModal = () => {
       <div className="bg-white w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl border border-slate-200 my-auto animate-fade-in text-slate-800">
         
         {/* Header */}
-        <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between border-b border-slate-800">
-          <div>
-            <span className="text-[11px] text-red-400 uppercase tracking-widest block font-bold">
+        <div className="bg-slate-900 text-white px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 border-b border-slate-800">
+          <div className="min-w-0">
+            <span className="text-[10px] sm:text-[11px] text-red-400 uppercase tracking-widest block font-bold truncate">
               Trung Tâm Kiểm Định & Điều Phối PCCC
             </span>
-            <h3 className="font-heading text-lg font-bold">
+            <h3 className="font-heading text-base sm:text-lg font-bold truncate">
               Tra Cứu Đơn Hàng: #{activeOrder.orderCode || activeOrder.id}
             </h3>
           </div>
           <button 
             onClick={() => setIsTrackingOpen(false)}
-            className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white text-lg transition-all"
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white text-base transition-all flex-shrink-0"
           >
             ✕
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="max-h-[82vh] overflow-y-auto p-6 space-y-6">
+        <div className="max-h-[85vh] overflow-y-auto p-4 sm:p-6 space-y-5">
           
           {/* Kỹ Sư Phụ Trách Kiểm Định */}
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between">
@@ -147,7 +147,7 @@ export const OrderTrackingModal = () => {
                     }`}>
                       {s.done ? <CheckCircle className="w-4 h-4" /> : idx + 1}
                     </div>
-                    <span className={`text-[10px] sm:text-[11px] font-bold mt-2 leading-snug break-words max-w-[85px] ${
+                    <span className={`text-[9px] sm:text-[11px] font-bold mt-1.5 sm:mt-2 leading-tight break-words max-w-[58px] sm:max-w-[85px] ${
                       s.done ? 'text-red-700' : 'text-slate-400'
                     }`}>
                       {s.label}

@@ -149,29 +149,29 @@ export const AIFloristModal = () => {
       <div className="bg-white w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl border border-slate-200 my-auto animate-fade-in">
         
         {/* Header */}
-        <div className="bg-gradient-to-r from-slate-900 via-red-950 to-slate-900 text-white px-6 py-4 flex items-center justify-between border-b border-red-900/50">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-red-600/30 border border-red-500/50 flex items-center justify-center">
-              <ShieldAlert className="w-5 h-5 text-red-400" />
+        <div className="bg-gradient-to-r from-slate-900 via-red-950 to-slate-900 text-white px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 border-b border-red-900/50">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-red-600/30 border border-red-500/50 flex items-center justify-center flex-shrink-0">
+              <ShieldAlert className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
             </div>
-            <div>
-              <h3 className="font-heading text-lg font-bold text-white flex items-center gap-2">
-                Trợ Lý AI Thẩm Định Rủi Ro PCCC
-                <span className="text-[10px] bg-red-600 text-white font-mono px-2 py-0.5 rounded-md">TCVN 3890</span>
+            <div className="min-w-0">
+              <h3 className="font-heading text-base sm:text-lg font-bold text-white flex items-center gap-1.5 sm:gap-2 truncate">
+                <span>AI Thẩm Định PCCC</span>
+                <span className="text-[9px] sm:text-[10px] bg-red-600 text-white font-mono px-1.5 py-0.5 rounded-md flex-shrink-0">TCVN 3890</span>
               </h3>
-              <p className="text-[11px] text-slate-300">Tải ảnh gian bếp, nhà xưởng hoặc văn phòng để AI phát hiện rủi ro cháy trong 3 giây</p>
+              <span className="text-[10px] text-slate-400 hidden sm:block">Phân tích mặt bằng & Đề xuất trang bị chuẩn Cục Cảnh sát PCCC</span>
             </div>
           </div>
           <button 
             onClick={() => setIsAIFloristOpen(false)}
-            className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white text-lg transition-all"
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white text-base transition-all flex-shrink-0"
           >
             ✕
           </button>
         </div>
 
-        {/* Body Grid */}
-        <div className="max-h-[82vh] overflow-y-auto p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Modal Body */}
+        <div className="max-h-[85vh] overflow-y-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
           
           {/* CỘT TRÁI: CHỌN ẢNH HOẶC UPLOAD (5 Cột) */}
           <div className="lg:col-span-5 space-y-4">

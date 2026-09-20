@@ -32,22 +32,22 @@ export const Header = () => {
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200">
       {/* Top Banner Thông Báo Khẩn Cấp - Chuẩn Cục Cảnh Sát PCCC BCA */}
-      <div className="bg-[#0F172A] text-slate-200 text-[11px] sm:text-xs py-2 px-3 sm:px-4 border-b border-slate-800 shadow-inner">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2">
+      <div className="bg-[#0F172A] text-slate-200 text-[10px] sm:text-xs py-1.5 sm:py-2 px-3 sm:px-4 border-b border-slate-800 shadow-inner overflow-hidden">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-1.5 sm:gap-2">
           
           {/* Thông tin Cứu Hộ & Thẩm Duyệt */}
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-2 min-w-0 max-w-full overflow-hidden text-center md:text-left">
             <span className="flex items-center gap-1.5 font-bold text-amber-400 truncate">
               <span className="w-2 h-2 rounded-full bg-red-500 animate-ping flex-shrink-0" />
-              <span className="text-red-400">🚨</span>
-              <strong className="tracking-tight uppercase">CỨU HỘ & TƯ VẤN THẨM DUYỆT PCCC:</strong>
-              <a href="tel:0843066604" className="text-white hover:text-amber-300 font-mono underline decoration-amber-400 underline-offset-2">0843.066.604</a>
-              <span className="hidden xl:inline text-slate-400 font-normal">• GIAO HỎA TỐC 60 PHÚT NỘI THÀNH • ĐẦY ĐỦ TEM BCA & BIÊN BẢN NGHIỆM THU</span>
+              <span className="text-red-400 flex-shrink-0">🚨</span>
+              <strong className="tracking-tight uppercase">CỨU HỘ & TƯ VẤN:</strong>
+              <a href="tel:0843066604" className="text-white hover:text-amber-300 font-mono underline decoration-amber-400 underline-offset-2 flex-shrink-0">0843.066.604</a>
+              <span className="hidden xl:inline text-slate-400 font-normal truncate">• GIAO HỎA TỐC 60 PHÚT NỘI THÀNH • ĐẦY ĐỦ TEM BCA & BIÊN BẢN NGHIỆM THU</span>
             </span>
           </div>
 
-          {/* Quick Action Buttons Kỹ Thuật */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Quick Action Buttons Kỹ Thuật (Hiển thị từ sm trở lên để chống tràn mobile) */}
+          <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
             <button
               onClick={() => setIsTrackingOpen(true)}
               className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-blue-600/30 hover:bg-blue-600/50 text-blue-200 border border-blue-500/40 transition-all"
@@ -79,32 +79,32 @@ export const Header = () => {
       </div>
 
       {/* Main Header Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-4">
         
         {/* Logo Thương Hiệu Industrial Safety */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <button 
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-1.5 text-slate-700 hover:text-red-600"
+            className="md:hidden p-1.5 text-slate-700 hover:text-red-600 flex-shrink-0"
             aria-label="Mở menu di động"
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
           </button>
           
-          <a href="#" className="flex items-center gap-2.5 group" aria-label="Trang chủ FLAMEGUARD PRO">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 via-red-700 to-slate-900 flex items-center justify-center text-white shadow-md shadow-red-600/25 border border-red-500/40 group-hover:scale-105 transition-transform flex-shrink-0">
-              <span className="text-xl">🧯</span>
+          <a href="#" className="flex items-center gap-2 sm:gap-2.5 group min-w-0" aria-label="Trang chủ FLAMEGUARD PRO">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-red-600 via-red-700 to-slate-900 flex items-center justify-center text-white shadow-md shadow-red-600/25 border border-red-500/40 group-hover:scale-105 transition-transform flex-shrink-0">
+              <span className="text-base sm:text-xl">🧯</span>
             </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-xl sm:text-2xl tracking-tight text-slate-900 leading-none uppercase font-heading">
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-1 sm:gap-1.5 min-w-0">
+                <span className="font-extrabold text-base sm:text-2xl tracking-tight text-slate-900 leading-none uppercase font-heading truncate">
                   FLAMEGUARD<span className="text-red-600">PRO</span>
                 </span>
-                <span className="text-[10px] bg-red-100 text-red-700 font-mono font-bold px-1.5 py-0.5 rounded border border-red-200">
+                <span className="hidden xs:inline-block text-[9px] sm:text-[10px] bg-red-100 text-red-700 font-mono font-bold px-1 sm:px-1.5 py-0.5 rounded border border-red-200 flex-shrink-0">
                   TCVN 3890
                 </span>
               </div>
-              <span className="text-[9px] uppercase tracking-[0.18em] text-slate-500 font-bold mt-1 font-sans">
+              <span className="hidden md:block text-[9px] uppercase tracking-[0.16em] text-slate-500 font-bold mt-1 font-sans truncate">
                 Hệ Thống Thiết Bị PCCC & CNCH Chuẩn Kiểm Định BCA
               </span>
             </div>
@@ -127,15 +127,15 @@ export const Header = () => {
         </div>
 
         {/* Action Buttons Cho Khách Hàng */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
           
           {/* Nút Trợ lý AI Thẩm Định Rủi Ro PCCC */}
           <button
             onClick={() => setIsAIFloristOpen(true)}
-            className="flex items-center gap-1.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 group"
+            className="flex items-center gap-1 sm:gap-1.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-[11px] sm:text-xs font-bold px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 group flex-shrink-0"
             aria-label="Trợ lý thẩm định rủi ro PCCC bằng AI"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-300 group-hover:rotate-12 transition-transform" />
+            <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-300 group-hover:rotate-12 transition-transform" />
             <span className="hidden sm:inline">Thẩm Định PCCC AI</span>
             <span className="sm:hidden">AI PCCC</span>
           </button>
@@ -143,11 +143,11 @@ export const Header = () => {
           {/* Theo dõi đơn hàng & Kiểm định */}
           <button
             onClick={() => setIsTrackingOpen(true)}
-            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-300 hover:border-red-600 text-slate-700 hover:text-red-600 bg-white hover:bg-red-50/50 transition-all relative"
+            className="flex items-center gap-1.5 text-xs font-semibold p-2 sm:px-3 sm:py-2 rounded-xl border border-slate-300 hover:border-red-600 text-slate-700 hover:text-red-600 bg-white hover:bg-red-50/50 transition-all relative flex-shrink-0"
             title="Tra cứu tình trạng đơn hàng & Ảnh kiểm định thiết bị"
             aria-label="Tra cứu đơn hàng PCCC"
           >
-            <PackageCheck className="w-3.5 h-3.5 text-red-600" />
+            <PackageCheck className="w-4 h-4 text-red-600" />
             <span className="hidden md:inline">Tra cứu đơn hàng</span>
             {activeOrder && (
               <span className="w-2 h-2 rounded-full bg-red-600 animate-ping absolute top-1 right-1" />
@@ -160,7 +160,7 @@ export const Header = () => {
             title="Danh sách yêu thích"
             aria-label={`Danh sách yêu thích (${wishlist.length} mẫu)`}
           >
-            <Heart className="w-5 h-5" />
+            <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
             {wishlist.length > 0 && (
               <span className="absolute top-0 right-0 w-4 h-4 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                 {wishlist.length}
@@ -171,7 +171,7 @@ export const Header = () => {
           {/* Giỏ hàng */}
           <button
             onClick={() => setIsCartOpen(true)}
-            className="flex items-center gap-2 bg-red-50 hover:bg-red-100/80 text-slate-900 border border-red-200 hover:border-red-300 px-3.5 py-2 rounded-xl transition-all active:scale-95 relative"
+            className="flex items-center gap-1.5 sm:gap-2 bg-red-50 hover:bg-red-100/80 text-slate-900 border border-red-200 hover:border-red-300 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl transition-all active:scale-95 relative flex-shrink-0"
             aria-label={`Giỏ hàng (${cartItemCount} món)`}
           >
             <ShoppingBag className="w-4 h-4 text-red-600" />

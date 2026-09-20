@@ -45,25 +45,25 @@ export const ProductDetailModal = () => {
       <div className="bg-white w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl border border-slate-200 my-auto animate-fade-in">
         
         {/* Modal Header */}
-        <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between border-b border-slate-800">
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-red-600 animate-ping" />
-            <span className="font-heading text-lg font-bold text-white">Cấu Hình Thiết Bị & Phụ Kiện Lắp Đặt PCCC</span>
+        <div className="bg-slate-900 text-white px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 border-b border-slate-800">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping flex-shrink-0" />
+            <span className="font-heading text-base sm:text-lg font-bold text-white truncate">Cấu Hình Thiết Bị PCCC</span>
           </div>
           <button 
             onClick={() => setQuickViewProduct(null)}
-            className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition-all text-sm font-bold"
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition-all text-sm font-bold flex-shrink-0"
           >
             ✕
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="max-h-[82vh] overflow-y-auto p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="max-h-[85vh] overflow-y-auto p-4 sm:p-8 grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-8">
           
           {/* CỘT TRÁI: ẢNH & THÔNG TIN CỐT LÕI (5 Cột) */}
           <div className="lg:col-span-5 space-y-4">
-            <div className="relative aspect-[4/5] rounded-2xl overflow-hidden shadow-md border border-slate-200 bg-slate-100">
+            <div className="relative aspect-[4/3] sm:aspect-[4/5] rounded-2xl overflow-hidden shadow-md border border-slate-200 bg-slate-100">
               <img
                 src={quickViewProduct.image}
                 alt={quickViewProduct.name}

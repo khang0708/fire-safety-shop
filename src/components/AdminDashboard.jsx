@@ -815,41 +815,41 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
         <div className="flex-1 min-w-0 flex flex-col min-h-screen bg-[#F8FAF9]">
           
           {/* Top Navigation Bar */}
-          <header className="bg-white border-b border-[#E8EFEA] sticky top-0 z-30 px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between shadow-xs">
+          <header className="bg-white border-b border-[#E8EFEA] sticky top-0 z-30 px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 shadow-xs">
             
             {/* Left: Mobile Menu Toggle & Breadcrumb Title */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
               <button
                 onClick={() => setIsMobileSidebarOpen(true)}
-                className="md:hidden p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 transition-all"
+                className="md:hidden p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 transition-all flex-shrink-0"
                 aria-label="Mở Menu Admin"
               >
                 <Menu className="w-5 h-5" />
               </button>
 
-              <div>
-                <h1 className="font-serif text-base sm:text-lg font-bold text-[#1B3B2B] leading-tight">
-                  {activeTab === 'orders' && '🧯 Quản Lý Đơn Hàng & Kiểm Định Kỹ Thuật'}
-                  {activeTab === 'inventory' && '🛡️ Quản Lý Kho Thiết Bị & Khí Nạp PCCC'}
-                  {activeTab === 'products_cms' && '📦 Quản Lý Danh Mục Thiết Bị PCCC'}
-                  {activeTab === 'discounts' && '🎟️ Quản Lý Voucher & Khuyến Mãi PCCC'}
-                  {activeTab === 'reviews' && '⭐ Quản Lý Đánh Giá Nghiệm Thu'}
-                  {activeTab === 'analytics' && '📊 Báo Cáo Phân Tích Doanh Thu & VAT'}
-                  {activeTab === 'shipping_config' && '🚚 Cấu Hình Vận Chuyển Chuyên Dụng PCCC'}
-                  {activeTab === 'zalo_config' && '💬 Cấu Hình Kênh Chat & Khẩn Cấp (Zalo, Telegram, Messenger)'}
+              <div className="min-w-0 flex-1">
+                <h1 className="font-serif text-sm sm:text-lg font-bold text-[#1B3B2B] leading-tight truncate">
+                  {activeTab === 'orders' && '🧯 Quản Lý Đơn Hàng & Kiểm Định'}
+                  {activeTab === 'inventory' && '🛡️ Kho Thiết Bị & Khí Nạp'}
+                  {activeTab === 'products_cms' && '📦 Danh Mục Thiết Bị PCCC'}
+                  {activeTab === 'discounts' && '🎟️ Voucher & Khuyến Mãi'}
+                  {activeTab === 'reviews' && '⭐ Đánh Giá Nghiệm Thu'}
+                  {activeTab === 'analytics' && '📊 Báo Cáo Doanh Thu & VAT'}
+                  {activeTab === 'shipping_config' && '🚚 Cấu Hình Vận Chuyển'}
+                  {activeTab === 'zalo_config' && '💬 Kênh Chat & Khẩn Cấp'}
                 </h1>
-                <span className="text-[10px] text-slate-400 hidden sm:block">FLAMEGUARD PRO • Trung Tâm Điều Hành & Kiểm Định Kỹ Thuật PCCC</span>
+                <span className="text-[10px] text-slate-400 hidden sm:block truncate">FLAMEGUARD PRO • Trung Tâm Điều Hành & Kiểm Định Kỹ Thuật PCCC</span>
               </div>
             </div>
 
             {/* Right: Sound controls, Bell & Profile */}
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
               
               {/* Nút Đồng Bộ Dữ Liệu Máy Chủ (Smart Sync) */}
               <button
                 onClick={handleManualRefresh}
                 disabled={isRefreshing}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition-all border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-semibold shadow-2xs"
+                className="flex items-center gap-1.5 text-xs p-2 sm:px-3 sm:py-1.5 rounded-full transition-all border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-semibold shadow-2xs"
                 title="Làm mới và đồng bộ dữ liệu từ máy chủ đám mây"
               >
                 <RefreshCw className={`w-3.5 h-3.5 text-[#1B3B2B] ${isRefreshing ? 'animate-spin text-emerald-600' : ''}`} />
@@ -862,7 +862,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                   setIsSoundEnabled(!isSoundEnabled);
                   if (!isSoundEnabled) playTestChime();
                 }}
-                className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition-all border font-semibold ${
+                className={`flex items-center gap-1.5 text-xs p-2 sm:px-3 sm:py-1.5 rounded-full transition-all border font-semibold ${
                   isSoundEnabled 
                     ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100' 
                     : 'bg-rose-50 text-rose-800 border-rose-300 hover:bg-rose-100'
