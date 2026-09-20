@@ -62,7 +62,8 @@ import {
   Image as ImageIcon,
   Truck,
   Menu,
-  RefreshCw
+  RefreshCw,
+  Gauge
 } from 'lucide-react';
 
 
