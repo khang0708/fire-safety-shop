@@ -777,10 +777,10 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
               href="/Huong_Dan_Su_Dung_FlameGuard_Pro.pdf"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full flex items-center justify-center gap-2 bg-[#E8998D]/20 hover:bg-[#E8998D]/30 text-[#F5D6CE] hover:text-white py-2 rounded-xl text-xs font-bold transition-all border border-[#E8998D]/30"
-              title="Mở cẩm nang hướng dẫn sử dụng file PDF (9 trang)"
+              className="w-full flex items-center justify-center gap-2 bg-red-600/20 hover:bg-red-600/30 text-red-200 hover:text-white py-2 rounded-xl text-xs font-bold transition-all border border-red-500/30"
+              title="Mở cẩm nang hướng dẫn sử dụng file PDF (9 trang chuẩn TCVN 3890)"
             >
-              <span>📖 Cẩm Nang HDSD (.PDF)</span>
+              <span>📖 Cẩm Nang HDSD (.PDF - 9 Trang)</span>
             </a>
 
             <div className="flex items-center justify-between pt-1">
@@ -788,14 +788,14 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                 <img
                   src={adminUser?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"}
                   alt={adminUser?.name || "Admin"}
-                  className="w-7 h-7 rounded-full object-cover border border-[#E8998D]"
+                  className="w-7 h-7 rounded-full object-cover border border-red-500/40"
                 />
                 <div className="min-w-0">
                   <span className="font-bold text-white text-[11px] block truncate max-w-[100px]">
-                    {adminUser?.name || 'Admin Atelier'}
+                    {adminUser?.name || 'Chỉ Huy Trưởng PCCC'}
                   </span>
-                  <span className="text-[9px] text-emerald-300 block truncate">
-                    {adminUser?.provider === 'google' ? 'Google SSO' : 'Admin'}
+                  <span className="text-[9px] text-emerald-400 block truncate">
+                    {adminUser?.provider === 'google' ? 'Google SSO' : 'Kỹ Sư An Toàn'}
                   </span>
                 </div>
               </div>
