@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trọn Bộ 6 Bản Preview Giao Diện PCCC - Chuẩn Thị Trường Việt Nam</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .heading { font-family: 'Space Grotesk', sans-serif; }
+    
+    .tactical-grid {
+      background-size: 20px 20px;
+      background-image: linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    }
+    .light-grid {
+      background-size: 20px 20px;
+      background-image: linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+    }
+  </style>
+</head>
+<body class="bg-[#0b0e14] text-[#e2e8f0] min-h-screen p-3 md:p-8">
+
+  <!-- TOP BAR BANNER THUẦN VIỆT -->
+  <header class="max-w-7xl mx-auto mb-6 bg-[#121620] border border-[#232b3b] rounded-2xl p-4 md:p-6 shadow-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2 mb-1">
+        <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+        <span class="mono text-xs uppercase tracking-widest text-red-400 font-bold">FLAMEGUARD VIỆT NAM • THUYẾT TRÌNH KHÁCH HÀNG</span>
+      </div>
+      <h1 class="text-xl md:text-3xl font-extrabold text-white heading tracking-tight">Trọn Bộ 6 Bản Preview Giao Diện PCCC Chuẩn Thị Trường Việt Nam</h1>
+      <p class="text-xs md:text-sm text-slate-400 mt-1">Được thiết kế riêng theo quy chuẩn <strong>TCVN 3890:2023</strong>, <strong>Thông tư 150 BCA</strong>, giá niêm yết <strong>VNĐ</strong>, tem kiểm định Bộ Công An và giao hỏa tốc 2 giờ.</p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="px-3 py-1.5 rounded-lg bg-red-950/80 border border-red-700/60 text-red-300 text-xs font-mono font-bold">
+        🚨 100% Tem Kiểm Định BCA
+      </span>
+      <span class="px-3 py-1.5 rounded-lg bg-emerald-950/80 border border-emerald-700/60 text-emerald-300 text-xs font-mono font-bold">
+        ⚡ Giao 2H Hà Nội & TP.HCM
+      </span>
+    </div>
+  </header>
+
+  <!-- 6 TAB NAVIGATION BUTTONS (THUẦN VIỆT) -->
+  <nav class="max-w-7xl mx-auto mb-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+    <!-- Tab 1 -->
+    <button id="nav1" onclick="switchOption(1)" class="p-3 rounded-xl border text-left transition-all bg-red-600 border-red-500 text-white shadow-lg">
+      <div class="text-[10px] mono uppercase font-bold text-red-200">PHƯƠNG ÁN 01</div>
+      <div class="font-bold text-xs truncate mt-0.5">PCCC Nhà Xưởng B2B</div>
+      <div class="text-[10px] opacity-80 truncate">Khu công nghiệp, Kho bãi</div>
+    </button>
+
+    <!-- Tab 2 -->
+    <button id="nav2" onclick="switchOption(2)" class="p-3 rounded-xl border text-left transition-all bg-[#141822] border-[#252e40] text-slate-400 hover:text-white">
+      <div class="text-[10px] mono uppercase font-bold text-slate-500">PHƯƠNG ÁN 02</div>
+      <div class="font-bold text-xs truncate mt-0.5">Căn Hộ & Chung Cư</div>
+      <div class="text-[10px] opacity-80 truncate">Hiện đại, Tinh tế, Gọn gàng</div>
+    </button>
+
+    <!-- Tab 3 -->
+    <button id="nav3" onclick="switchOption(3)" class="p-3 rounded-xl border text-left transition-all bg-[#141822] border-[#252e40] text-slate-400 hover:text-white">
+      <div class="text-[10px] mono uppercase font-bold text-slate-500">PHƯƠNG ÁN 03</div>
+      <div class="font-bold text-xs truncate mt-0.5">Hồ Sơ Nghiệm Thu BCA</div>
+      <div class="text-[10px] opacity-80 truncate">TCVN 3890, Thông tư 150</div>
+    </button>
+
+    <!-- Tab 4 -->
+    <button id="nav4" onclick="switchOption(4)" class="p-3 rounded-xl border text-left transition-all bg-[#141822] border-[#252e40] text-slate-400 hover:text-white">
+      <div class="text-[10px] mono uppercase font-bold text-slate-500">PHƯƠNG ÁN 04</div>
+      <div class="font-bold text-xs truncate mt-0.5">Trạm Bơm & Cơ Điện</div>
+      <div class="text-[10px] opacity-80 truncate">Nhà thầu MEP, Tủ điện</div>
+    </button>
+
+    <!-- Tab 5 -->
+    <button id="nav5" onclick="switchOption(5)" class="p-3 rounded-xl border text-left transition-all bg-[#141822] border-[#252e40] text-slate-400 hover:text-white">
+      <div class="text-[10px] mono uppercase font-bold text-slate-500">PHƯƠNG ÁN 05</div>
+      <div class="font-bold text-xs truncate mt-0.5">Ma Trận Đám Cháy</div>
+      <div class="text-[10px] opacity-80 truncate">Class A/B/C/E/K, Bếp ăn</div>
+    </button>
+
+    <!-- Tab 6 -->
+    <button id="nav6" onclick="switchOption(6)" class="p-3 rounded-xl border text-left transition-all bg-[#141822] border-[#252e40] text-slate-400 hover:text-white">
+      <div class="text-[10px] mono uppercase font-bold text-amber-400">PHƯƠNG ÁN 06 ⭐</div>
+      <div class="font-bold text-xs truncate mt-0.5 text-white">Bán Lẻ Hỏa Tốc 2H</div>
+      <div class="text-[10px] opacity-80 truncate">Combo gia đình, Freeship</div>
+    </button>
+  </nav>
+
+  <!-- MAIN STAGE -->
+  <main class="max-w-7xl mx-auto space-y-6">
+
+    <!-- OPTION HEADER INFO -->
+    <section class="bg-[#121620] border border-[#232b3b] rounded-2xl p-5 md:p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2 mb-1.5">
+          <span id="optBadge" class="px-2 py-0.5 rounded bg-red-600 text-white font-bold text-[10px] mono">PHƯƠNG ÁN 01</span>
+          <span id="optTarget" class="px-2 py-0.5 rounded bg-[#1c2333] text-slate-300 font-medium text-[10px] mono border border-[#2b3548]">Dành cho: B2B Nhà Xưởng & Khu Công Nghiệp</span>
+        </div>
+        <h2 id="optTitle" class="text-2xl md:text-3xl font-extrabold text-white heading tracking-tight">PCCC Công Nghiệp & Nhà Xưởng Chuẩn TCVN</h2>
+        <p id="optDesc" class="text-xs md:text-sm text-slate-400 mt-1 max-w-3xl">Giao diện cơ khí kỹ thuật chuyên sâu với lưới phân tách hairline 1px, thông số áp suất Bar/MPa dạng Monospace sắc bén, bảng thông số nghiệm thu công trình.</p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a id="optImgBtn" href="option1.jpg" target="_blank" class="px-4 py-2.5 rounded-xl bg-[#1b2230] hover:bg-[#252f44] text-slate-200 border border-[#2d384d] text-xs font-bold mono transition-all shadow-sm flex items-center gap-2">
+          <span>🔍 Mở Ảnh Gốc 4K</span>
+        </a>
+        <button onclick="copyOptionDetails()" class="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold mono transition-all shadow-md flex items-center gap-1.5">
+          <span>📋 Copy Tóm Tắt & Báo Giá</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- VISUAL RENDER PREVIEW (ROBUST AUTO-FALLBACK IMAGE) -->
+    <section class="bg-[#121620] border border-[#232b3b] rounded-2xl p-4 shadow-xl">
+      <div class="flex items-center justify-between pb-3 mb-3 border-b border-[#232b3b]">
+        <span class="mono text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+          Hình Ảnh Mockup Thiết Kế Desktop Trực Quan
+        </span>
+        <span class="text-[11px] text-slate-400 mono">Hiển thị sắc nét trên màn hình Retina / 4K</span>
+      </div>
+      <div class="rounded-xl overflow-hidden border border-[#242c3d] bg-black/70 flex items-center justify-center p-2 min-h-[300px]">
+        <img id="optImage" 
+             src="option1.jpg" 
+             alt="Preview Giao Diện Đầy Đủ" 
+             class="w-full h-auto max-h-[580px] object-contain mx-auto rounded-lg shadow-2xl transition-all duration-300" />
+      </div>
+    </section>
+
+    <!-- LIVE DETAILED DESKTOP CANVAS (VIETNAM CONTEXT) -->
+    <section class="bg-[#121620] border border-[#232b3b] rounded-2xl p-5 md:p-8 shadow-xl space-y-5">
+      <div class="border-b border-[#232b3b] pb-3 flex items-center justify-between">
+        <div>
+          <span class="mono text-xs font-bold uppercase tracking-wider text-amber-400">KIẾN TRÚC GIAO DIỆN THỰC TẾ (VIỆT NAM CONTEXT)</span>
+          <h3 class="text-lg md:text-xl font-bold text-white heading mt-0.5">Bản Dựng Khung Giao Diện Chi Tiết Cho Phương Án Này</h3>
+        </div>
+        <span class="text-xs text-slate-400 mono">Giá niêm yết VNĐ • Tem BCA • TCVN 3890</span>
+      </div>
+
+      <!-- INJECTABLE HTML MOCK CANVAS -->
+      <div id="mockupCanvas" class="rounded-2xl border overflow-hidden shadow-2xl transition-all duration-300">
+        <!-- Injected by JS -->
+      </div>
+    </section>
+
+    <!-- COLOR TOKENS, VIETNAM SELLING POINTS & AUDIENCE MATRIX -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Box 1: Bảng mã màu -->
+      <div class="bg-[#121620] border border-[#232b3b] rounded-2xl p-5 space-y-4">
+        <div class="flex items-center justify-between border-b border-[#232b3b] pb-2">
+          <h4 class="font-bold text-xs uppercase tracking-wider text-slate-300 mono">BẢNG MÃ MÀU THIẾT KẾ (HEX)</h4>
+          <span class="text-[10px] text-slate-500">Click để copy</span>
+        </div>
+        <div id="optColors" class="space-y-2 text-xs mono">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+
+      <!-- Box 2: Luận điểm bán hàng tại VN -->
+      <div class="bg-[#121620] border border-[#232b3b] rounded-2xl p-5 space-y-4">
+        <div class="border-b border-[#232b3b] pb-2">
+          <h4 class="font-bold text-xs uppercase tracking-wider text-slate-300 mono">LÝ DO THUYẾT PHỤC KHÁCH VIỆT NAM</h4>
+        </div>
+        <ul id="optSellingPoints" class="space-y-2.5 text-xs text-slate-300">
+          <!-- Injected by JS -->
+        </ul>
+      </div>
+
+      <!-- Box 3: Định vị thị trường & Pháp lý -->
+      <div class="bg-[#121620] border border-[#232b3b] rounded-2xl p-5 space-y-4">
+        <div class="border-b border-[#232b3b] pb-2">
+          <h4 class="font-bold text-xs uppercase tracking-wider text-slate-300 mono">TIÊU CHUẨN PHÁP LÝ & ĐỐI TƯỢNG</h4>
+        </div>
+        <div id="optMarketReview" class="text-xs text-slate-300 space-y-2.5 leading-relaxed">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script>
+    const options = {
+      1: {
+        badge: "PHƯƠNG ÁN 01",
+        target: "Phù hợp: B2B Nhà xưởng, Khu công nghiệp (VSIP, Tân Tạo, Quế Võ), Kho logistics",
+        title: "PCCC Công Nghiệp & Nhà Xưởng Chuẩn TCVN",
+        desc: "Giao diện cơ khí kỹ thuật chuyên sâu với lưới phân tách hairline 1px, thông số áp suất Bar/MPa dạng Monospace sắc bén, bảng thông số nghiệm thu công trình.",
+        image: "option1.jpg",
+        colors: [
+          { name: "Nền Slate Kỹ Thuật Công Nghiệp", hex: "#121417" },
+          { name: "Thép Tấm Bề Mặt Card", hex: "#1F242B" },
+          { name: "Đỏ Cứu Hỏa Tín Hiệu PCCC", hex: "#E02B20" },
+          { name: "Đồng Thau Van & Khớp Nối D65", hex: "#E5A93C" },
+          { name: "Viền Kỹ Thuật Hairline 1px", hex: "#2E3540" }
+        ],
+        sellingPoints: [
+          "Bố cục dạng lưới bản vẽ kỹ thuật cơ khí, tạo sự uy tín tuyệt đối với các giám đốc nhà máy và kỹ sư MEP.",
+          "Hiển thị ngay thông số áp suất thử nghiệm 2.5 MPa (25 Bar), tầm phun xa từ 4-6m, thời gian xả liên tục ≥ 9s.",
+          "Tích hợp báo giá sỉ cho đơn vị thi công: chiết khấu từ 15% - 25% khi mua từ 20 bình trở lên.",
+          "Chân trang bảo chứng đầy đủ chứng nhận: TCVN 3890:2023, TCVN 7435, ISO 9001 và Tem Kiểm Định Cục PCCC."
+        ],
+        marketReview: `
+          <p><strong>Căn cứ pháp lý:</strong> Quy chuẩn QCVN 06:2022/BXD và TCVN 3890:2023 về trang bị phương tiện PCCC cho nhà kho, xưởng sản xuất có nguy cơ cháy nổ cao.</p>
+          <p><strong>Cam kết bảo chứng:</strong> 100% bình có hồ sơ CO/CQ, biên bản xuất kho kiểm định của Bộ Công An, xuất hóa đơn VAT điện tử trong 30 phút.</p>
+        `,
+        canvasHtml: `
+          <div class="bg-[#121417] text-[#f1f3f5] border-[#2e3540] p-6 space-y-6 tactical-grid">
+            <div class="flex items-center justify-between border-b border-[#2e3540] pb-3 text-xs">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded bg-red-600 flex items-center justify-center text-white font-black text-xs">FG</div>
+                <span class="font-bold tracking-wider mono text-white">FLAMEGUARD CÔNG NGHIỆP • KHO PCCC TOÀN QUỐC</span>
+              </div>
+              <div class="hidden sm:flex gap-4 mono text-[11px] text-slate-400">
+                <span class="text-red-500 font-bold">BÌNH XE ĐẨY 35KG</span>
+                <span>BÌNH KHÍ CO2 MT5</span>
+                <span>HỘP VÒI D65</span>
+                <span>HỒ SƠ NGHIỆM THU</span>
+              </div>
+              <span class="mono text-xs text-amber-400 font-bold">HOTLINE KỸ THUẬT: 0843.066.604</span>
+            </div>
+            <div class="p-6 bg-[#161a22] border border-[#2e3540] rounded-xl flex flex-col md:flex-row items-center justify-between gap-6">
+              <div class="space-y-3 max-w-xl">
+                <span class="text-[10px] font-bold mono bg-red-950 text-red-300 border border-red-800 px-2.5 py-1 rounded">
+                  ĐẠT CHUẨN TCVN 3890:2023 • TEM KIỂM ĐỊNH BỘ CÔNG AN
+                </span>
+                <h4 class="text-2xl md:text-3xl font-black heading uppercase text-white leading-tight">
+                  THIẾT BỊ PHÒNG CHÁY CÔNG NGHIỆP NHÀ XƯỞNG & KHO BÃI
+                </h4>
+                <p class="text-xs text-slate-300 leading-relaxed">
+                  Cung ứng số lượng lớn bình chữa cháy xe đẩy 35kg, bình bột MFZL8, bình CO2 MT5 và hệ thống họng tiếp nước PCCC. Bàn giao kèm đầy đủ biên bản kiểm định BCA, CO/CQ và hóa đơn VAT.
+                </p>
+                <div class="flex flex-wrap gap-3 pt-1">
+                  <button class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded mono uppercase shadow-md">
+                    YÊU CẦU BÁO GIÁ DỰ ÁN 2026 →
+                  </button>
+                  <button class="px-4 py-2.5 bg-[#222834] border border-[#354054] text-slate-300 text-xs rounded mono uppercase">
+                    TẢI BẢNG THÔNG SỐ (.PDF)
+                  </button>
+                </div>
+              </div>
+              <div class="w-full md:w-56 bg-[#0e1116] border border-[#2a3344] rounded-lg p-3.5 space-y-2 text-[11px] mono">
+                <div class="text-red-400 font-bold border-b border-[#242b38] pb-1">THÔNG SỐ KIỂM ĐỊNH LÔ:</div>
+                <div class="flex justify-between"><span>ÁP SUẤT NẠP N2:</span><span class="text-emerald-400 font-bold">1.4 MPa</span></div>
+                <div class="flex justify-between"><span>ÁP SUẤT THỬ VỎ:</span><span class="text-white font-bold">2.5 MPa</span></div>
+                <div class="flex justify-between"><span>TẦM PHUN XA:</span><span class="text-white font-bold">≥ 6.0 Mét</span></div>
+                <div class="flex justify-between"><span>SERI TEM BCA:</span><span class="text-amber-400 font-bold">2026-X889</span></div>
+                <div class="text-[9px] text-slate-500 pt-1 border-t border-[#242b38]">KHO SẴN 5.000 BÌNH TẠI KCN</div>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              <div class="bg-[#181d26] border border-[#2a3344] p-4 rounded-xl space-y-2">
+                <div class="flex justify-between text-[10px] mono text-slate-400"><span>SKU: MFZ35-PRO</span><span class="text-emerald-400 font-bold">CÓ SẴN 150 BÌNH</span></div>
+                <h5 class="font-bold text-white text-sm">Bình Chữa Cháy Xe Đẩy Bột ABC 35kg</h5>
+                <div class="text-[11px] text-slate-300">Chuyên dụng cho kho xăng dầu, xưởng gỗ, nhà kho pallet trần cao trên 6m.</div>
+                <div class="pt-2 border-t border-[#242c3d] flex items-center justify-between">
+                  <div class="font-black text-red-500 text-sm">1.650.000₫</div>
+                  <button class="px-3 py-1.5 bg-red-600 text-white rounded text-[11px] font-bold mono">ĐẶT HÀNG</button>
+                </div>
+              </div>
+              <div class="bg-[#181d26] border border-[#2a3344] p-4 rounded-xl space-y-2">
+                <div class="flex justify-between text-[10px] mono text-slate-400"><span>SKU: CO2-MT5</span><span class="text-emerald-400 font-bold">CÓ SẴN 300 BÌNH</span></div>
+                <h5 class="font-bold text-white text-sm">Bình Khí CO2 MT5 5kg Đúc Thép Nguyên Khối</h5>
+                <div class="text-[11px] text-slate-300">Dập đám cháy tủ điện trung thế, phòng máy chủ server, trạm biến áp không để lại bột cặn.</div>
+                <div class="pt-2 border-t border-[#242c3d] flex items-center justify-between">
+                  <div class="font-black text-red-500 text-sm">620.000₫</div>
+                  <button class="px-3 py-1.5 bg-red-600 text-white rounded text-[11px] font-bold mono">ĐẶT HÀNG</button>
+                </div>
+              </div>
+              <div class="bg-[#181d26] border border-[#2a3344] p-4 rounded-xl space-y-2">
+                <div class="flex justify-between text-[10px] mono text-slate-400"><span>SKU: VOI-D65-20M</span><span class="text-emerald-400 font-bold">CÓ SẴN 500 CUỘN</span></div>
+                <h5 class="font-bold text-white text-sm">Cuộn Vòi Chữa Cháy D65 20m Tráng Cao Su</h5>
+                <div class="text-[11px] text-slate-300">Áp lực làm việc 16 Bar, khớp nối nhôm đúc tiêu chuẩn Việt Nam lắp vừa mọi họng cứu hỏa.</div>
+                <div class="pt-2 border-t border-[#242c3d] flex items-center justify-between">
+                  <div class="font-black text-red-500 text-sm">480.000₫</div>
+                  <button class="px-3 py-1.5 bg-red-600 text-white rounded text-[11px] font-bold mono">ĐẶT HÀNG</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      2: {
+        badge: "PHƯƠNG ÁN 02",
+        target: "Phù hợp: Căn hộ chung cư, Biệt thự cao cấp, Tòa nhà văn phòng hiện đại",
+        title: "PCCC Căn Hộ & Chung Cư Hiện Đại",
+        desc: "Phong cách tối giản, sang trọng chuẩn nội thất cao cấp. Nền Chalk White sáng sạch, chữ Deep Carbon Ink siêu nét, tem an toàn Verified Teal, hòa hợp với căn hộ đẹp.",
+        image: "option2.jpg",
+        colors: [
+          { name: "Nền Chalk White Sạch Sẽ", hex: "#F8F9FA" },
+          { name: "Xám Titanium Mịn Bề Mặt", hex: "#EEF0F2" },
+          { name: "Chữ Đen Carbon Sắc Nét", hex: "#0F172A" },
+          { name: "Đỏ Fire Engine Cao Cấp", hex: "#D32F2F" },
+          { name: "Xanh Kiểm Định Verified Teal", hex: "#0F766E" }
+        ],
+        sellingPoints: [
+          "Xóa tan định kiến thiết bị chữa cháy là thô ráp, bụi bặm; biến bình cứu hỏa thành món đồ nội thất an toàn cao cấp.",
+          "Kệ để sàn kim loại sơn tĩnh điện chống xước sàn gỗ và tránh ẩm ướt đáy bình.",
+          "Trang bị dây thoát hiểm tự hãm thả chậm chống kẹt khói dành cho nhà từ tầng 3 đến tầng 25.",
+          "Đầu báo khói quang điện độc lập sử dụng pin Lithium 5-10 năm, gắn trần không cần đục tường đi dây."
+        ],
+        marketReview: `
+          <p><strong>Khách hàng mục tiêu:</strong> Cư dân các khu đô thị Vinhomes, Masteri, Ecopark, căn hộ dịch vụ và biệt thự liền kề.</p>
+          <p><strong>Tâm lý khách hàng:</strong> Sẵn sàng chi trả mức giá cao hơn để nhận được thiết bị đẹp, gọn gàng, có bảo hành 2 năm và hướng dẫn sử dụng chi tiết bằng tiếng Việt.</p>
+        `,
+        canvasHtml: `
+          <div class="bg-[#F8F9FA] text-[#0F172A] border-[#E2E8F0] p-6 space-y-6 light-grid">
+            <div class="flex items-center justify-between border-b border-[#E2E8F0] pb-3 text-xs">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded bg-[#0F172A] flex items-center justify-center text-white font-black text-xs">FG</div>
+                <span class="font-bold tracking-wider text-[#0F172A]">AN TÂM GIA ĐÌNH • THIẾT BỊ PCCC CHUNG CƯ CAO CẤP</span>
+              </div>
+              <div class="hidden sm:flex gap-4 text-[11px] text-slate-600 font-medium">
+                <span>BÌNH CHỮA CHÁY CĂN HỘ</span>
+                <span>DÂY THOÁT HIỂM TỰ HÃM</span>
+                <span>MẶT NẠ PHÒNG ĐỘC</span>
+                <span>ĐẦU BÁO KHÓI KHÔNG DÂY</span>
+              </div>
+              <span class="text-xs font-bold text-red-600 mono">HOTLINE: 0843.066.604</span>
+            </div>
+            <div class="p-6 bg-white border border-[#E2E8F0] rounded-xl flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
+              <div class="space-y-3 max-w-xl">
+                <span class="text-[10px] font-bold mono bg-emerald-50 text-[#0F766E] border border-emerald-200 px-2.5 py-1 rounded">
+                  AN TOÀN KHÔNG GIAN SỐNG • CHUẨN NỘI THẤT HIỆN ĐẠI
+                </span>
+                <h4 class="text-2xl md:text-3xl font-extrabold heading text-[#0F172A] leading-tight">
+                  BẢO VỆ GIA ĐÌNH TOÀN DIỆN VỚI THIẾT BỊ PCCC CHUẨN BỘ CÔNG AN
+                </h4>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                  Trang bị các phương tiện dập lửa khẩn cấp và thoát hiểm thông minh dành riêng cho chung cư và nhà phố cao tầng. Thiết kế thanh lịch, dễ thao tác trong 3 giây, đạt kiểm định quốc gia.
+                </p>
+                <div class="flex gap-3 pt-1">
+                  <button class="px-4 py-2.5 bg-[#D32F2F] text-white font-bold text-xs rounded-lg shadow-sm">
+                    XEM BỘ SƯU TẬP GIA ĐÌNH
+                  </button>
+                  <button class="px-4 py-2.5 bg-white border border-slate-300 text-slate-800 text-xs rounded-lg hover:bg-slate-50">
+                    CẨM NANG THOÁT HIỂM (.PDF)
+                  </button>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3 text-xs w-full md:w-64">
+                <div class="p-3 bg-[#F8F9FA] border border-slate-200 rounded-lg text-center">
+                  <div class="text-[#D32F2F] font-black text-lg">BỘT ABC 4KG</div>
+                  <div class="text-[10px] text-slate-500">Dập lửa gỗ, điện, gas</div>
+                  <div class="font-bold text-xs text-slate-800 mt-1">295.000₫</div>
+                </div>
+                <div class="p-3 bg-[#F8F9FA] border border-slate-200 rounded-lg text-center">
+                  <div class="text-[#0F766E] font-black text-lg">BÁO KHÓI QUANG</div>
+                  <div class="text-[10px] text-slate-500">Pin Lithium 5 năm</div>
+                  <div class="font-bold text-xs text-slate-800 mt-1">350.000₫</div>
+                </div>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              <div class="bg-white border border-slate-200 p-4 rounded-xl shadow-xs space-y-2">
+                <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">ĐẦY ĐỦ TEM BCA</span>
+                <h5 class="font-bold text-slate-900 text-sm">Bình Bột Khô ABC 4kg Kèm Kệ Đặt Sàn Đơn</h5>
+                <p class="text-slate-500 text-[11px]">Kim chỉ áp suất vạch xanh xuất xưởng, tặng kèm kệ sắt sơn tĩnh điện giữ bình đứng vững.</p>
+                <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <span class="font-black text-[#D32F2F] text-sm">345.000₫ <span class="text-[10px] text-slate-400 font-normal">(Cả kệ)</span></span>
+                  <button class="px-3 py-1.5 bg-[#0F172A] text-white font-bold rounded text-[11px]">CHỌN MUA</button>
+                </div>
+              </div>
+              <div class="bg-white border border-slate-200 p-4 rounded-xl shadow-xs space-y-2">
+                <span class="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">THOÁT HIỂM TẦNG 4-10</span>
+                <h5 class="font-bold text-slate-900 text-sm">Bộ Dây Thoát Hiểm Tự Hãm Hàn Quốc 25m</h5>
+                <p class="text-slate-500 text-[11px]">Dây cáp thép bọc sợi chống cháy, bộ điều tốc hạ chậm đều 1m/s an toàn cho phụ nữ và trẻ nhỏ.</p>
+                <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <span class="font-black text-[#D32F2F] text-sm">1.850.000₫</span>
+                  <button class="px-3 py-1.5 bg-[#0F172A] text-white font-bold rounded text-[11px]">CHỌN MUA</button>
+                </div>
+              </div>
+              <div class="bg-white border border-slate-200 p-4 rounded-xl shadow-xs space-y-2">
+                <span class="text-[10px] font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200">BẢO VỆ ĐƯỜNG THỞ 40 PHÚT</span>
+                <h5 class="font-bold text-slate-900 text-sm">Combo 02 Mặt Nạ Lọc Khói Độc TZL30</h5>
+                <p class="text-slate-500 text-[11px]">Chống ngộ độc khí CO và khói dày đặc trong đám cháy chung cư, phin lọc than hoạt tính nguyên seal.</p>
+                <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <span class="font-black text-[#D32F2F] text-sm">280.000₫ <span class="text-[10px] text-slate-400 font-normal">(/2 chiếc)</span></span>
+                  <button class="px-3 py-1.5 bg-[#0F172A] text-white font-bold rounded text-[11px]">CHỌN MUA</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      3: {
+        badge: "PHƯƠNG ÁN 03",
+        target: "Phù hợp: Đấu thầu dự án, Bệnh viện, Trường học, Cơ sở cần chuẩn bị hồ sơ kiểm tra PCCC liên ngành",
+        title: "Cổng Hồ Sơ Nghiệm Thu PCCC & Chuẩn TCVN",
+        desc: "Giao diện phong cách chứng chỉ chuẩn hóa pháp lý Bộ Công An (TCVN 3890 & Thông tư 150), tích hợp sơ đồ mặt cắt cấu tạo bình và mã QR truy xuất nguồn gốc nghiệm thu.",
+        image: "option3.jpg",
+        colors: [
+          { name: "Nền Blueprint Deep Navy", hex: "#0F1E36" },
+          { name: "Khối Bảng Chứng Chỉ Kỹ Thuật", hex: "#F1F5F9" },
+          { name: "Đỏ Dấu Mộc Thẩm Duyệt BCA", hex: "#DC2626" },
+          { name: "Xanh Kiểm Định Hợp Chuẩn", hex: "#0284C7" },
+          { name: "Xám Kỹ Thuật TCVN Norm", hex: "#334155" }
+        ],
+        sellingPoints: [
+          "Hiển thị sơ đồ mặt cắt cơ khí của bình chữa cháy bột và CO2, giải thích rõ cơ chế van an toàn và khí đẩy.",
+          "Bảng tra cứu quy chuẩn TCVN 3890:2023 phân định rõ ràng số lượng bình bắt buộc theo từng loại hình công trình.",
+          "Hệ thống tra cứu số Seri tem kiểm định BCA 2026 trực tiếp, đảm bảo bình mới 100% chưa qua sử dụng.",
+          "Cực kỳ hiệu quả khi làm việc với cán bộ thẩm duyệt PCCC quận/huyện và đoàn kiểm tra liên ngành."
+        ],
+        marketReview: `
+          <p><strong>Cơ sở pháp lý:</strong> Thông tư số 150/2020/TT-BCA quy định chi tiết danh mục và định mức phương tiện PCCC cứu nạn cứu hộ đối với các cơ sở kinh doanh có điều kiện (Karaoke, Bar, Khách sạn, Phòng khám).</p>
+          <p><strong>Lợi thế cạnh tranh:</strong> Bàn giao kèm biên bản bàn giao thiết bị đạt chuẩn PCCC để khách hàng kẹp thẳng vào hồ sơ nghiệm thu cơ sở.</p>
+        `,
+        canvasHtml: `
+          <div class="bg-[#0F1E36] text-[#f1f5f9] border-[#1e3458] p-6 space-y-6 tactical-grid">
+            <div class="flex items-center justify-between border-b border-[#1e3458] pb-3 text-xs">
+              <div class="flex items-center gap-2">
+                <span class="bg-red-600 text-white font-bold px-2 py-0.5 rounded text-[10px]">TCVN 3890</span>
+                <span class="bg-blue-600 text-white font-bold px-2 py-0.5 rounded text-[10px]">TT 150/BCA</span>
+                <span class="font-bold tracking-wider mono text-white">HỒ SƠ THẨM DUYỆT & NGHIỆM THU PCCC QUỐC GIA</span>
+              </div>
+              <span class="mono text-xs text-amber-300">TƯ VẤN THẨM DUYỆT: 0843.066.604</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              <div class="bg-[#152744] border border-[#223d68] p-4 rounded-xl space-y-2">
+                <span class="text-[10px] text-red-400 font-bold mono">SƠ ĐỒ CƠ KHÍ MFZL4</span>
+                <h5 class="font-bold text-white text-sm">CẤU TẠO MẶT CẮT BÌNH BỘT ABC</h5>
+                <p class="text-slate-300 text-[11px]">Van đồng thau nguyên khối, ống siphon thép, bột chữa cháy Silicon hóa chống vón cục, khí đẩy N2 nạp sẵn vạch xanh.</p>
+                <div class="pt-2 text-[10px] text-emerald-400 mono">✓ TCVN 7026:2013 ĐẠT TIÊU CHUẨN</div>
+              </div>
+              <div class="bg-[#152744] border border-[#223d68] p-4 rounded-xl space-y-2">
+                <span class="text-[10px] text-blue-400 font-bold mono">PHÁP LÝ NGHIỆM THU</span>
+                <h5 class="font-bold text-white text-sm">TEM KIỂM ĐỊNH CỤC CẢNH SÁT PCCC</h5>
+                <p class="text-slate-300 text-[11px]">Tem dán vỡ phản quang có mã số định danh riêng từng bình, kèm giấy chứng nhận xuất xưởng của Bộ Công An.</p>
+                <div class="pt-2 text-[10px] text-blue-400 mono">✓ CÓ BIÊN BẢN BÀN GIAO KÈM THEO</div>
+              </div>
+              <div class="bg-[#152744] border border-[#223d68] p-4 rounded-xl space-y-2">
+                <span class="text-[10px] text-amber-400 font-bold mono">TRA CỨU TRỰC TUYẾN</span>
+                <h5 class="font-bold text-white text-sm">QUÉT QR XÁC THỰC LÔ BÌNH</h5>
+                <p class="text-slate-300 text-[11px]">Mã QR dán trên thân bình cho phép chủ cơ sở và cán bộ kiểm tra quét kiểm tra ngày nạp sạc và hạn kiểm định.</p>
+                <div class="pt-2 text-[10px] text-amber-400 mono">✓ SERI: BCA-2026-MFZ4-089</div>
+              </div>
+            </div>
+            <div class="p-4 bg-[#112038] border border-[#1e3458] rounded-xl flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
+              <div>
+                <h5 class="font-bold text-white text-sm">Gói Thiết Bị & Hồ Sơ Nghiệm Thu Cho Nhà Hàng, Quán Karaoke, Trường Học</h5>
+                <p class="text-slate-400 text-[11px] mt-0.5">Bao gồm bảng nội quy tiêu lệnh dạ quang, sơ đồ thoát hiểm, sổ theo dõi phương tiện PCCC cơ sở.</p>
+              </div>
+              <button class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg mono text-xs whitespace-nowrap">
+                YÊU CẦU LẬP DỰ TOÁN NGHIỆM THU →
+              </button>
+            </div>
+          </div>
+        `
+      },
+      4: {
+        badge: "PHƯƠNG ÁN 04",
+        target: "Phù hợp: Nhà thầu cơ điện MEP, Trạm bơm tăng áp, Phòng server IT, Tủ điện trung thế",
+        title: "Cơ Điện & Hệ Thống PCCC Tự Động",
+        desc: "Bảng điều khiển hệ thống cơ điện công trình nặng, van xả tràn, trạm bơm tăng áp và bình cầu chữa cháy tự động treo trần.",
+        image: "option4.jpg",
+        colors: [
+          { name: "Nền Dark Charcoal Cơ Điện", hex: "#0F131A" },
+          { name: "Thép Không Gỉ 304 Khớp Nối", hex: "#CBD5E1" },
+          { name: "Đỏ Cứu Hỏa Tín Hiệu", hex: "#E02B20" },
+          { name: "Đồng Hồ Đo Áp Kép", hex: "#F59E0B" },
+          { name: "Lưới Cơ Khí Công Nghiệp", hex: "#1E293B" }
+        ],
+        sellingPoints: [
+          "Khẳng định vị thế tổng thầu cung ứng hệ thống PCCC cơ điện công trình quy mô lớn.",
+          "Cung cấp giải pháp bình cầu bột tự động kích hoạt ở nhiệt độ 68°C bảo vệ kho hàng ban đêm.",
+          "Hệ thống chữa cháy khí tự động FM-200 / Novec 1230 bảo vệ phòng máy chủ không bị hư hại thiết bị vi mạch.",
+          "3 chỉ số cam kết: 100% Tem BCA, 5.000+ Tòa nhà thi công, Xuất kho hỏa tốc 60 phút."
+        ],
+        marketReview: `
+          <p><strong>Khách hàng mục tiêu:</strong> Các công ty thi công cơ điện MEP, quản lý tòa nhà văn phòng cao ốc, trạm điện lực EVN và trung tâm dữ liệu Viettel/FPT.</p>
+          <p><strong>Quy mô đơn hàng:</strong> Giá trị hợp đồng từ vài chục triệu đến hàng trăm triệu đồng cho một cụm hệ thống tự động.</p>
+        `,
+        canvasHtml: `
+          <div class="bg-[#0F131A] text-slate-200 border-[#1E293B] p-6 space-y-6 tactical-grid">
+            <div class="flex items-center justify-between border-b border-[#1E293B] pb-3 text-xs">
+              <span class="font-bold tracking-wider mono text-white">FLAMEGUARD MEP • CƠ ĐIỆN & HỆ THỐNG PCCC TỰ ĐỘNG</span>
+              <span class="mono text-xs text-red-500 font-bold">HOTLINE DỰ ÁN: 1900-PCCC</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+              <div class="p-4 bg-[#141a24] border border-[#232f42] rounded-xl">
+                <div class="text-2xl md:text-3xl font-black text-white heading">100%</div>
+                <div class="text-xs font-bold text-red-400 mt-1">KIỂM ĐỊNH CỤC CẢNH SÁT PCCC</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">Biên bản bàn giao & chứng từ nghiệm thu hợp pháp</div>
+              </div>
+              <div class="p-4 bg-[#141a24] border border-[#232f42] rounded-xl">
+                <div class="text-2xl md:text-3xl font-black text-white heading">5.000+</div>
+                <div class="text-xs font-bold text-white mt-1">CÔNG TRÌNH TOÀN QUỐC</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">Hạ tầng khu công nghiệp & nhà cao tầng đã nghiệm thu</div>
+              </div>
+              <div class="p-4 bg-[#141a24] border border-[#232f42] rounded-xl">
+                <div class="text-2xl md:text-3xl font-black text-white heading">60 PHÚT</div>
+                <div class="text-xs font-bold text-amber-400 mt-1">GIAO HỎA TỐC NỘI THÀNH</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">Đội xe tải chuyên dụng sẵn sàng xuất kho 24/7</div>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              <div class="bg-[#141923] border border-[#242e40] p-4 rounded-xl space-y-2">
+                <span class="text-[10px] text-amber-400 font-bold mono">TỰ ĐỘNG KÍCH HOẠT 68°C</span>
+                <h5 class="font-bold text-white text-sm">Bình Cầu Chữa Cháy Tự Động Treo Trần 6kg</h5>
+                <p class="text-slate-400 text-[11px]">Bảo vệ kho hàng và phòng điện khi không có người trực, đầu phun Sprinkler nổ xả bột phủ kín 10m².</p>
+                <div class="pt-2 flex justify-between items-center border-t border-[#20293a]">
+                  <span class="font-bold text-red-400 text-sm">450.000₫</span>
+                  <button class="px-3 py-1 bg-red-600 text-white rounded text-[11px] font-bold">ĐẶT MUA</button>
+                </div>
+              </div>
+              <div class="bg-[#141923] border border-[#242e40] p-4 rounded-xl space-y-2">
+                <span class="text-[10px] text-blue-400 font-bold mono">VAN BÁO ĐỘNG HỆ THỐNG</span>
+                <h5 class="font-bold text-white text-sm">Van Báo Cháy Tự Động Alarm Valve DN100</h5>
+                <p class="text-slate-400 text-[11px]">Kèm chuông nước cơ học và rơ-le áp suất kích hoạt bơm cứu hỏa khi đường ống tụt áp do vỡ đầu phun.</p>
+                <div class="pt-2 flex justify-between items-center border-t border-[#20293a]">
+                  <span class="font-bold text-red-400 text-sm">4.200.000₫</span>
+                  <button class="px-3 py-1 bg-red-600 text-white rounded text-[11px] font-bold">ĐẶT MUA</button>
+                </div>
+              </div>
+              <div class="bg-[#141923] border border-[#242e40] p-4 rounded-xl space-y-2">
+                <span class="text-[10px] text-emerald-400 font-bold mono">KHÍ SẠCH SERVER</span>
+                <h5 class="font-bold text-white text-sm">Hệ Thống Khí Tự Động FM-200 / HFC-227ea</h5>
+                <p class="text-slate-400 text-[11px]">Dập tắt đám cháy phòng server trong 10 giây bằng cách hấp thụ nhiệt, an toàn tuyệt đối cho người và mạch điện.</p>
+                <div class="pt-2 flex justify-between items-center border-t border-[#20293a]">
+                  <span class="font-bold text-red-400 text-sm">Khảo sát & Báo giá</span>
+                  <button class="px-3 py-1 bg-red-600 text-white rounded text-[11px] font-bold">TƯ VẤN</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      5: {
+        badge: "PHƯƠNG ÁN 05",
+        target: "Phù hợp: Chuỗi F&B, Nhà hàng nướng lẩu, Quán cafe, Bếp ăn công nghiệp, Cửa hàng dịch vụ",
+        title: "Ma Trận Phân Loại Đám Cháy (Class A - K)",
+        desc: "Giao diện phân loại 5 nhóm nguy cơ đám cháy bằng tiếng Việt dễ hiểu, tích hợp đồng hồ đo mức độ rủi ro (Risk Meter) và hướng dẫn chọn đúng loại bình dập dầu mỡ.",
+        image: "option5.jpg",
+        colors: [
+          { name: "Nền Slate Kỹ Thuật Số", hex: "#111620" },
+          { name: "Khối Phân Loại Nguy Cơ", hex: "#1A2232" },
+          { name: "Đồng Hồ Cảnh Báo Risk Meter", hex: "#EF4444" },
+          { name: "Vạch Xanh An Toàn Kỹ Thuật", hex: "#10B981" },
+          { name: "Xanh Nút Thẩm Định PCCC", hex: "#2563EB" }
+        ],
+        sellingPoints: [
+          "Bộ lọc giải thích trực quan: Đám cháy dầu mỡ ăn (Class K) tuyệt đối không dùng nước hay bình bột thông thường; phải dùng bình Bọt Foam Sinh Học.",
+          "Đám cháy chập điện ổ cắm (Class E) phải dùng bình Khí CO2 sạch để không bị giật điện và không làm cháy hỏng vi mạch.",
+          "Tự động tính toán số lượng bình cần trang bị dựa trên diện tích mặt bằng sàn m².",
+          "Giúp chủ cơ sở tự tin giải trình với đoàn kiểm tra rằng mình trang bị đúng chủng loại phương tiện cho khu vực bếp."
+        ],
+        marketReview: `
+          <p><strong>Khách hàng mục tiêu:</strong> Chủ nhà hàng, quán bar, tiệm trà sữa, tiệm bánh và các bếp ăn tập thể trường học/công ty.</p>
+          <p><strong>Nỗi đau được giải quyết:</strong> Sợ nhất là khi xảy ra cháy chảo dầu lại tạt nước vào gây nổ bùng ngọn lửa; trang bị bình bọt Foam và chăn dập lửa là giải pháp triệt để nhất.</p>
+        `,
+        canvasHtml: `
+          <div class="bg-[#111620] text-slate-200 border-[#1f2838] p-6 space-y-6">
+            <div class="text-center space-y-1">
+              <span class="text-[10px] font-bold mono text-red-400 uppercase">HỆ THỐNG PHÂN LOẠI NGUY CƠ CHÁY THEO TIÊU CHUẨN</span>
+              <h4 class="text-xl md:text-2xl font-bold text-white heading">CHỌN ĐÚNG BÌNH CHO TỪNG LOẠI ĐÁM CHÁY</h4>
+              <p class="text-xs text-slate-400 max-w-xl mx-auto">Sử dụng sai loại bình có thể khiến đám cháy bùng phát dữ dội hơn hoặc gây giật điện nguy hiểm đến tính mạng.</p>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center text-xs">
+              <div class="p-3.5 bg-[#18202e] border border-[#2b3952] rounded-xl hover:border-red-500 cursor-pointer">
+                <div class="text-lg font-black text-red-500">CLASS A</div>
+                <div class="font-bold text-white mt-1">Đám Cháy Rắn</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">Gỗ, giấy, vải, bao bì</div>
+                <div class="mt-2 text-[10px] bg-red-950 text-red-300 py-0.5 rounded font-mono">Dùng Bình Bột ABC</div>
+              </div>
+              <div class="p-3.5 bg-[#18202e] border border-[#2b3952] rounded-xl hover:border-amber-500 cursor-pointer">
+                <div class="text-lg font-black text-amber-500">CLASS B</div>
+                <div class="font-bold text-white mt-1">Đám Cháy Lỏng</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">Xăng, dầu hỏa, cồn</div>
+                <div class="mt-2 text-[10px] bg-amber-950 text-amber-300 py-0.5 rounded font-mono">Dùng Foam / Bột</div>
+              </div>
+              <div class="p-3.5 bg-[#18202e] border border-[#2b3952] rounded-xl hover:border-blue-500 cursor-pointer">
+                <div class="text-lg font-black text-blue-400">CLASS C</div>
+                <div class="font-bold text-white mt-1">Đám Cháy Khí</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">Khí Gas LPG, Methane</div>
+                <div class="mt-2 text-[10px] bg-blue-950 text-blue-300 py-0.5 rounded font-mono">Đóng van & Xịt Bột</div>
+              </div>
+              <div class="p-3.5 bg-[#18202e] border border-[#2b3952] rounded-xl hover:border-purple-500 cursor-pointer">
+                <div class="text-lg font-black text-purple-400">CLASS E</div>
+                <div class="font-bold text-white mt-1">Đám Cháy Điện</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">Tủ điện, Server, Máy móc</div>
+                <div class="mt-2 text-[10px] bg-purple-950 text-purple-300 py-0.5 rounded font-mono">Dùng Bình Khí CO2</div>
+              </div>
+              <div class="p-3.5 bg-[#18202e] border border-[#2b3952] rounded-xl hover:border-emerald-500 cursor-pointer">
+                <div class="text-lg font-black text-emerald-400">CLASS K</div>
+                <div class="font-bold text-white mt-1">Bếp Dầu Mỡ</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">Chảo dầu chiên sôi cao</div>
+                <div class="mt-2 text-[10px] bg-emerald-950 text-emerald-300 py-0.5 rounded font-mono">Bọt Foam & Chăn Lửa</div>
+              </div>
+            </div>
+            <div class="p-4 bg-[#151c28] border border-[#273448] rounded-xl flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
+              <div>
+                <span class="font-bold text-white text-sm">💡 Tính Nhanh Số Lượng Bình Theo Diện Tích Mặt Bằng</span>
+                <p class="text-slate-400 text-[11px] mt-0.5">Nhập diện tích và loại hình kinh doanh để nhận ngay danh sách bình bắt buộc theo TCVN 3890.</p>
+              </div>
+              <button class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg mono text-xs">
+                MỞ BẢNG TÍNH ĐỊNH MỨC PCCC →
+              </button>
+            </div>
+          </div>
+        `
+      },
+      6: {
+        badge: "PHƯƠNG ÁN 06 ⭐",
+        target: "Phù hợp: Siêu thị bán lẻ PCCC trực tuyến, Hộ gia đình, Căn hộ chung cư, Tài xế ô tô, Shop bán lẻ",
+        title: "Kho PCCC Bán Lẻ Hỏa Tốc 2 Giờ Toàn Quốc",
+        desc: "Giao diện thương mại điện tử PCCC bán lẻ tối ưu hóa cho người tiêu dùng Việt Nam: Giao hỏa tốc 2 giờ nội thành, 100% Tem BCA cào mã nhắn tin, Hóa đơn VAT điện tử, Combo tiết kiệm.",
+        image: "option6.jpg",
+        colors: [
+          { name: "Đỏ Cứu Hỏa Quốc Gia", hex: "#D32F2F" },
+          { name: "Vàng Cam Cảnh Báo An Toàn", hex: "#F59E0B" },
+          { name: "Xanh Kiểm Định Bộ Công An", hex: "#059669" },
+          { name: "Nền Trắng Ngọc Trai Sạch", hex: "#F8FAFC" },
+          { name: "Chữ Đen Carbon Tương Phản Cao", hex: "#0F172A" }
+        ],
+        sellingPoints: [
+          "Cam kết thép: 100% tem kiểm định của Cục Cảnh Sát PCCC có lớp tráng bạc cào mã gửi SMS xác thực, đền gấp 10 lần nếu phát hiện tem giả.",
+          "Giao hỏa tốc 2 giờ tại Hà Nội & TP.HCM - Hỗ trợ các chủ hộ kinh doanh chuẩn bị kịp đợt kiểm tra an toàn PCCC cơ sở.",
+          "Đóng gói Combo tiện ích giảm giá tới 30%: Combo Căn hộ chung cư (690k), Combo Bếp nhà hàng (890k), Combo Ô tô (350k).",
+          "Hỗ trợ xuất hóa đơn điện tử VAT và cấp biên bản nghiệm thu bàn giao thiết bị trong ngày.",
+          "Chính sách 1 đổi 1 trong 30 ngày nếu kim đồng hồ tụt khỏi vạch xanh an toàn."
+        ],
+        marketReview: `
+          <p><strong>Khách hàng mục tiêu:</strong> Chiếm hơn 90% lượng tìm kiếm mua bình chữa cháy trên Google/Zalo tại Việt Nam (người dân ở chung cư, chủ tiệm tóc, cafe, tạp hóa, văn phòng công ty nhỏ).</p>
+          <p><strong>Tỷ lệ chuyển đổi đơn hàng:</strong> Cao nhất trong tất cả các phong cách nhờ giá niêm yết minh bạch bằng VNĐ, nút Zalo tư vấn 24/7 và chính sách Freeship đơn từ 500k.</p>
+        `,
+        canvasHtml: `
+          <div class="bg-[#F8FAFC] text-[#0F172A] border-[#E2E8F0] p-6 space-y-6">
+            <div class="bg-[#D32F2F] text-white py-2.5 px-4 rounded-xl flex flex-col sm:flex-row items-center justify-between text-xs gap-2 shadow-md">
+              <div class="flex items-center gap-2 font-bold">
+                <span class="animate-pulse">🚨</span>
+                <span>GIAO HỎA TỐC 2 GIỜ HÀ NỘI & TP.HCM • 100% TEM KIỂM ĐỊNH BCA CÀO MÃ SMS • XUẤT HÓA ĐƠN VAT</span>
+              </div>
+              <div class="flex items-center gap-3 text-[11px] mono">
+                <span>ZALO: 0843.066.604</span>
+                <span class="bg-white/20 px-2 py-0.5 rounded font-bold">FREESHIP TỪ 500K</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white font-black text-sm">FG</div>
+                <div>
+                  <span class="font-extrabold text-base text-slate-900 tracking-tight heading">FLAMEGUARD<span class="text-red-600">.VN</span></span>
+                  <span class="block text-[10px] text-slate-500 font-bold uppercase tracking-wider">TỔNG KHO PHÂN PHỐI THIẾT BỊ PCCC CHÍNH HÃNG</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 text-xs">
+                <div class="hidden md:flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs">
+                  <span>🔍 Tìm bình bột 4kg, khí CO2, mặt nạ, chăn dập lửa...</span>
+                </div>
+                <button class="bg-red-600 text-white font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5">
+                  <span>🛒 Giỏ Hàng (3)</span>
+                </button>
+              </div>
+            </div>
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <h4 class="font-black heading text-base uppercase text-[#0F172A] flex items-center gap-2">
+                  <span class="text-red-600">🔥</span> GÓI COMBO AN TOÀN PCCC (TIẾT KIỆM TỚI 30%)
+                </h4>
+                <span class="text-xs text-red-600 font-bold hover:underline cursor-pointer">Xem tất cả 10 gói combo →</span>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div class="bg-white border-2 border-red-500/80 rounded-xl p-4 shadow-md flex flex-col justify-between space-y-3 relative">
+                  <span class="absolute -top-3 left-4 bg-red-600 text-white font-bold px-2 py-0.5 rounded text-[10px] mono">BÁN CHẠY NHẤT</span>
+                  <div>
+                    <h5 class="font-bold text-sm text-slate-900">Combo Căn Hộ Chung Cư Toàn Diện</h5>
+                    <p class="text-[11px] text-slate-500 mt-1">01 Bình bột ABC 4kg + 02 Mặt nạ khói TZL30 + 01 Chăn sợi thủy tinh 1.8m + Kệ để sàn chống ẩm</p>
+                    <div class="mt-3 p-2 bg-emerald-50 rounded border border-emerald-200 text-[10px] text-emerald-800 font-medium">
+                      ✓ Đạt chuẩn Thông tư 150/2020/TT-BCA cho nhà ở
+                    </div>
+                  </div>
+                  <div class="pt-2 border-t flex items-center justify-between">
+                    <div>
+                      <div class="text-[10px] text-slate-400 line-through">850.000₫</div>
+                      <div class="text-base font-black text-red-600">690.000₫</div>
+                    </div>
+                    <button class="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xs">MUA NGAY</button>
+                  </div>
+                </div>
+                <div class="bg-white border border-slate-300 rounded-xl p-4 shadow-sm flex flex-col justify-between space-y-3">
+                  <div>
+                    <h5 class="font-bold text-sm text-slate-900">Combo Bếp Nhà Hàng & Quán Ăn</h5>
+                    <p class="text-[11px] text-slate-500 mt-1">01 Bình Bọt Foam Sinh Học 6L + 01 Chăn dập lửa sợi thủy tinh 1.8m x 1.8m chịu nhiệt 550°C</p>
+                    <div class="mt-3 p-2 bg-blue-50 rounded border border-blue-200 text-[10px] text-blue-800 font-medium">
+                      ✓ Dập tắt chảo dầu sôi trong 5 giây, an toàn xịt người
+                    </div>
+                  </div>
+                  <div class="pt-2 border-t flex items-center justify-between">
+                    <div>
+                      <div class="text-[10px] text-slate-400 line-through">1.050.000₫</div>
+                      <div class="text-base font-black text-red-600">890.000₫</div>
+                    </div>
+                    <button class="px-3.5 py-2 bg-[#0F172A] hover:bg-black text-white font-bold rounded-lg text-xs">MUA NGAY</button>
+                  </div>
+                </div>
+                <div class="bg-white border border-slate-300 rounded-xl p-4 shadow-sm flex flex-col justify-between space-y-3">
+                  <div>
+                    <h5 class="font-bold text-sm text-slate-900">Combo Ô Tô & Xe Cơ Giới 4-7 Chỗ</h5>
+                    <p class="text-[11px] text-slate-500 mt-1">01 Bình bột mini 1kg MFZL1 + 01 Búa thoát hiểm cắt dây đai + Đai khóa thép chống va đập</p>
+                    <div class="mt-3 p-2 bg-amber-50 rounded border border-amber-200 text-[10px] text-amber-800 font-medium">
+                      ✓ Chống nổ dưới trời nắng 70°C, kiểm định đạt chuẩn xe
+                    </div>
+                  </div>
+                  <div class="pt-2 border-t flex items-center justify-between">
+                    <div>
+                      <div class="text-[10px] text-slate-400 line-through">420.000₫</div>
+                      <div class="text-base font-black text-red-600">350.000₫</div>
+                    </div>
+                    <button class="px-3.5 py-2 bg-[#0F172A] hover:bg-black text-white font-bold rounded-lg text-xs">MUA NGAY</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center text-xs">
+              <div class="p-3 bg-white border border-slate-200 rounded-xl">
+                <div class="text-xl">🛡️</div>
+                <div class="font-bold text-slate-900 mt-1">100% Tem Cục PCCC</div>
+                <div class="text-[10px] text-slate-500">Cào mã SMS Bộ Công An</div>
+              </div>
+              <div class="p-3 bg-white border border-slate-200 rounded-xl">
+                <div class="text-xl">⚡</div>
+                <div class="font-bold text-slate-900 mt-1">Giao Nhanh 2 Giờ</div>
+                <div class="text-[10px] text-slate-500">Freeship đơn từ 500k</div>
+              </div>
+              <div class="p-3 bg-white border border-slate-200 rounded-xl">
+                <div class="text-xl">📑</div>
+                <div class="font-bold text-slate-900 mt-1">Hóa Đơn VAT & CO/CQ</div>
+                <div class="text-[10px] text-slate-500">Biên bản nghiệm thu cơ sở</div>
+              </div>
+              <div class="p-3 bg-white border border-slate-200 rounded-xl">
+                <div class="text-xl">🔄</div>
+                <div class="font-bold text-slate-900 mt-1">1 Đổi 1 Trong 30 Ngày</div>
+                <div class="text-[10px] text-slate-500">Nếu kim tụt khỏi vạch xanh</div>
+              </div>
+            </div>
+          </div>
+        `
+      }
+    };
+
+    let cur = 1;
+
+    function switchOption(num) {
+      cur = num;
+      const opt = options[num];
+
+      // Update Nav Buttons
+      for (let i = 1; i <= 6; i++) {
+        const b = document.getElementById(`nav${i}`);
+        if (i === num) {
+          b.className = "p-3 rounded-xl border text-left transition-all bg-red-600 border-red-500 text-white shadow-lg";
+          b.querySelector('.mono').className = "text-[10px] mono uppercase font-bold text-red-200";
+        } else {
+          b.className = "p-3 rounded-xl border text-left transition-all bg-[#141822] border-[#252e40] text-slate-400 hover:text-white";
+          b.querySelector('.mono').className = "text-[10px] mono uppercase font-bold text-slate-500";
+        }
+      }
+
+      // Update Details
+      document.getElementById('optBadge').innerText = opt.badge;
+      document.getElementById('optTarget').innerText = opt.target;
+      document.getElementById('optTitle').innerText = opt.title;
+      document.getElementById('optDesc').innerText = opt.desc;
+
+      // Smart Image Loading with Fallbacks
+      const imgEl = document.getElementById('optImage');
+      imgEl.onerror = function() {
+        if (!this.triedAlt1) {
+          this.triedAlt1 = true;
+          this.src = '/demo/' + opt.image;
+        } else if (!this.triedAlt2) {
+          this.triedAlt2 = true;
+          this.src = './' + opt.image;
+        }
+      };
+      imgEl.src = opt.image;
+      document.getElementById('optImgBtn').href = opt.image;
+
+      // Update Canvas
+      document.getElementById('mockupCanvas').innerHTML = opt.canvasHtml;
+
+      // Update Colors
+      const colorBox = document.getElementById('optColors');
+      colorBox.innerHTML = opt.colors.map(c => `
+        <div onclick="copyHex('${c.hex}')" class="flex items-center justify-between p-2.5 rounded-lg bg-[#0c0f15] border border-[#202736] hover:border-red-500/50 cursor-pointer transition-colors group">
+          <div class="flex items-center gap-2.5">
+            <span class="w-4 h-4 rounded-md shadow-sm border border-white/20" style="background-color: ${c.hex}"></span>
+            <span class="text-slate-300 font-medium text-[11px]">${c.name}</span>
+          </div>
+          <span class="text-slate-400 group-hover:text-red-400 font-bold text-[11px]">${c.hex}</span>
+        </div>
+      `).join('');
+
+      // Update Selling Points
+      const spBox = document.getElementById('optSellingPoints');
+      spBox.innerHTML = opt.sellingPoints.map(sp => `
+        <li class="flex items-start gap-2">
+          <span class="text-red-500 font-bold mt-0.5">✓</span>
+          <span>${sp}</span>
+        </li>
+      `).join('');
+
+      // Update Market Review
+      document.getElementById('optMarketReview').innerHTML = opt.marketReview;
+    }
+
+    function copyHex(hex) {
+      navigator.clipboard.writeText(hex);
+      alert(`Đã sao chép mã màu: ${hex}`);
+    }
+
+    function copyOptionDetails() {
+      const opt = options[cur];
+      const text = `TƯ VẤN PHƯƠNG ÁN: ${opt.title}\n- ${opt.target}\n- Định hướng: ${opt.desc}\n- Mã màu: ${opt.colors.map(c => c.hex).join(', ')}`;
+      navigator.clipboard.writeText(text);
+      alert(`Đã copy tóm tắt của ${opt.badge} vào clipboard!`);
+    }
+
+    // Initialize with Option 1
+    switchOption(1);
+  </script>
+</body>
+</html>

@@ -692,7 +692,7 @@ function fullstackApiPlugin() {
 export default defineConfig({
   plugins: [react(), fullstackApiPlugin()],
   server: {
-    port: 5173,
+    port: 5175,
     host: true,
     allowedHosts: true,
   },
