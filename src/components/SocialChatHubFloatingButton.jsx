@@ -3,6 +3,7 @@ import { useShop } from '../context/ShopContext';
 import { openPersonalZaloChat } from '../services/zaloService';
 import { openFacebookMessenger } from '../services/facebookService';
 import { MessageCircle, X, Send, Sparkles, Clock, CheckCircle2, ChevronRight, PhoneCall } from 'lucide-react';
+import { ZaloIcon } from './ZaloIcon';
 
 export const SocialChatHubFloatingButton = () => {
   const { shopZaloPhone, facebookSettings } = useShop();
@@ -216,8 +217,8 @@ export const SocialChatHubFloatingButton = () => {
             </svg>
 
             {/* Badge Zalo góc dưới */}
-            <span className="absolute -bottom-1 -left-1 w-5 h-5 rounded-full bg-[#0068FF] text-white font-extrabold text-[10px] flex items-center justify-center border-2 border-white shadow-xs">
-              Z
+            <span className="absolute -bottom-1 -left-1 w-5 h-5 rounded-full bg-white flex items-center justify-center border-2 border-white shadow-xs overflow-hidden">
+              <ZaloIcon className="w-full h-full rounded-full" />
             </span>
 
             {/* Online Green Pulse */}

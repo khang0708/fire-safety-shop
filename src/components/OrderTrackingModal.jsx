@@ -20,6 +20,7 @@ import {
 
 import { openPersonalZaloChat } from '../services/zaloService';
 import { generateMessengerOrderInquiry } from '../services/facebookService';
+import { ZaloIcon } from './ZaloIcon';
 
 export const OrderTrackingModal = () => {
   const { isTrackingOpen, setIsTrackingOpen, activeOrder, approvePhotoProof, shopZaloPhone, facebookSettings } = useShop();
@@ -120,7 +121,7 @@ export const OrderTrackingModal = () => {
                 className="p-2.5 bg-[#0068FF] text-white rounded-xl hover:bg-blue-600 shadow-xs transition-transform active:scale-95 flex items-center justify-center"
                 title={`Chat Zalo Với Kỹ Sư (${shopZaloPhone})`}
               >
-                <span className="font-black text-xs">Z</span>
+                <ZaloIcon className="w-4 h-4" />
               </button>
             </div>
           </div>

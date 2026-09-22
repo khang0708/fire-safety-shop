@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 
 import { openPersonalZaloChat } from '../services/zaloService';
+import { ZaloIcon } from './ZaloIcon';
 
 export const FlowerGrid = () => {
   const { 
@@ -176,9 +177,10 @@ export const FlowerGrid = () => {
           <button
             type="button"
             onClick={() => openPersonalZaloChat(shopZaloPhone, 'Chào kỹ sư FLAMEGUARD PRO, tôi cần tư vấn thiết bị PCCC và hồ sơ kiểm định cho công trình!')}
-            className="bg-[#0068FF] text-white text-xs font-bold px-5 py-3 rounded-xl hover:bg-blue-600 transition-all shadow-md active:scale-95 flex items-center gap-1.5"
+            className="bg-[#0068FF] text-white text-xs font-bold px-5 py-3 rounded-xl hover:bg-blue-600 transition-all shadow-md active:scale-95 flex items-center gap-2"
           >
-            <span>💬 Chat Zalo Kỹ Sư ({shopZaloPhone})</span>
+            <ZaloIcon className="w-4 h-4 shrink-0" />
+            <span>Chat Zalo Kỹ Sư ({shopZaloPhone})</span>
           </button>
           <a
             href={`tel:${shopZaloPhone.replace(/\s+/g, '')}`}

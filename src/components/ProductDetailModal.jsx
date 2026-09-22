@@ -4,7 +4,8 @@ import { BOUQUET_SIZES, WRAPPING_PAPERS, ADDONS } from '../data/flowers';
 import { CardPreviewer } from './CardPreviewer';
 import { openPersonalZaloChat } from '../services/zaloService';
 import { generateMessengerProductInquiry } from '../services/facebookService';
-import { Star, ShoppingBag, ShieldCheck, Truck, Gauge } from 'lucide-react';
+import { Star, ShoppingBag, ShieldCheck, Truck, Gauge, Check, MessageCircle } from 'lucide-react';
+import { ZaloIcon } from './ZaloIcon';
 
 export const ProductDetailModal = () => {
   const { quickViewProduct, setQuickViewProduct, addToCart, shopZaloPhone, facebookSettings } = useShop();
@@ -263,17 +264,17 @@ export const ProductDetailModal = () => {
                           : 'border-slate-200 hover:border-slate-300 bg-white'
                       }`}
                     >
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-xl">{addon.img}</span>
-                        <div>
-                          <span className="font-bold text-slate-900 block">{addon.name}</span>
-                          <span className="text-red-600 font-mono font-bold">+{addon.price.toLocaleString('vi-VN')}đ</span>
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1 mr-2.5">
+                        <span className="text-xl shrink-0">{addon.img}</span>
+                        <div className="min-w-0 flex-1">
+                          <span className="font-bold text-slate-900 block leading-tight">{addon.name}</span>
+                          <span className="text-red-600 font-mono font-bold block mt-0.5">+{addon.price.toLocaleString('vi-VN')}đ</span>
                         </div>
                       </div>
-                      <div className={`w-5 h-5 rounded-md flex items-center justify-center border ${
-                        isChecked ? 'bg-red-600 border-red-600 text-white' : 'border-slate-300'
+                      <div className={`w-5 h-5 rounded-md shrink-0 flex items-center justify-center border transition-all ${
+                        isChecked ? 'bg-red-600 border-red-600 text-white shadow-xs' : 'border-slate-300 bg-slate-50/60'
                       }`}>
-                        {isChecked && '✓'}
+                        {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                       </div>
                     </label>
                   );
@@ -299,9 +300,10 @@ export const ProductDetailModal = () => {
                       name: `${quickViewProduct.name} (${selectedSize.name})`,
                       price: finalPrice
                     })}
-                    className="px-3.5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                    className="px-3.5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 shrink-0"
                     title="Tư vấn thiết bị này qua Facebook Messenger"
                   >
+                    <MessageCircle className="w-4 h-4 text-[#0084FF]" />
                     <span>Messenger</span>
                   </button>
                 )}
@@ -315,10 +317,10 @@ export const ProductDetailModal = () => {
                       `Chào kỹ sư FLAMEGUARD PRO, tôi muốn tư vấn về thiết bị "${quickViewProduct.name}" (Quy cách: ${selectedSize.name}, Giá: ${finalPrice.toLocaleString('vi-VN')}đ)`
                     );
                   }}
-                  className="px-3.5 py-3 bg-blue-50 hover:bg-blue-100 text-[#0068FF] border border-blue-200 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                  className="px-3.5 py-3 bg-blue-50 hover:bg-blue-100 text-[#0068FF] border border-blue-200 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shrink-0"
                   title={`Tư vấn thiết bị qua Zalo (${shopZaloPhone})`}
                 >
-                  <span className="font-black text-xs">Z</span>
+                  <ZaloIcon className="w-4 h-4 shrink-0 rounded-xs" />
                   <span>Zalo Kỹ Sư</span>
                 </button>
 

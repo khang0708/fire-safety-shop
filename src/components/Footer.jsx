@@ -2,6 +2,7 @@ import React from 'react';
 import { useShop } from '../context/ShopContext';
 import { openPersonalZaloChat } from '../services/zaloService';
 import { Phone, Mail, MapPin, ShieldCheck, Globe, MessageCircle, Lock, Flame } from 'lucide-react';
+import { ZaloIcon } from './ZaloIcon';
 
 export const Footer = ({ onOpenAdminLogin }) => {
   const { shopZaloPhone } = useShop();
@@ -39,7 +40,7 @@ export const Footer = ({ onOpenAdminLogin }) => {
                 className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-[#0068FF] hover:text-white flex items-center justify-center transition-all" 
                 title={`Chat Zalo (${shopZaloPhone})`}
               >
-                <span className="font-black text-xs">Z</span>
+                <ZaloIcon className="w-4 h-4" />
               </button>
               <a href={`tel:${shopZaloPhone.replace(/\s+/g, '')}`} className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-red-600 hover:text-white flex items-center justify-center transition-all" title="Hotline">
                 <Phone className="w-4 h-4" />

@@ -3,6 +3,7 @@ import { useShop } from '../context/ShopContext';
 import { openPersonalZaloChat } from '../services/zaloService';
 import { openFacebookMessenger } from '../services/facebookService';
 import { X, Trash2, Plus, Minus, ArrowRight, ShieldCheck, Ticket } from 'lucide-react';
+import { ZaloIcon } from './ZaloIcon';
 
 export const CartDrawer = () => {
   const { 
@@ -289,7 +290,7 @@ export const CartDrawer = () => {
                   }`}
                   title={`Chat Zalo (${shopZaloPhone})`}
                 >
-                  <span className="font-extrabold text-xs">Z</span>
+                  <ZaloIcon className="w-3.5 h-3.5 shrink-0" />
                   <span>Chat Zalo</span>
                 </button>
               </div>
