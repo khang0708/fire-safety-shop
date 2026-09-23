@@ -332,6 +332,75 @@ app.get('/api/orders', async (req, res) => {
   }
 });
 
+// Clean helper for Telegram tokens
+const cleanTelegramToken = (token) => {
+  if (!token) return '';
+  return token.trim().replace(/^bot/i, '');
+};
+
+const cleanTelegramChatId = (chatId) => {
+  if (!chatId) return '';
+  return String(chatId).trim();
+};
+
+const escapeHtml = (str) => {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+};
+
+const sendTelegramNotificationForOrder = async (order, customToken = null, customChatId = null) => {
+  try {
+    const settings = (await readJson('settings.json')) || {};
+    const botToken = customToken || settings.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = customChatId || settings.telegramChatId || process.env.TELEGRAM_CHAT_ID;
+
+    if (!botToken || !chatId) return false;
+
+    const token = cleanTelegramToken(botToken);
+    const targetChatId = cleanTelegramChatId(chatId);
+    if (!token || !targetChatId) return false;
+
+    let itemsListText = '';
+    if (Array.isArray(order.items) && order.items.length > 0) {
+      itemsListText = '\n📋 <b>Chi tiết thiết bị:</b>\n' +
+        order.items.map((it, idx) => `  ${idx + 1}. ${escapeHtml(it.name)} (<b>${Number(it.price || 0).toLocaleString('vi-VN')}đ</b>)`).join('\n') + '\n';
+    }
+
+    const anonymousNotice = order.isAnonymous ? ' <i>(🕵️ Đơn gửi ẩn danh)</i>' : '';
+
+    const htmlMessage = `🧯 <b>CÓ ĐƠN ĐẶT THIẾT BỊ PCCC MỚI!</b> (#${escapeHtml(order.orderCode || order.id)})\n\n` +
+      `🏢 <b>Cơ sở / Người đặt:</b> ${escapeHtml(order.customerName || 'Khách hàng')}${anonymousNotice}\n` +
+      `📞 <b>Hotline / SĐT:</b> ${escapeHtml(order.customerPhone || 'Chưa cung cấp')}\n` +
+      `🧯 <b>Thiết bị chính:</b> ${escapeHtml(order.productName || 'Thiết bị PCCC kiểm định')}\n` +
+      itemsListText +
+      `💰 <b>Tổng thanh toán:</b> <b>${Number(order.totalAmount || 0).toLocaleString('vi-VN')}đ</b>\n` +
+      `⏱️ <b>Phương thức giao:</b> ${escapeHtml(order.deliverySlot || 'Hỏa tốc 60-90 phút')}\n` +
+      `📍 <b>Người nhận:</b> ${escapeHtml(order.receiverName || '')} (${escapeHtml(order.receiverPhone || '')})\n` +
+      `🏠 <b>Địa chỉ:</b> ${escapeHtml(order.receiverAddress || 'Chưa cung cấp')}\n\n` +
+      `👉 <i>FLAMEGUARD PRO: Sẵn sàng kiểm định và xuất kho!</i>`;
+
+    const telegramUrl = `https://api.telegram.org/bot${token}/sendMessage`;
+    const tgRes = await fetch(telegramUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: targetChatId,
+        text: htmlMessage,
+        parse_mode: 'HTML'
+      })
+    });
+    const tgData = await tgRes.json();
+    return Boolean(tgData?.ok);
+  } catch (err) {
+    console.warn('[Telegram Order Notify Note]:', err.message);
+    return false;
+  }
+};
+
 // POST /api/orders
 app.post('/api/orders', async (req, res) => {
   try {
@@ -374,7 +443,14 @@ app.post('/api/orders', async (req, res) => {
       timestamp: new Date().toISOString()
     });
 
-    res.status(201).json({ success: true, data: newOrder });
+    // Gửi thông báo Telegram tự động từ Server
+    const telegramSent = await sendTelegramNotificationForOrder(
+      newOrder,
+      req.body.telegramBotToken,
+      req.body.telegramChatId
+    );
+
+    res.status(201).json({ success: true, data: newOrder, telegramSent });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -410,20 +486,8 @@ app.patch('/api/orders/:id/status', async (req, res) => {
   }
 });
 
-// ----------------------------------------------------
 // 3. TELEGRAM BOT NOTIFICATION WEBHOOK & AUTO-DETECT CHAT ID
 // ----------------------------------------------------
-
-// Clean helper for Telegram tokens
-const cleanTelegramToken = (token) => {
-  if (!token) return '';
-  return token.trim().replace(/^bot/i, '');
-};
-
-const cleanTelegramChatId = (chatId) => {
-  if (!chatId) return '';
-  return String(chatId).trim();
-};
 
 // Endpoint tự động tìm Chat ID từ Bot Token 1-Chạm!
 app.post('/api/notifications/telegram-get-chat-id', async (req, res) => {
@@ -685,11 +749,27 @@ app.post('/api/zalo/send-zns', async (req, res) => {
 // ----------------------------------------------------
 // 8. SETTINGS API
 // ----------------------------------------------------
+const maskSecret = (val) => {
+  if (!val || typeof val !== 'string') return '';
+  if (val.length <= 8) return '********';
+  return `${val.slice(0, 6)}...${val.slice(-4)}`;
+};
+
 app.get('/api/settings', async (req, res) => {
   try {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    const settings = await readJson('settings.json');
-    res.json({ success: true, data: settings });
+    const settings = (await readJson('settings.json')) || {};
+
+    const isAdmin = req.headers['x-admin-auth'] === 'true' || req.query.scope === 'admin';
+
+    const safeSettings = {
+      ...settings,
+      telegramBotToken: isAdmin ? settings.telegramBotToken : maskSecret(settings.telegramBotToken),
+      hasTelegramToken: Boolean(settings.telegramBotToken && settings.telegramBotToken.length > 5),
+      hasTelegramChatId: Boolean(settings.telegramChatId)
+    };
+
+    res.json({ success: true, data: safeSettings });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -698,9 +778,16 @@ app.get('/api/settings', async (req, res) => {
 app.post('/api/settings', async (req, res) => {
   try {
     const current = (await readJson('settings.json')) || {};
+    const payload = { ...req.body };
+
+    // Không ghi đè nếu payload gửi lên là chuỗi mask (chứa '...')
+    if (payload.telegramBotToken && payload.telegramBotToken.includes('...')) {
+      delete payload.telegramBotToken;
+    }
+
     const updated = {
       ...current,
-      ...req.body,
+      ...payload,
       updatedAt: req.body.updatedAt || new Date().toISOString()
     };
     await writeJson('settings.json', updated);

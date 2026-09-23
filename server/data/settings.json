@@ -1,7 +1,7 @@
 {
   "shopZaloPhone": "0843066604",
-  "telegramBotToken": "8879386786:AAEavHnm4SCLNtc8cOFofnbtRsV6zVK_nks",
-  "telegramChatId": "5686726439",
+  "telegramBotToken": "",
+  "telegramChatId": "",
   "isSoundEnabled": true,
   "shippingSettings": {
     "standardFee": 35000,

@@ -5,8 +5,10 @@ const API_BASE = '/api';
 
 async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
+  const isAdminLoggedIn = typeof localStorage !== 'undefined' && Boolean(localStorage.getItem('flameguard_admin_user'));
   const headers = {
     'Content-Type': 'application/json',
+    ...(isAdminLoggedIn ? { 'x-admin-auth': 'true' } : {}),
     ...(options.headers || {})
   };
 
