@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useShop } from '../context/ShopContext';
+import { SHOP_CATEGORIES } from '../data/flowers';
 import { 
   ShoppingBag, 
   Heart, 
@@ -23,11 +24,26 @@ export const Header = () => {
     searchQuery,
     setSearchQuery,
     activeOrder,
-    shopZaloPhone
+    shopZaloPhone,
+    activeCategory,
+    setActiveCategory
   } = useShop();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const categoryNavRef = useRef(null);
+
+  // Tự động căn giữa danh mục đang chọn trên mobile
+  useEffect(() => {
+    if (categoryNavRef.current) {
+      const activeEl = categoryNavRef.current.querySelector('[data-active="true"]');
+      if (activeEl) {
+        const container = categoryNavRef.current;
+        const scrollTarget = activeEl.offsetLeft - (container.clientWidth - activeEl.clientWidth) / 2;
+        container.scrollTo({ left: Math.max(0, scrollTarget), behavior: 'smooth' });
+      }
+    }
+  }, [activeCategory]);
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200">
@@ -180,6 +196,42 @@ export const Header = () => {
         </div>
       </div>
 
+      {/* 3 Trụ Cột Danh Mục Navigation Sub-bar (Mobile / Tablet / Desktop) */}
+      <div className="border-t border-slate-200 bg-white/90 py-2 px-3 sm:px-4 shadow-xs">
+        <div 
+          ref={categoryNavRef}
+          className="max-w-7xl mx-auto flex items-center justify-start sm:justify-center gap-2 overflow-x-auto scrollbar-none text-xs overscroll-x-contain py-0.5"
+        >
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1 hidden sm:inline shrink-0">
+            Danh mục:
+          </span>
+          {SHOP_CATEGORIES.map((cat) => {
+            const isActive = activeCategory === cat.id;
+            return (
+              <a
+                key={cat.id}
+                href="#catalog"
+                data-active={isActive ? 'true' : 'false'}
+                onClick={() => setActiveCategory(cat.id)}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full font-bold transition-all whitespace-nowrap shrink-0 ${
+                  isActive
+                    ? 'bg-red-600 text-white shadow-xs'
+                    : 'text-slate-700 hover:text-red-600 hover:bg-slate-100 bg-slate-50 border border-slate-200/80'
+                }`}
+              >
+                <span className="shrink-0">{cat.icon}</span>
+                <span>{cat.fullName || cat.label}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-normal hidden md:inline shrink-0 ${
+                  isActive ? 'bg-white/20 text-white' : 'bg-slate-200/80 text-slate-600'
+                }`}>
+                  {cat.badge}
+                </span>
+              </a>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-white border-b border-slate-200 p-4 space-y-4 shadow-lg animate-fade-in">
@@ -224,19 +276,32 @@ export const Header = () => {
           </div>
 
           <div className="flex flex-col gap-1 text-xs font-medium text-slate-800 pt-2 border-t border-gray-100">
-            <a href="#catalog" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-2 rounded-lg hover:bg-gray-50 flex items-center justify-between">
-              <span>🧯 Tất cả thiết bị PCCC sẵn sàng giao</span>
-              <span className="text-gray-400">→</span>
-            </a>
-            <a href="#catalog" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-2 rounded-lg hover:bg-gray-50 flex items-center justify-between">
-              <span>🏠 Thiết bị PCCC gia đình & chung cư</span>
-              <span className="text-gray-400">→</span>
-            </a>
-            <a href="#catalog" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-2 rounded-lg hover:bg-gray-50 flex items-center justify-between">
-              <span>🏭 Giải pháp nhà xưởng & văn phòng TCVN 3890</span>
-              <span className="text-gray-400">→</span>
-            </a>
-            <a href="#reviews-section" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-2 rounded-lg hover:bg-gray-50 flex items-center justify-between">
+            <span className="text-[10px] uppercase font-bold text-slate-400 px-2 pt-1">Danh mục sản phẩm:</span>
+            {SHOP_CATEGORIES.map((cat) => {
+              const isActive = activeCategory === cat.id;
+              return (
+                <a
+                  key={cat.id}
+                  href="#catalog"
+                  onClick={() => {
+                    setActiveCategory(cat.id);
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`py-2 px-2.5 rounded-xl flex items-center justify-between transition-colors ${
+                    isActive ? 'bg-red-600 text-white font-bold' : 'hover:bg-slate-50 text-slate-700'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span>{cat.icon}</span>
+                    <span>{cat.fullName || cat.label}</span>
+                  </span>
+                  <span className={`text-[11px] ${isActive ? 'text-red-100' : 'text-slate-400'}`}>
+                    {cat.badge}
+                  </span>
+                </a>
+              );
+            })}
+            <a href="#reviews-section" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-2 rounded-lg hover:bg-gray-50 flex items-center justify-between mt-1 pt-2 border-t border-gray-100">
               <span>⭐ Cảm nhận khách hàng thực tế</span>
               <span className="text-gray-400">→</span>
             </a>

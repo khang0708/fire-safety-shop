@@ -1,9 +1,12 @@
 import React from 'react';
 import { useShop } from '../context/ShopContext';
+import { SHOP_CATEGORIES } from '../data/flowers';
 import { Sparkles, ShieldCheck, Gauge, ArrowRight, Award } from 'lucide-react';
 
 export const HeroSection = () => {
-  const { setIsAIFloristOpen, setSelectedOccasion } = useShop();
+  const { setIsAIFloristOpen, setSelectedOccasion, activeCategory, setActiveCategory } = useShop();
+
+  const currentCategory = SHOP_CATEGORIES.find(c => c.id === activeCategory) || SHOP_CATEGORIES[0];
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-[#0F172A] via-[#1E293B] to-[#0F172A] py-12 md:py-18 text-white">
@@ -31,6 +34,44 @@ export const HeroSection = () => {
             <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto lg:mx-0 leading-relaxed font-sans font-normal">
               <strong>FLAMEGUARD PRO</strong> là hệ thống phân phối phương tiện chữa cháy, cứu nạn cứu hộ và thiết bị an toàn cơ sở đạt chuẩn quốc gia. <strong>100% sản phẩm có tem kiểm định Bộ Công An</strong>, kim áp suất vạch xanh xuất xưởng, bàn giao kèm biên bản nghiệm thu và hồ sơ CO/CQ đầy đủ.
             </p>
+
+            {/* 3 Trụ Cột Danh Mục Tương Tác Nhanh Trên Banner (Interactive 3-Pillar Selector) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 text-left">
+              {SHOP_CATEGORIES.map((cat) => {
+                const isSelected = activeCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setActiveCategory(cat.id)}
+                    className={`p-3 rounded-2xl border text-left transition-all duration-300 relative group cursor-pointer active:scale-95 ${
+                      isSelected
+                        ? 'bg-gradient-to-br from-red-600 to-red-700 text-white border-red-500 shadow-lg shadow-red-600/30 ring-2 ring-red-400/40'
+                        : 'bg-slate-800/80 hover:bg-slate-800 text-slate-300 border-slate-700/80 hover:border-slate-600 shadow-sm'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-2xl">{cat.icon}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                        isSelected 
+                          ? 'bg-white/20 text-white border-white/20' 
+                          : 'bg-slate-700 text-slate-300 border-slate-600'
+                      }`}>
+                        {cat.badge}
+                      </span>
+                    </div>
+                    <div className="font-bold text-xs tracking-tight font-heading uppercase text-white">
+                      {cat.shortName}
+                    </div>
+                    <div className={`text-[11px] mt-1 line-clamp-1 leading-snug ${
+                      isSelected ? 'text-red-100' : 'text-slate-400'
+                    }`}>
+                      {cat.tagline}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
 
             {/* 2 Nút CTA Hành Động Kỹ Thuật */}
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3.5 pt-2">
@@ -88,15 +129,15 @@ export const HeroSection = () => {
 
           </div>
 
-          {/* CỘT PHẢI: VISUAL SHOWCASE THIẾT BỊ CỨU HỎA */}
+          {/* CỘT PHẢI: VISUAL SHOWCASE THIẾT BỊ CỨU HỎA THAY ĐỔI ĐỘNG */}
           <div className="lg:col-span-5 relative">
             <div className="relative mx-auto max-w-sm sm:max-w-md">
               
               {/* Main Image Frame 4:5 */}
               <div className="relative aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl border-4 border-slate-700/60 bg-slate-800">
                 <img
-                  src="/images/hero-fire-safety.jpg"
-                  alt="Bình chữa cháy và thiết bị an toàn PCCC FLAMEGUARD PRO"
+                  src={currentCategory.showcaseImg || '/images/hero-fire-safety.jpg'}
+                  alt={currentCategory.showcaseTitle}
                   width="400"
                   height="500"
                   fetchPriority="high"
@@ -107,10 +148,14 @@ export const HeroSection = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent flex flex-col justify-end p-6 text-white">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-red-400 flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                    Bộ Trang Bị Khuyên Dùng Cho Gia Đình
+                    {currentCategory.showcaseBadge}
                   </span>
-                  <h3 className="font-heading text-xl sm:text-2xl font-bold mt-1">Bình Bột ABC & Mặt Nạ Khói TZL30</h3>
-                  <p className="text-xs text-slate-300 mt-1">Đạt chuẩn TCVN 3890:2023 • Sẵn sàng dập tắt đám cháy trong 10 giây</p>
+                  <h3 className="font-heading text-xl sm:text-2xl font-bold mt-1">
+                    {currentCategory.showcaseTitle}
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-1">
+                    {currentCategory.showcaseDesc}
+                  </p>
                 </div>
               </div>
 

@@ -1,10 +1,12 @@
 import React from 'react';
 import { useShop } from '../context/ShopContext';
-import { OCCASIONS, COLOR_TONES } from '../data/flowers';
+import { SHOP_CATEGORIES, OCCASIONS, COLOR_TONES } from '../data/flowers';
 import { ShieldAlert, Layers } from 'lucide-react';
 
 export const OccasionFilter = () => {
   const { 
+    activeCategory,
+    setActiveCategory,
     selectedOccasion, 
     setSelectedOccasion, 
     selectedColor, 
@@ -14,6 +16,35 @@ export const OccasionFilter = () => {
   return (
     <div id="catalog" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       
+      {/* 3 Trụ Cột Danh Mục Chuyển Đổi Nhanh (Pillar Segmented Tabs) */}
+      <div className="bg-slate-100 p-1.5 sm:p-2 rounded-2xl border border-slate-200 shadow-xs max-w-3xl mx-auto mb-8">
+        <div className="grid grid-cols-3 gap-1 sm:gap-2">
+          {SHOP_CATEGORIES.map((cat) => {
+            const isActive = activeCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setActiveCategory(cat.id)}
+                className={`py-2.5 px-2 sm:px-4 rounded-xl font-bold transition-all duration-300 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 active:scale-95 cursor-pointer text-xs ${
+                  isActive
+                    ? 'bg-red-600 text-white shadow-md shadow-red-600/25'
+                    : 'text-slate-700 hover:text-red-600 hover:bg-white'
+                }`}
+              >
+                <span className="text-base sm:text-lg">{cat.icon}</span>
+                <span className="font-heading truncate">{cat.label}</span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-normal hidden lg:inline ${
+                  isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
+                }`}>
+                  {cat.badge}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Tiêu đề & Phân Loại Công Trình TCVN 3890 */}
       <div className="text-center mb-8">
         <div className="inline-flex items-center gap-2 bg-red-900/10 text-red-700 px-3.5 py-1.5 rounded-xl text-xs font-bold mb-3 border border-red-200 shadow-xs">

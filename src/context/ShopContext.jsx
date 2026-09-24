@@ -331,6 +331,7 @@ export const ShopProvider = ({ children }) => {
   const [latestNewOrder, setLatestNewOrder] = useState(null);
 
   // 4. Giỏ hàng & Sản phẩm
+  const [activeCategory, setActiveCategory] = useState('extinguishers'); // 'extinguishers' | 'rescue' | 'alarms'
   const [cart, setCart] = useState([]);
   const [wishlist, setWishlist] = useState([]);
   const [selectedOccasion, setSelectedOccasion] = useState('all');
@@ -1366,6 +1367,8 @@ export const ShopProvider = ({ children }) => {
         triggerAdminOrderAlert,
         refreshShopData,
         isApiConnected,
+        activeCategory,
+        setActiveCategory,
         cart,
         wishlist,
         selectedOccasion,

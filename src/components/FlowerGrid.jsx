@@ -18,6 +18,7 @@ import { ZaloIcon } from './ZaloIcon';
 
 export const FlowerGrid = () => {
   const { 
+    activeCategory,
     products, 
     selectedOccasion, 
     selectedColor, 
@@ -42,6 +43,20 @@ export const FlowerGrid = () => {
     // 1. Lọc sản phẩm
     const filtered = products.filter((flower) => {
       if (flower.isAvailable === false) return false;
+
+      // Filter theo 3 Trụ Cột Danh Mục
+      if (activeCategory && activeCategory !== 'all') {
+        if (activeCategory === 'extinguishers') {
+          const isExtinguisher = flower.category === 'extinguishers' || ['powder', 'co2', 'foam'].includes(flower.colorTone);
+          if (!isExtinguisher) return false;
+        } else if (activeCategory === 'rescue') {
+          const isRescue = flower.category === 'rescue' || (flower.colorTone === 'escape' && flower.id !== 'fire-05');
+          if (!isRescue) return false;
+        } else if (activeCategory === 'alarms') {
+          const isAlarm = flower.category === 'alarms' || flower.colorTone === 'alarm' || flower.id === 'fire-05';
+          if (!isAlarm) return false;
+        }
+      }
 
       // Filter Occasion
       if (selectedOccasion !== 'all' && flower.occasion !== selectedOccasion) {
@@ -79,7 +94,7 @@ export const FlowerGrid = () => {
       default:
         return cloned;
     }
-  }, [products, selectedOccasion, selectedColor, searchQuery, sortBy]);
+  }, [products, activeCategory, selectedOccasion, selectedColor, searchQuery, sortBy]);
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">

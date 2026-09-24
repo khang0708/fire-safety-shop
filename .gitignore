@@ -28,3 +28,4 @@ dist-ssr
 guide_assets/
 capture_guide_screens.js
 mobile_audit_screenshots/
+.codegraph/

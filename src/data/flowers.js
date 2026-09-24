@@ -1,4 +1,43 @@
 // Dữ liệu danh mục thiết bị cứu hỏa và an toàn PCCC - FLAMEGUARD PRO
+export const SHOP_CATEGORIES = [
+  {
+    id: 'extinguishers',
+    shortName: 'Bình Chữa Cháy',
+    label: 'Bình Chữa Cháy BCA',
+    icon: '🧯',
+    badge: 'Tem BCA Vạch Xanh',
+    tagline: 'Bột ABC, Khí CO2, Bọt Foam dập tắt 10s',
+    showcaseImg: '/images/hero-fire-safety.jpg',
+    showcaseBadge: 'Bộ Trang Bị Khuyên Dùng Cho Gia Đình',
+    showcaseTitle: 'Bình Bột ABC & Khí CO2 Kiểm Định',
+    showcaseDesc: 'Đạt chuẩn TCVN 3890:2023 • Sẵn sàng dập tắt đám cháy trong 10 giây'
+  },
+  {
+    id: 'rescue',
+    shortName: 'Cứu Hộ & Thoát Hiểm',
+    label: 'Cứu Hộ & Thoát Hiểm',
+    icon: '🤿',
+    badge: 'Sống Còn 40 Phút',
+    tagline: 'Mặt nạ lọc độc TZL30, thang dây tự cứu',
+    showcaseImg: '/images/smoke-mask-tzl30.jpg',
+    showcaseBadge: 'Trang Bị Sinh Tồn Cho Căn Hộ Chung Cư',
+    showcaseTitle: 'Mặt Nạ Lọc Khói TZL30 & Dây Thoát Hiểm',
+    showcaseDesc: 'Bảo vệ đường thở 40 phút • Lọc sạch 99% khí độc CO, Cyanide & khói cay'
+  },
+  {
+    id: 'alarms',
+    shortName: 'Báo Cháy & Tự Động',
+    label: 'Báo Cháy & Tự Động',
+    icon: '🚨',
+    badge: 'Còi Hú 85dB',
+    tagline: 'Cảm biến khói quang học, chăn dập lửa',
+    showcaseImg: '/images/smoke-detector-alarm.jpg',
+    showcaseBadge: 'Cảnh Báo Cháy Sớm Tự Động 24/7',
+    showcaseTitle: 'Đầu Báo Khói Quang Học Độc Lập 85dB',
+    showcaseDesc: 'Cảm biến hồng ngoại phát hiện khói âm ỉ ngay từ phút đầu tiên'
+  }
+];
+
 export const OCCASIONS = [
   { id: 'all', label: 'Tất cả thiết bị', icon: '🧯' },
   { id: 'home', label: 'Hộ Gia Đình & Chung Cư Cao Tầng', icon: '🏢' },
