@@ -22,7 +22,8 @@
     "rating": 4.9,
     "reviewsCount": 342,
     "freshDays": 365,
-    "isAvailable": true
+    "isAvailable": true,
+    "category": "extinguishers"
   },
   {
     "id": "fire-02",
@@ -47,7 +48,8 @@
     "rating": 5,
     "reviewsCount": 198,
     "freshDays": 730,
-    "isAvailable": true
+    "isAvailable": true,
+    "category": "extinguishers"
   },
   {
     "id": "fire-03",
@@ -72,7 +74,8 @@
     "rating": 4.95,
     "reviewsCount": 512,
     "freshDays": 1095,
-    "isAvailable": true
+    "isAvailable": true,
+    "category": "rescue"
   },
   {
     "id": "fire-04",
@@ -97,7 +100,8 @@
     "rating": 4.9,
     "reviewsCount": 87,
     "freshDays": 1825,
-    "isAvailable": true
+    "isAvailable": true,
+    "category": "rescue"
   },
   {
     "id": "fire-05",
@@ -121,7 +125,8 @@
     "rating": 4.88,
     "reviewsCount": 230,
     "freshDays": 1825,
-    "isAvailable": true
+    "isAvailable": true,
+    "category": "alarms"
   },
   {
     "id": "fire-06",
@@ -146,7 +151,8 @@
     "rating": 4.92,
     "reviewsCount": 165,
     "freshDays": 1825,
-    "isAvailable": true
+    "isAvailable": true,
+    "category": "alarms"
   },
   {
     "id": "fire-07",
@@ -170,7 +176,8 @@
     "rating": 5,
     "reviewsCount": 79,
     "freshDays": 1095,
-    "isAvailable": true
+    "isAvailable": true,
+    "category": "extinguishers"
   },
   {
     "id": "fire-08",
@@ -194,7 +201,8 @@
     "rating": 4.85,
     "reviewsCount": 310,
     "freshDays": 730,
-    "isAvailable": true
+    "isAvailable": true,
+    "category": "extinguishers"
   },
   {
     "id": "fl-1787735321783",
@@ -219,6 +227,7 @@
     "freshDays": 4,
     "isAvailable": true,
     "createdAt": "2026-08-26T09:08:41.784Z",
-    "updatedAt": "2026-09-19T18:04:54.692Z"
+    "updatedAt": "2026-09-19T18:04:54.692Z",
+    "category": "extinguishers"
   }
 ]

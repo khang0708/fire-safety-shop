@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useShop } from '../context/ShopContext';
-import { OCCASIONS, COLOR_TONES } from '../data/flowers';
+import { SHOP_CATEGORIES, OCCASIONS, COLOR_TONES } from '../data/flowers';
 import { 
   openPersonalZaloChat, 
   openPersonalZaloToCustomer 
@@ -232,13 +232,16 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
     expiresAt: '2026-12-31'
   });
   
+  const [cmsCategoryFilter, setCmsCategoryFilter] = useState('all'); // 'all' | 'extinguishers' | 'rescue' | 'alarms'
+
   const [formData, setFormData] = useState({
     name: '',
     subtitle: '',
     price: 320000,
     originalPrice: 380000,
-    occasion: 'fire-extinguisher',
-    colorTone: 'abc-powder',
+    category: 'extinguishers',
+    occasion: 'home',
+    colorTone: 'powder',
     image: '/images/abc-powder-4kg.jpg',
     tags: ['Tem BCA'],
     meaning: 'Thiết bị chữa cháy đạt chuẩn TCVN 3890:2023, dập tắt đám cháy tức thời.',
@@ -309,8 +312,9 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
       subtitle: '',
       price: 320000,
       originalPrice: 380000,
-      occasion: 'fire-extinguisher',
-      colorTone: 'abc-powder',
+      category: 'extinguishers',
+      occasion: 'home',
+      colorTone: 'powder',
       image: '/images/abc-powder-4kg.jpg',
       tags: ['Tem BCA'],
       meaning: 'Thiết bị chữa cháy đạt chuẩn TCVN 3890:2023, dập tắt đám cháy tức thời.',
@@ -327,13 +331,14 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
       subtitle: prod.subtitle || '',
       price: prod.price,
       originalPrice: prod.originalPrice || prod.price,
-      occasion: prod.occasion || 'love',
-      colorTone: prod.colorTone || 'pastel',
+      category: prod.category || (['escape'].includes(prod.colorTone) && prod.id !== 'fire-05' ? 'rescue' : (['alarm'].includes(prod.colorTone) || prod.id === 'fire-05') ? 'alarms' : 'extinguishers'),
+      occasion: prod.occasion || 'home',
+      colorTone: prod.colorTone || 'powder',
       image: prod.image,
-      tags: prod.tags || ['Mẫu Mới'],
+      tags: prod.tags || ['Tem BCA'],
       meaning: prod.meaning || '',
       flowerTypes: Array.isArray(prod.flowerTypes) ? prod.flowerTypes.join(', ') : prod.flowerTypes || '',
-      freshDays: prod.freshDays || 4,
+      freshDays: prod.freshDays || 365,
     });
     setIsProductModalOpen(true);
   };
@@ -347,7 +352,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
       price: Number(formData.price),
       originalPrice: Number(formData.originalPrice),
       flowerTypes: flowerTypesArray,
-      freshDays: Number(formData.freshDays) || 4,
+      freshDays: Number(formData.freshDays) || 365,
       updatedAt: now
     };
 
@@ -1288,56 +1293,130 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
               </button>
             </div>
 
+            {/* Thanh Lọc 3 Trụ Cột Danh Mục PCCC */}
+            <div className="bg-white p-2.5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-2 overflow-x-auto text-xs">
+              <span className="font-bold text-slate-500 uppercase tracking-wider px-2 shrink-0 text-[11px]">
+                Lọc theo trụ cột:
+              </span>
+              <button
+                type="button"
+                onClick={() => setCmsCategoryFilter('all')}
+                className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all ${
+                  cmsCategoryFilter === 'all'
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+              >
+                Tất cả ({products.length})
+              </button>
+              {SHOP_CATEGORIES.map(cat => {
+                const count = products.filter(p => {
+                  if (cat.id === 'extinguishers') return p.category === 'extinguishers' || ['powder', 'co2', 'foam'].includes(p.colorTone);
+                  if (cat.id === 'rescue') return p.category === 'rescue' || (p.colorTone === 'escape' && p.id !== 'fire-05');
+                  if (cat.id === 'alarms') return p.category === 'alarms' || p.colorTone === 'alarm' || p.id === 'fire-05';
+                  return p.category === cat.id;
+                }).length;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setCmsCategoryFilter(cat.id)}
+                    className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                      cmsCategoryFilter === cat.id
+                        ? 'bg-red-600 text-white shadow-xs'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                    }`}
+                  >
+                    <span>{cat.icon}</span>
+                    <span>{cat.shortName}</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-normal ${
+                      cmsCategoryFilter === cat.id ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
+                    }`}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {products.map((prod) => (
-                <div key={prod.id} className="bg-white rounded-2xl border border-[#E8EFEA] overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
-                  <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
-                    <img src={prod.image} alt={prod.name} className="w-full h-full object-cover" />
-                    <div className="absolute top-3 left-3">
-                      <span className="text-[10px] font-bold bg-[#1B3B2B] text-white px-2.5 py-0.5 rounded-full shadow-sm">
-                        Dịp: {OCCASIONS.find(o => o.id === prod.occasion)?.label || prod.occasion}
-                      </span>
-                    </div>
-                    <div className="absolute top-3 right-3">
-                      <button
-                        onClick={() => toggleProductAvailability(prod.id)}
-                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1 transition-all ${
-                          prod.isAvailable !== false
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                            : 'bg-red-100 text-red-800 border border-red-300'
-                        }`}
-                      >
-                        {prod.isAvailable !== false ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-                        <span>{prod.isAvailable !== false ? 'Đang hiển thị' : 'Đã ẩn'}</span>
-                      </button>
-                    </div>
-                  </div>
+              {products
+                .filter(prod => {
+                  if (cmsCategoryFilter === 'all') return true;
+                  if (cmsCategoryFilter === 'extinguishers') {
+                    return prod.category === 'extinguishers' || ['powder', 'co2', 'foam'].includes(prod.colorTone);
+                  }
+                  if (cmsCategoryFilter === 'rescue') {
+                    return prod.category === 'rescue' || (prod.colorTone === 'escape' && prod.id !== 'fire-05');
+                  }
+                  if (cmsCategoryFilter === 'alarms') {
+                    return prod.category === 'alarms' || prod.colorTone === 'alarm' || prod.id === 'fire-05';
+                  }
+                  return prod.category === cmsCategoryFilter;
+                })
+                .map((prod) => {
+                  const prodCat = SHOP_CATEGORIES.find(c => {
+                    if (prod.category === c.id) return true;
+                    if (c.id === 'extinguishers' && ['powder', 'co2', 'foam'].includes(prod.colorTone)) return true;
+                    if (c.id === 'rescue' && prod.colorTone === 'escape' && prod.id !== 'fire-05') return true;
+                    if (c.id === 'alarms' && (prod.colorTone === 'alarm' || prod.id === 'fire-05')) return true;
+                    return false;
+                  }) || SHOP_CATEGORIES[0];
 
-                  <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-                    <div>
-                      <h4 className="font-serif text-base font-bold text-[#1B3B2B] line-clamp-1">{prod.name}</h4>
-                      <p className="text-xs text-gray-500 line-clamp-2 mt-0.5">{prod.subtitle}</p>
-                    </div>
+                  return (
+                    <div key={prod.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+                      <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
+                        <img src={prod.image} alt={prod.name} className="w-full h-full object-cover" />
+                        <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
+                          <span className="text-[10px] font-bold bg-slate-900/90 text-white px-2.5 py-0.5 rounded-full shadow-sm flex items-center gap-1 backdrop-blur-xs">
+                            <span>{prodCat.icon}</span>
+                            <span>{prodCat.shortName}</span>
+                          </span>
+                          <span className="text-[9px] font-bold bg-red-600 text-white px-2 py-0.5 rounded-full shadow-xs">
+                            {OCCASIONS.find(o => o.id === prod.occasion)?.label || prod.occasion}
+                          </span>
+                        </div>
+                        <div className="absolute top-3 right-3">
+                          <button
+                            onClick={() => toggleProductAvailability(prod.id)}
+                            className={`text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1 transition-all ${
+                              prod.isAvailable !== false
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                : 'bg-red-100 text-red-800 border border-red-300'
+                            }`}
+                          >
+                            {prod.isAvailable !== false ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                            <span>{prod.isAvailable !== false ? 'Đang bán' : 'Đã ẩn'}</span>
+                          </button>
+                        </div>
+                      </div>
 
-                    <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] text-gray-400 block">Giá niêm yết:</span>
-                        <span className="text-base font-bold text-[#C4685A] font-sans">
-                          {prod.price?.toLocaleString('vi-VN')}đ
-                        </span>
-                      </div>
-                      <div className="flex gap-1.5">
-                        <button onClick={() => handleOpenEditModal(prod)} className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg">
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => deleteProduct(prod.id)} className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                      <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                        <div>
+                          <h4 className="font-heading text-base font-bold text-slate-900 line-clamp-1">{prod.name}</h4>
+                          <p className="text-xs text-gray-500 line-clamp-2 mt-0.5">{prod.subtitle}</p>
+                        </div>
+
+                        <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
+                          <div>
+                            <span className="text-[10px] text-gray-400 block font-medium">Giá niêm yết:</span>
+                            <span className="text-base font-bold text-red-600 font-sans">
+                              {prod.price?.toLocaleString('vi-VN')}đ
+                            </span>
+                          </div>
+                          <div className="flex gap-1.5">
+                            <button onClick={() => handleOpenEditModal(prod)} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors" title="Chỉnh sửa thiết bị">
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => deleteProduct(prod.id)} className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors" title="Xóa thiết bị">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
             </div>
           </div>
         )}
@@ -2577,6 +2656,40 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                 </div>
               </div>
 
+              {/* TRỤ CỘT DANH MỤC THIẾT BỊ (BANNER PILLAR) */}
+              <div>
+                <label className="block font-bold text-gray-700 mb-1.5 flex items-center justify-between">
+                  <span>Trụ Cột Danh Mục Thiết Bị (Hiển thị Banner) *</span>
+                  <span className="text-[10px] text-gray-400 font-normal">Quyết định nhóm thiết bị trên Banner</span>
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {SHOP_CATEGORIES.map((cat) => {
+                    const isSelected = formData.category === cat.id;
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, category: cat.id })}
+                        className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                          isSelected
+                            ? 'border-red-600 bg-red-50/80 ring-2 ring-red-500/20 text-red-900 shadow-xs'
+                            : 'border-gray-200 bg-slate-50/50 hover:border-gray-300 text-gray-700'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between w-full mb-1">
+                          <span className="text-base">{cat.icon}</span>
+                          {isSelected && (
+                            <span className="w-2 h-2 rounded-full bg-red-600"></span>
+                          )}
+                        </div>
+                        <div className="text-[11px] font-bold leading-tight">{cat.shortName}</div>
+                        <div className="text-[9px] text-gray-400 truncate mt-0.5">{cat.name}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-gray-700 mb-1">Mục đích / Khu vực sử dụng</label>
@@ -2591,7 +2704,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Tone màu chủ đạo</label>
+                  <label className="block font-bold text-gray-700 mb-1">Công nghệ / Loại chất chữa cháy</label>
                   <select
                     value={formData.colorTone}
                     onChange={(e) => setFormData({ ...formData, colorTone: e.target.value })}
@@ -2633,7 +2746,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                       type="button"
                       onClick={() => setImageImportMode('url')}
                       className={`px-2.5 py-1 rounded-md transition-all ${
-                        imageImportMode === 'url' ? 'bg-white text-[#1B3B2B] shadow-xs font-bold' : 'hover:text-black'
+                        imageImportMode === 'url' ? 'bg-white text-red-600 shadow-xs font-bold' : 'hover:text-black'
                       }`}
                     >
                       🔗 Link URL
@@ -2643,7 +2756,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
 
                 {/* CÁCH 1: TẢI FILE TỪ MÁY TÍNH (KÉO THẢ HOẶC CHỌN TỆP) */}
                 {imageImportMode === 'upload' && (
-                  <div className="relative border-2 border-dashed border-[#5C8A70] hover:border-[#1B3B2B] bg-[#FAF8F5] hover:bg-[#F4F7F5] p-4 rounded-2xl text-center transition-all cursor-pointer group">
+                  <div className="relative border-2 border-dashed border-slate-300 hover:border-red-600 bg-slate-50 hover:bg-red-50/20 p-4 rounded-2xl text-center transition-all cursor-pointer group">
                     <input
                       type="file"
                       accept="image/*"
@@ -2651,10 +2764,10 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                     />
                     <div className="space-y-1.5 flex flex-col items-center">
-                      <div className="w-10 h-10 rounded-full bg-[#EBF2ED] text-[#1B3B2B] flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Upload className="w-5 h-5 text-[#5C8A70]" />
+                      <div className="w-10 h-10 rounded-full bg-red-50 text-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Upload className="w-5 h-5 text-red-600" />
                       </div>
-                      <p className="text-xs font-bold text-[#1B3B2B]">
+                      <p className="text-xs font-bold text-slate-800">
                         Bấm để chọn ảnh từ máy tính hoặc kéo thả vào đây
                       </p>
                       <p className="text-[10px] text-gray-400">
@@ -2664,17 +2777,17 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                   </div>
                 )}
 
-                {/* CÁCH 2: CHỌN TỪ THƯ VIỆN MẪU XƯỞNG HOA CÓ SẴN */}
+                {/* CÁCH 2: CHỌN TỪ THƯ VIỆN MẪU THIẾT BỊ PCCC CÓ SẴN */}
                 {imageImportMode === 'library' && (
                   <div className="space-y-1.5">
                     <span className="text-[10px] text-gray-500 font-semibold block">Click vào ảnh mẫu bạn muốn áp dụng:</span>
-                    <div className="grid grid-cols-3 gap-2 p-2 bg-[#FAF8F5] rounded-2xl border border-gray-200 max-h-40 overflow-y-auto">
+                    <div className="grid grid-cols-3 gap-2 p-2 bg-slate-50 rounded-2xl border border-gray-200 max-h-40 overflow-y-auto">
                       {PRESET_FLOWER_PHOTOS.map((preset, idx) => (
                         <div
                           key={idx}
                           onClick={() => setFormData(prev => ({ ...prev, image: preset.url }))}
                           className={`relative group cursor-pointer aspect-[4/3] rounded-xl overflow-hidden border-2 transition-all ${
-                            formData.image === preset.url ? 'border-[#1B3B2B] ring-2 ring-[#1B3B2B]/20' : 'border-transparent hover:border-gray-300'
+                            formData.image === preset.url ? 'border-red-600 ring-2 ring-red-500/20' : 'border-transparent hover:border-gray-300'
                           }`}
                         >
                           <img src={preset.url} alt={preset.name} className="w-full h-full object-cover" />
@@ -2694,20 +2807,20 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                     value={formData.image}
                     onChange={(e) => setFormData({ ...formData, image: e.target.value })}
                     placeholder="https://images.unsplash.com/... hoặc dán link ảnh Web"
-                    className="w-full p-2.5 rounded-xl border border-gray-300 focus:outline-none focus:border-[#1B3B2B] text-xs font-medium"
+                    className="w-full p-2.5 rounded-xl border border-gray-300 focus:outline-none focus:border-red-600 text-xs font-medium"
                   />
                 )}
 
                 {/* KHUNG XEM TRƯỚC ẢNH THỰC TẾ (LIVE PREVIEW) */}
                 {formData.image ? (
-                  <div className="flex items-center gap-3 p-2.5 bg-white rounded-2xl border border-[#E8EFEA] shadow-xs">
+                  <div className="flex items-center gap-3 p-2.5 bg-white rounded-2xl border border-slate-200 shadow-xs">
                     <img
                       src={formData.image}
                       alt="Xem trước ảnh mẫu thiết bị"
                       className="w-14 h-14 rounded-xl object-cover border border-gray-200 flex-shrink-0"
                     />
                     <div className="flex-1 min-w-0">
-                      <span className="text-[11px] font-bold text-[#1B3B2B] flex items-center gap-1">
+                      <span className="text-[11px] font-bold text-slate-900 flex items-center gap-1">
                         <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
                         <span>Đã nạp ảnh thành công</span>
                       </span>
@@ -2734,7 +2847,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
               <div className="pt-4 border-t border-gray-200 flex gap-2">
                 <button
                   type="submit"
-                  className="flex-1 bg-[#1B3B2B] hover:bg-[#264A37] text-white font-bold py-3 rounded-full shadow-md"
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-full shadow-md transition-colors"
                 >
                   {editingProductId ? 'Lưu Thay Đổi' : '+ Đăng Bán Lên Cửa Hàng'}
                 </button>
