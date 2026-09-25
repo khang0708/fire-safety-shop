@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { FLOWERS_DATA } from '../data/flowers';
 import { 
   fetchProductsApi, 
@@ -232,6 +232,23 @@ export const ShopProvider = ({ children }) => {
     localStorage.setItem('flameguard_tg_chat_id', val);
     saveSettingsApi({ telegramChatId: val, updatedAt: now }).catch(() => {});
   };
+
+  // 2.1. Quản lý Toast Thông Báo Nổi (VD: Đã sao chép nội dung sản phẩm gửi Zalo)
+  const [toastNotification, setToastNotification] = useState(null);
+  const toastTimerRef = useRef(null);
+
+  const showToast = useCallback((message, duration = 4500) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToastNotification(message);
+    toastTimerRef.current = setTimeout(() => {
+      setToastNotification(null);
+    }, duration);
+  }, []);
+
+  const hideToast = useCallback(() => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToastNotification(null);
+  }, []);
 
   // 3. Quản lý thông báo Admin Real-time
   const [isSoundEnabled, setIsSoundEnabledState] = useState(() => {
@@ -1495,7 +1512,10 @@ export const ShopProvider = ({ children }) => {
         cartTotal,
         submitOrder,
         approvePhotoProof,
-        updateOrderByAdmin
+        updateOrderByAdmin,
+        toastNotification,
+        showToast,
+        hideToast
       }}
     >
       {children}

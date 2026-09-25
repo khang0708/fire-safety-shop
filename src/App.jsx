@@ -1,5 +1,5 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { ShopProvider } from './context/ShopContext';
+import { ShopProvider, useShop } from './context/ShopContext';
 import { ZaloMiniAppBanner } from './components/ZaloMiniAppBanner';
 import { Header } from './components/Header';
 import { HeroSection } from './components/HeroSection';
@@ -19,6 +19,7 @@ const AdminLoginModal = lazy(() => import('./components/AdminLoginModal').then(m
 const AdminDashboard = lazy(() => import('./components/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 
 function AppContent() {
+  const { toastNotification, hideToast } = useShop();
   const [isAdminView, setIsAdminView] = useState(false);
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
   
@@ -143,6 +144,21 @@ function AppContent() {
 
       {/* Footer với link Cổng Nội Bộ kín đáo */}
       <Footer onOpenAdminLogin={() => setIsAdminLoginOpen(true)} />
+
+      {/* Global Toast Notification (Thông báo sao chép nội dung Zalo) */}
+      {toastNotification && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] max-w-md w-[92%] sm:w-auto bg-slate-900/95 text-white px-4 py-3 rounded-2xl shadow-2xl border border-red-500/40 backdrop-blur-md flex items-center gap-3 animate-fade-in text-xs sm:text-sm font-medium">
+          <span className="text-xl shrink-0">📋</span>
+          <span className="flex-1 leading-snug">{toastNotification}</span>
+          <button 
+            onClick={hideToast}
+            className="text-slate-400 hover:text-white p-1 text-sm font-bold cursor-pointer transition-colors"
+            aria-label="Đóng thông báo"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   );
 }

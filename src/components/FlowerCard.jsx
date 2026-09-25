@@ -1,7 +1,7 @@
 import React from 'react';
 import { useShop } from '../context/ShopContext';
 import { Heart, Star, Plus, Eye, ShieldCheck, Gauge, CheckCircle2, Zap, Flame } from 'lucide-react';
-import { openPersonalZaloChat } from '../services/zaloService';
+import { openPersonalZaloChat, formatProductZaloMessage } from '../services/zaloService';
 import { ZaloIcon } from './ZaloIcon';
 
 const getSpecsForFlower = (flower) => {
@@ -86,7 +86,7 @@ const getSpecsForFlower = (flower) => {
 };
 
 export const FlowerCard = ({ flower }) => {
-  const { wishlist, toggleWishlist, addToCart, setQuickViewProduct, shopZaloPhone } = useShop();
+  const { wishlist, toggleWishlist, addToCart, setQuickViewProduct, shopZaloPhone, showToast } = useShop();
   const isLiked = wishlist.includes(flower.id);
   const specs = getSpecsForFlower(flower);
 
@@ -241,9 +241,13 @@ export const FlowerCard = ({ flower }) => {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
+                  const productMsg = formatProductZaloMessage(flower, specs);
                   openPersonalZaloChat(
                     shopZaloPhone,
-                    `Chào kỹ sư FLAMEGUARD PRO, tôi cần tư vấn báo giá thiết bị "${flower.name}" (Giá: ${flower.price.toLocaleString('vi-VN')}đ)`
+                    productMsg,
+                    () => {
+                      showToast?.('📋 Đã sao chép thông số thiết bị! Hãy bấm "Dán" (Paste) vào Zalo để gửi cho Kỹ Sư.');
+                    }
                   );
                 }}
                 className="bg-blue-50 hover:bg-blue-100 text-[#0068FF] hover:text-blue-700 border border-blue-200/80 text-[11px] sm:text-xs font-bold px-2.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer shadow-2xs"

@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { useShop } from '../context/ShopContext';
 import { BOUQUET_SIZES, WRAPPING_PAPERS, ADDONS } from '../data/flowers';
 import { CardPreviewer } from './CardPreviewer';
-import { openPersonalZaloChat } from '../services/zaloService';
+import { openPersonalZaloChat, formatProductZaloMessage } from '../services/zaloService';
 import { generateMessengerProductInquiry } from '../services/facebookService';
 import { Star, ShoppingBag, ShieldCheck, Truck, Gauge, Check, MessageCircle } from 'lucide-react';
 import { ZaloIcon } from './ZaloIcon';
 
 export const ProductDetailModal = () => {
-  const { quickViewProduct, setQuickViewProduct, addToCart, shopZaloPhone, facebookSettings } = useShop();
+  const { quickViewProduct, setQuickViewProduct, addToCart, shopZaloPhone, facebookSettings, showToast } = useShop();
 
   if (!quickViewProduct) return null;
 
@@ -312,9 +312,20 @@ export const ProductDetailModal = () => {
                 <button
                   type="button"
                   onClick={() => {
+                    const productMsg = formatProductZaloMessage(
+                      quickViewProduct,
+                      {
+                        agent: quickViewProduct.flowerTypes?.[0] || 'Thiết bị PCCC',
+                        range: 'Đạt chuẩn TCVN 3890'
+                      },
+                      selectedSize
+                    );
                     openPersonalZaloChat(
                       shopZaloPhone,
-                      `Chào kỹ sư FLAMEGUARD PRO, tôi muốn tư vấn về thiết bị "${quickViewProduct.name}" (Quy cách: ${selectedSize.name}, Giá: ${finalPrice.toLocaleString('vi-VN')}đ)`
+                      productMsg,
+                      () => {
+                        showToast?.('📋 Đã sao chép thông số thiết bị! Hãy bấm "Dán" (Paste) vào Zalo để gửi cho Kỹ Sư.');
+                      }
                     );
                   }}
                   className="px-3.5 py-3 bg-blue-50 hover:bg-blue-100 text-[#0068FF] border border-blue-200 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shrink-0 cursor-pointer"

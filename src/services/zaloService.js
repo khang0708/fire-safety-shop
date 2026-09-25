@@ -9,14 +9,47 @@ export const isRunningInZalo = () => {
   return /zalo/i.test(userAgent) || Boolean(window.ZLP) || Boolean(window.ZMP);
 };
 
-// 1. Mở Chat Zalo Cá Nhân qua Số Điện Thoại (Có hỗ trợ copy tin nhắn mẫu)
-export const openPersonalZaloChat = (phone = '0843066604', prefilledText = '') => {
+// Hàm định dạng thông tin sản phẩm chi tiết để gửi kèm qua Zalo
+export const formatProductZaloMessage = (product, specs = {}, selectedSize = null) => {
+  if (!product) return '';
+  const currentUrl = typeof window !== 'undefined' ? window.location.origin : 'https://fire-safety-shop.vercel.app';
+  const sizeText = selectedSize?.name ? ` [Quy cách: ${selectedSize.name}]` : '';
+  const price = selectedSize?.price || product.price || 0;
+  
+  let msg = `🧯 [YÊU CẦU TƯ VẤN THIẾT BỊ PCCC]\n`;
+  msg += `• Thiết bị: ${product.name}${sizeText}\n`;
+  msg += `• Giá kiểm định xuất xưởng: ${Number(price).toLocaleString('vi-VN')}đ\n`;
+  
+  if (specs.agent) msg += `• Chất chữa cháy: ${specs.agent}\n`;
+  if (specs.fireClass) msg += `• Đám cháy phù hợp: ${specs.fireClass}\n`;
+  if (specs.range) msg += `• Tầm phun hiệu quả: ${specs.range}\n`;
+  if (specs.bulkPrice) msg += `• Giá sỉ / dự án: ${specs.bulkPrice}\n`;
+  
+  msg += `• Tiêu chuẩn: 100% Tem kiểm định Bộ Công An • Chuẩn TCVN 3890:2023\n`;
+  msg += `• Link xem sản phẩm: ${currentUrl}/#catalog\n\n`;
+  msg += `Chào kỹ sư FLAMEGUARD PRO, vui lòng tư vấn chi tiết và thời gian giao thiết bị này giúp tôi!`;
+  
+  return msg;
+};
+
+// 1. Mở Chat Zalo Cá Nhân qua Số Điện Thoại (Có hỗ trợ copy tin nhắn mẫu kèm nội dung sản phẩm)
+export const openPersonalZaloChat = (phone = '0843066604', prefilledText = '', onCopied = null) => {
   const cleanPhone = (phone || '0843066604').replace(/\D/g, '');
   
   if (prefilledText && typeof navigator !== 'undefined' && navigator.clipboard) {
     try {
       navigator.clipboard.writeText(prefilledText);
-    } catch (e) {}
+      if (typeof onCopied === 'function') {
+        onCopied(prefilledText);
+      }
+    } catch (e) {
+      console.warn('Clipboard write error:', e);
+      if (typeof onCopied === 'function') {
+        onCopied(prefilledText);
+      }
+    }
+  } else if (typeof onCopied === 'function') {
+    onCopied(prefilledText);
   }
   
   // Link chuẩn của Zalo cá nhân
