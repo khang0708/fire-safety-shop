@@ -8,7 +8,7 @@ import { Star, ShoppingBag, ShieldCheck, Truck, Gauge, Check, MessageCircle } fr
 import { ZaloIcon } from './ZaloIcon';
 
 export const ProductDetailModal = () => {
-  const { quickViewProduct, setQuickViewProduct, addToCart, shopZaloPhone, facebookSettings, showToast } = useShop();
+  const { quickViewProduct, setQuickViewProduct, addToCart, shopZaloPhone, facebookSettings, openZaloInquiry } = useShop();
 
   if (!quickViewProduct) return null;
 
@@ -312,7 +312,7 @@ export const ProductDetailModal = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    const productMsg = formatProductZaloMessage(
+                    openZaloInquiry(
                       quickViewProduct,
                       {
                         agent: quickViewProduct.flowerTypes?.[0] || 'Thiết bị PCCC',
@@ -320,16 +320,9 @@ export const ProductDetailModal = () => {
                       },
                       selectedSize
                     );
-                    openPersonalZaloChat(
-                      shopZaloPhone,
-                      productMsg,
-                      () => {
-                        showToast?.('📋 Đã sao chép thông số thiết bị! Hãy bấm "Dán" (Paste) vào Zalo để gửi cho Kỹ Sư.');
-                      }
-                    );
                   }}
                   className="px-3.5 py-3 bg-blue-50 hover:bg-blue-100 text-[#0068FF] border border-blue-200 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shrink-0 cursor-pointer"
-                  title={`Tư vấn thiết bị qua Zalo (${shopZaloPhone})`}
+                  title={`Xem nội dung & tư vấn thiết bị qua Zalo (${shopZaloPhone})`}
                 >
                   <ZaloIcon className="w-4 h-4 shrink-0 rounded-xs" />
                   <span>Liên Hệ Zalo</span>

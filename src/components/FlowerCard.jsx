@@ -86,7 +86,7 @@ const getSpecsForFlower = (flower) => {
 };
 
 export const FlowerCard = ({ flower }) => {
-  const { wishlist, toggleWishlist, addToCart, setQuickViewProduct, shopZaloPhone, showToast } = useShop();
+  const { wishlist, toggleWishlist, addToCart, setQuickViewProduct, shopZaloPhone, openZaloInquiry } = useShop();
   const isLiked = wishlist.includes(flower.id);
   const specs = getSpecsForFlower(flower);
 
@@ -241,17 +241,10 @@ export const FlowerCard = ({ flower }) => {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  const productMsg = formatProductZaloMessage(flower, specs);
-                  openPersonalZaloChat(
-                    shopZaloPhone,
-                    productMsg,
-                    () => {
-                      showToast?.('📋 Đã sao chép thông số thiết bị! Hãy bấm "Dán" (Paste) vào Zalo để gửi cho Kỹ Sư.');
-                    }
-                  );
+                  openZaloInquiry(flower, specs);
                 }}
                 className="bg-blue-50 hover:bg-blue-100 text-[#0068FF] hover:text-blue-700 border border-blue-200/80 text-[11px] sm:text-xs font-bold px-2.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer shadow-2xs"
-                title={`Liên hệ tư vấn Zalo thiết bị này (${shopZaloPhone})`}
+                title={`Xem nội dung & liên hệ Zalo thiết bị này (${shopZaloPhone})`}
               >
                 <ZaloIcon className="w-3.5 h-3.5 shrink-0 rounded-xs" />
                 <span className="hidden sm:inline">Liên Hệ Zalo</span>

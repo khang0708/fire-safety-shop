@@ -15,6 +15,7 @@ const CartDrawer = lazy(() => import('./components/CartDrawer').then(m => ({ def
 const CheckoutModal = lazy(() => import('./components/CheckoutModal').then(m => ({ default: m.CheckoutModal })));
 const AIFloristModal = lazy(() => import('./components/AIFloristModal').then(m => ({ default: m.AIFloristModal })));
 const OrderTrackingModal = lazy(() => import('./components/OrderTrackingModal').then(m => ({ default: m.OrderTrackingModal })));
+const ZaloInquiryModal = lazy(() => import('./components/ZaloInquiryModal').then(m => ({ default: m.ZaloInquiryModal })));
 const AdminLoginModal = lazy(() => import('./components/AdminLoginModal').then(m => ({ default: m.AdminLoginModal })));
 const AdminDashboard = lazy(() => import('./components/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 
@@ -132,6 +133,7 @@ function AppContent() {
         <CheckoutModal />
         <AIFloristModal />
         <OrderTrackingModal />
+        <ZaloInquiryModal />
         <AdminLoginModal
           isOpen={isAdminLoginOpen}
           onClose={() => {

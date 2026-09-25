@@ -250,6 +250,49 @@ export const ShopProvider = ({ children }) => {
     setToastNotification(null);
   }, []);
 
+  // 2.2. Quản lý Modal Tư Vấn Zalo (Xem trước nội dung đã sao chép trước khi mở Zalo)
+  const [zaloInquiryData, setZaloInquiryData] = useState(null);
+
+  const openZaloInquiry = useCallback((product, specs = {}, selectedSize = null) => {
+    if (!product) return;
+    const cleanPhone = (shopZaloPhone || '0843066604').replace(/\D/g, '');
+    const currentUrl = typeof window !== 'undefined' ? window.location.origin : 'https://fire-safety-shop.vercel.app';
+    const sizeText = selectedSize?.name ? ` [Quy cách: ${selectedSize.name}]` : '';
+    const price = selectedSize?.price || product.price || 0;
+    
+    let msg = `🧯 [YÊU CẦU TƯ VẤN THIẾT BỊ PCCC]\n`;
+    msg += `• Thiết bị: ${product.name}${sizeText}\n`;
+    msg += `• Giá kiểm định xuất xưởng: ${Number(price).toLocaleString('vi-VN')}đ\n`;
+    
+    if (specs.agent) msg += `• Chất chữa cháy: ${specs.agent}\n`;
+    if (specs.fireClass) msg += `• Đám cháy phù hợp: ${specs.fireClass}\n`;
+    if (specs.range) msg += `• Tầm phun hiệu quả: ${specs.range}\n`;
+    if (specs.bulkPrice) msg += `• Báo giá sỉ/dự án: ${specs.bulkPrice}\n`;
+    
+    msg += `• Tiêu chuẩn: 100% Tem kiểm định Bộ Công An • Chuẩn TCVN 3890:2023\n`;
+    msg += `• Link xem sản phẩm: ${currentUrl}/#catalog\n\n`;
+    msg += `Chào kỹ sư FLAMEGUARD PRO, vui lòng tư vấn chi tiết và thời gian giao thiết bị này giúp tôi!`;
+
+    // Tự động sao chép vào bộ nhớ tạm
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      try {
+        navigator.clipboard.writeText(msg);
+      } catch (e) {}
+    }
+
+    setZaloInquiryData({
+      product,
+      specs,
+      selectedSize,
+      message: msg,
+      cleanPhone
+    });
+  }, [shopZaloPhone]);
+
+  const closeZaloInquiry = useCallback(() => {
+    setZaloInquiryData(null);
+  }, []);
+
   // 3. Quản lý thông báo Admin Real-time
   const [isSoundEnabled, setIsSoundEnabledState] = useState(() => {
     return localStorage.getItem('flameguard_sound_enabled') !== 'false';
@@ -1515,7 +1558,10 @@ export const ShopProvider = ({ children }) => {
         updateOrderByAdmin,
         toastNotification,
         showToast,
-        hideToast
+        hideToast,
+        zaloInquiryData,
+        openZaloInquiry,
+        closeZaloInquiry
       }}
     >
       {children}
