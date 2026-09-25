@@ -317,11 +317,11 @@ export const ProductDetailModal = () => {
                       `Chào kỹ sư FLAMEGUARD PRO, tôi muốn tư vấn về thiết bị "${quickViewProduct.name}" (Quy cách: ${selectedSize.name}, Giá: ${finalPrice.toLocaleString('vi-VN')}đ)`
                     );
                   }}
-                  className="px-3.5 py-3 bg-blue-50 hover:bg-blue-100 text-[#0068FF] border border-blue-200 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shrink-0"
+                  className="px-3.5 py-3 bg-blue-50 hover:bg-blue-100 text-[#0068FF] border border-blue-200 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shrink-0 cursor-pointer"
                   title={`Tư vấn thiết bị qua Zalo (${shopZaloPhone})`}
                 >
                   <ZaloIcon className="w-4 h-4 shrink-0 rounded-xs" />
-                  <span>Zalo Kỹ Sư</span>
+                  <span>Liên Hệ Zalo</span>
                 </button>
 
                 <button

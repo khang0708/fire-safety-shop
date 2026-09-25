@@ -1,6 +1,8 @@
 import React from 'react';
 import { useShop } from '../context/ShopContext';
 import { Heart, Star, Plus, Eye, ShieldCheck, Gauge, CheckCircle2, Zap, Flame } from 'lucide-react';
+import { openPersonalZaloChat } from '../services/zaloService';
+import { ZaloIcon } from './ZaloIcon';
 
 const getSpecsForFlower = (flower) => {
   if (flower.id === 'fire-01') {
@@ -84,7 +86,7 @@ const getSpecsForFlower = (flower) => {
 };
 
 export const FlowerCard = ({ flower }) => {
-  const { wishlist, toggleWishlist, addToCart, setQuickViewProduct } = useShop();
+  const { wishlist, toggleWishlist, addToCart, setQuickViewProduct, shopZaloPhone } = useShop();
   const isLiked = wishlist.includes(flower.id);
   const specs = getSpecsForFlower(flower);
 
@@ -219,29 +221,51 @@ export const FlowerCard = ({ flower }) => {
         {/* Price & Action Section */}
         <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
           {/* Giá bán & Giá sỉ dự án */}
-          <div className="flex items-end justify-between">
+          <div className="flex items-center justify-between gap-1.5 flex-wrap">
             <div>
-              <span className="text-[10px] text-slate-400 block font-medium">Giá kiểm định xuất xưởng:</span>
+              <span className="text-[10px] text-slate-400 block font-medium">Giá xuất xưởng:</span>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-base sm:text-lg font-black text-red-600 font-mono">
                   {flower.price.toLocaleString('vi-VN')}đ
                 </span>
                 {flower.originalPrice && (
-                  <span className="text-xs text-slate-400 line-through font-mono">
+                  <span className="text-[11px] text-slate-400 line-through font-mono">
                     {flower.originalPrice.toLocaleString('vi-VN')}đ
                   </span>
                 )}
               </div>
             </div>
 
-            <button
-              onClick={() => addToCart(flower)}
-              className="bg-slate-900 hover:bg-red-600 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-sm transition-all flex items-center gap-1 active:scale-95"
-              title="Thêm thiết bị vào đơn"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Thêm Vào Đơn</span>
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openPersonalZaloChat(
+                    shopZaloPhone,
+                    `Chào kỹ sư FLAMEGUARD PRO, tôi cần tư vấn báo giá thiết bị "${flower.name}" (Giá: ${flower.price.toLocaleString('vi-VN')}đ)`
+                  );
+                }}
+                className="bg-blue-50 hover:bg-blue-100 text-[#0068FF] hover:text-blue-700 border border-blue-200/80 text-[11px] sm:text-xs font-bold px-2.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer shadow-2xs"
+                title={`Liên hệ tư vấn Zalo thiết bị này (${shopZaloPhone})`}
+              >
+                <ZaloIcon className="w-3.5 h-3.5 shrink-0 rounded-xs" />
+                <span className="hidden sm:inline">Liên Hệ Zalo</span>
+                <span className="sm:hidden">Zalo</span>
+              </button>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  addToCart(flower);
+                }}
+                className="bg-slate-900 hover:bg-red-600 text-white text-[11px] sm:text-xs font-bold px-3 py-2.5 rounded-xl shadow-sm transition-all flex items-center gap-1 active:scale-95 cursor-pointer shrink-0"
+                title="Thêm thiết bị vào đơn"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Thêm Vào Đơn</span>
+              </button>
+            </div>
           </div>
 
           {/* Dòng giá chiết khấu dự án / chung cư */}
