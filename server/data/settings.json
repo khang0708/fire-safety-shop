@@ -3,6 +3,11 @@
   "telegramBotToken": "",
   "telegramChatId": "",
   "isSoundEnabled": true,
+  "displaySettings": {
+    "hideHeroBanner": true,
+    "bannerMode": "trust_bar",
+    "enableAdsUrlParam": true
+  },
   "shippingSettings": {
     "standardFee": 35000,
     "expressFee": 60000,
@@ -20,5 +25,5 @@
     "welcomeMessage": "Chào bạn! FLAMEGUARD PRO sẵn sàng tư vấn giải pháp trang bị PCCC và thiết bị cứu hỏa chuẩn kiểm định cho gia đình và doanh nghiệp.",
     "autoReplyEnabled": true
   },
-  "updatedAt": "2026-09-20T00:35:00.000Z"
+  "updatedAt": "2026-09-25T03:48:15.334Z"
 }

@@ -10,11 +10,12 @@ export const OccasionFilter = () => {
     selectedOccasion, 
     setSelectedOccasion, 
     selectedColor, 
-    setSelectedColor 
+    setSelectedColor,
+    isBannerEffectivelyHidden
   } = useShop();
 
   return (
-    <div id="catalog" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div id="catalog" className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${isBannerEffectivelyHidden ? 'pt-5 pb-8' : 'py-10'}`}>
       
       {/* 3 Trụ Cột Danh Mục Chuyển Đổi Nhanh (Pillar Segmented Tabs) */}
       <div className="bg-slate-100 p-1.5 sm:p-2 rounded-2xl border border-slate-200 shadow-xs max-w-3xl mx-auto mb-8">

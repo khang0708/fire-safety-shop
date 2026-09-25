@@ -63,7 +63,8 @@ import {
   Truck,
   Menu,
   RefreshCw,
-  Gauge
+  Gauge,
+  Sliders
 } from 'lucide-react';
 
 export const ORDER_STATUS_MAP = {
@@ -112,6 +113,8 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
     setLatestNewOrder,
     facebookSettings,
     updateFacebookSettings,
+    displaySettings,
+    updateDisplaySettings,
     refreshShopData
   } = useShop();
 
@@ -298,6 +301,44 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
       if (facebookSettings.autoReplyEnabled !== undefined) setInputFbAutoReply(facebookSettings.autoReplyEnabled);
     }
   }, [facebookSettings]);
+
+  // State Cài đặt Giao Diện & Chạy Ads (Landing Page Mode)
+  const [inputHideBanner, setInputHideBanner] = useState(displaySettings?.hideHeroBanner || false);
+  const [inputBannerMode, setInputBannerMode] = useState(displaySettings?.bannerMode || 'trust_bar');
+  const [inputEnableAdsParam, setInputEnableAdsParam] = useState(displaySettings?.enableAdsUrlParam !== false);
+  const [saveDisplaySuccess, setSaveDisplaySuccess] = useState(false);
+  const [adLinkCopied, setAdLinkCopied] = useState(false);
+
+  useEffect(() => {
+    if (displaySettings) {
+      if (displaySettings.hideHeroBanner !== undefined) setInputHideBanner(displaySettings.hideHeroBanner);
+      if (displaySettings.bannerMode) setInputBannerMode(displaySettings.bannerMode);
+      if (displaySettings.enableAdsUrlParam !== undefined) setInputEnableAdsParam(displaySettings.enableAdsUrlParam);
+    }
+  }, [displaySettings]);
+
+  const handleSaveDisplaySettings = (e) => {
+    if (e?.preventDefault) e.preventDefault();
+    if (updateDisplaySettings) {
+      updateDisplaySettings({
+        hideHeroBanner: inputHideBanner,
+        bannerMode: inputBannerMode,
+        enableAdsUrlParam: inputEnableAdsParam
+      });
+    }
+    setSaveDisplaySuccess(true);
+    setTimeout(() => setSaveDisplaySuccess(false), 3000);
+  };
+
+  const handleCopyAdLink = () => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://fire-safety-shop.vercel.app';
+    const adUrl = `${origin}/?view=catalog`;
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(adUrl);
+    }
+    setAdLinkCopied(true);
+    setTimeout(() => setAdLinkCopied(false), 2500);
+  };
 
   // Cập nhật trạng thái quyền thông báo trình duyệt
   const handleRequestBrowserNotif = async () => {
@@ -713,7 +754,8 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                 groupTitle: 'CÀI ĐẶT HỆ THỐNG',
                 items: [
                   { id: 'shipping_config', label: 'Vận Chuyển Chuyên Dụng', icon: Truck },
-                  { id: 'zalo_config', label: 'Cấu Hình Zalo / FB / Tele', icon: Smartphone }
+                  { id: 'zalo_config', label: 'Cấu Hình Zalo / FB / Tele', icon: Smartphone },
+                  { id: 'display_config', label: 'Giao Diện & Chạy Ads', icon: EyeOff }
                 ]
               }
             ].map((group, gIdx) => (
@@ -842,6 +884,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                   {activeTab === 'analytics' && '📊 Báo Cáo Doanh Thu & VAT'}
                   {activeTab === 'shipping_config' && '🚚 Cấu Hình Vận Chuyển'}
                   {activeTab === 'zalo_config' && '💬 Kênh Chat & Khẩn Cấp'}
+                  {activeTab === 'display_config' && '🎨 Giao Diện & Chạy Ads (Landing Page)'}
                 </h1>
                 <span className="text-[10px] text-slate-400 hidden sm:block truncate">FLAMEGUARD PRO • Trung Tâm Điều Hành & Kiểm Định Kỹ Thuật PCCC</span>
               </div>
@@ -2406,6 +2449,196 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
 
             </div>
 
+          </div>
+        )}
+
+        {/* TAB 7: CẤU HÌNH GIAO DIỆN & CHẠY ADS (LANDING PAGE MODE) */}
+        {activeTab === 'display_config' && (
+          <div className="space-y-6 animate-fade-in">
+            {/* Header Tab */}
+            <div className="bg-white p-6 rounded-3xl border border-[#E8EFEA] shadow-sm flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h3 className="font-heading text-2xl font-bold text-slate-900 flex items-center gap-2.5">
+                  <EyeOff className="w-6 h-6 text-red-600" />
+                  <span>Cấu Hình Giao Diện & Tối Ưu Chạy Quảng Cáo (Ads Landing Mode)</span>
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Kiểm soát hiển thị khối Banner Hero lớn, chuyển đổi linh hoạt sang chế độ Landing Page để khách hàng xem ngay sản phẩm và giá tiền khi bấm vào bài viết hoặc quảng cáo.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${inputHideBanner ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
+                  {inputHideBanner ? '● Đang Ẩn Banner (Chế độ Landing Ads)' : '○ Đang Hiện Banner Đầy Đủ'}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* CỘT TRÁI: FORM CẤU HÌNH CHÍNH (7 CỘT) */}
+              <div className="lg:col-span-7 bg-white p-6 rounded-3xl border border-[#E8EFEA] shadow-sm space-y-6">
+                <h4 className="font-serif text-lg font-bold text-[#1B3B2B] flex items-center gap-2">
+                  <Sliders className="w-5 h-5 text-red-600" />
+                  Thiết Lập Trạng Thái Hiển Thị Trang Chủ
+                </h4>
+
+                <form onSubmit={handleSaveDisplaySettings} className="space-y-6 text-xs">
+                  {/* Option 1: Công tắc bật/tắt ẩn banner toàn trang */}
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="pr-4">
+                        <span className="font-bold text-slate-900 text-sm block">1. Ẩn Banner Lớn (Hero Banner) Toàn Trang:</span>
+                        <span className="text-[11px] text-slate-500">
+                          Áp dụng mặc định cho tất cả khách truy cập vào trang web
+                        </span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={inputHideBanner}
+                          onChange={(e) => setInputHideBanner(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Option 2: Kiểu hiển thị khi ẩn banner */}
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                    <span className="font-bold text-slate-900 text-sm block">2. Kiểu Hiển Thị Thay Thế Khi Ẩn Banner:</span>
+                    <span className="text-[11px] text-slate-500 block -mt-1">
+                      Chọn cách trang web hiển thị phần đầu trang khi khối banner lớn được ẩn
+                    </span>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      <label className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${inputBannerMode === 'trust_bar' ? 'bg-red-50/60 border-red-500 ring-2 ring-red-500/20' : 'bg-white border-slate-200 hover:border-slate-300'}`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-bold text-slate-900 text-xs">Thanh Trust Bar Mỏng (44px)</span>
+                          <input
+                            type="radio"
+                            name="bannerMode"
+                            value="trust_bar"
+                            checked={inputBannerMode === 'trust_bar'}
+                            onChange={() => setInputBannerMode('trust_bar')}
+                            className="text-red-600 focus:ring-red-500"
+                          />
+                        </div>
+                        <p className="text-[11px] text-slate-600 leading-relaxed">
+                          ⭐ <b>Khuyên dùng theo UI/UX Pro Max:</b> Hiển thị thanh mỏng gồm <i>Tem BCA + TCVN 3890 + Hotline 24/7</i>. Vừa show sản phẩm ngay, vừa giữ uy tín kiểm định.
+                        </p>
+                      </label>
+
+                      <label className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${inputBannerMode === 'hidden' ? 'bg-red-50/60 border-red-500 ring-2 ring-red-500/20' : 'bg-white border-slate-200 hover:border-slate-300'}`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-bold text-slate-900 text-xs">Ẩn Hoàn Toàn 100%</span>
+                          <input
+                            type="radio"
+                            name="bannerMode"
+                            value="hidden"
+                            checked={inputBannerMode === 'hidden'}
+                            onChange={() => setInputBannerMode('hidden')}
+                            className="text-red-600 focus:ring-red-500"
+                          />
+                        </div>
+                        <p className="text-[11px] text-slate-600 leading-relaxed">
+                          Ẩn sạch toàn bộ banner, đưa Menu Header dính liền trực tiếp vào Lưới sản phẩm & bộ lọc danh mục.
+                        </p>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Option 3: Tự động kích hoạt khi có URL Param ?view=catalog hoặc ?ads=true */}
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="pr-4">
+                        <span className="font-bold text-slate-900 text-sm block">3. Tự Động Ẩn Khi Có Tham Số Ads Trên Link:</span>
+                        <span className="text-[11px] text-slate-500">
+                          Cho phép link quảng cáo có đuôi <code className="bg-slate-200 px-1 py-0.5 rounded text-red-600 font-mono">?view=catalog</code> hoặc <code className="bg-slate-200 px-1 py-0.5 rounded text-red-600 font-mono">?ads=true</code> tự động ẩn banner mà không cần đổi cài đặt toàn trang
+                        </span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={inputEnableAdsParam}
+                          onChange={(e) => setInputEnableAdsParam(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Nút lưu cài đặt */}
+                  <div className="flex items-center justify-between pt-2">
+                    <button
+                      type="submit"
+                      className="bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-3 rounded-2xl text-xs shadow-md shadow-red-600/25 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>Lưu Cấu Hình Giao Diện</span>
+                    </button>
+
+                    {saveDisplaySuccess && (
+                      <div className="flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 animate-fade-in font-bold">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        <span>Đã lưu thành công cấu hình hiển thị & chạy Ads!</span>
+                      </div>
+                    )}
+                  </div>
+                </form>
+              </div>
+
+              {/* CỘT PHẢI: BỘ CÔNG CỤ TẠO LINK CHẠY ADS & HƯỚNG DẪN VIẾT BÀI (5 CỘT) */}
+              <div className="lg:col-span-5 space-y-5">
+                {/* Card 1: Hộp Copy Link Chuyên Dụng Chạy Ads */}
+                <div className="bg-white p-5 rounded-3xl border border-[#E8EFEA] shadow-sm space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-amber-500" />
+                    <h5 className="font-bold text-gray-900 text-sm">Link Chuyên Dụng Chạy Ads / Viết Bài</h5>
+                  </div>
+                  <p className="text-[11px] text-slate-600 leading-relaxed">
+                    Sử dụng link này để chèn vào nút <b>"Mua ngay"</b>, <b>"Xem bảng giá"</b> trong bài viết Facebook, Zalo OA hoặc chiến dịch quảng cáo TikTok/Google Ads:
+                  </p>
+
+                  <div className="p-3 bg-slate-900 text-slate-100 rounded-2xl space-y-2 border border-slate-700 font-mono text-[11px]">
+                    <div className="truncate text-amber-300">
+                      https://fire-safety-shop.vercel.app/?view=catalog
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCopyAdLink}
+                      className="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded-xl font-sans font-bold flex items-center justify-center gap-1.5 text-xs transition-all active:scale-95 shadow-sm cursor-pointer"
+                    >
+                      {adLinkCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{adLinkCopied ? 'Đã Sao Chép Link Thành Công!' : 'Sao Chép Link Chạy Ads'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Card 2: Lợi ích chuyển đổi UI/UX Pro Max */}
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50/50 p-5 rounded-3xl border border-amber-200/80 shadow-xs space-y-3">
+                  <h5 className="font-bold text-amber-950 text-xs flex items-center gap-1.5">
+                    <Zap className="w-4 h-4 text-amber-600" />
+                    Hiệu Quả Chuyển Đổi Khi Ẩn Banner:
+                  </h5>
+                  <ul className="text-[11px] text-amber-900 space-y-2 pl-1">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span><b>Giảm 45–60% Bounce Rate:</b> Khách hàng thấy ngay sản phẩm và giá trong 1 giây đầu.</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span><b>Tối ưu chi phí mỗi lượt nhấp (CPC):</b> Khách từ quảng cáo không phải cuộn màn hình dài.</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span><b>Thích hợp cho viết bài review:</b> Khi bạn viết bài về bình CO2 hay thiết bị báo khói, link trỏ thẳng vào danh mục sản phẩm tương ứng.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

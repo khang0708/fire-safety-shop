@@ -303,6 +303,75 @@ export const ShopProvider = ({ children }) => {
     });
   };
 
+  // 3.3. Cấu hình Hiển Thị & Chạy Quảng Cáo (Landing Page Mode)
+  const [displaySettings, setDisplaySettingsState] = useState(() => {
+    try {
+      const cached = localStorage.getItem('flameguard_display_settings');
+      if (cached) return JSON.parse(cached);
+    } catch (e) {}
+    return {
+      hideHeroBanner: false, // Ẩn banner Hero lớn
+      bannerMode: 'trust_bar', // 'hidden' (ẩn hoàn toàn) | 'trust_bar' (thanh mỏng 44px)
+      enableAdsUrlParam: true // Tự động nhận diện ?view=catalog hoặc ?ads=true
+    };
+  });
+
+  const updateDisplaySettings = (newSettings) => {
+    const now = updateSettingsTimestamp();
+    setDisplaySettingsState(prev => {
+      const merged = { ...prev, ...newSettings };
+      try {
+        localStorage.setItem('flameguard_display_settings', JSON.stringify(merged));
+      } catch (e) {}
+      saveSettingsApi({ displaySettings: merged, updatedAt: now }).catch(() => {});
+      return merged;
+    });
+  };
+
+  // Kiểm tra nếu URL có tham số quảng cáo / catalog mode
+  const [isAdsUrlActive, setIsAdsUrlActive] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const searchParams = new URLSearchParams(window.location.search);
+    const hash = window.location.hash;
+    return searchParams.get('view') === 'catalog' ||
+      searchParams.get('ads') === 'true' ||
+      searchParams.get('ads') === '1' ||
+      searchParams.get('hideBanner') === 'true' ||
+      hash === '#catalog' ||
+      hash === '#products';
+  });
+
+  // Lắng nghe hashchange & popstate để cập nhật tức thời
+  useEffect(() => {
+    const checkHashAndParams = () => {
+      if (typeof window === 'undefined') return;
+      const searchParams = new URLSearchParams(window.location.search);
+      const hash = window.location.hash;
+      const isAds = searchParams.get('view') === 'catalog' ||
+        searchParams.get('ads') === 'true' ||
+        searchParams.get('ads') === '1' ||
+        searchParams.get('hideBanner') === 'true' ||
+        hash === '#catalog' ||
+        hash === '#products';
+      setIsAdsUrlActive(isAds);
+    };
+    window.addEventListener('hashchange', checkHashAndParams);
+    window.addEventListener('popstate', checkHashAndParams);
+    return () => {
+      window.removeEventListener('hashchange', checkHashAndParams);
+      window.removeEventListener('popstate', checkHashAndParams);
+    };
+  }, []);
+
+  // Tính toán trạng thái ẩn banner: Tuyệt đối tuân theo Cài đặt Admin (hoặc tham số Ads trên Link)
+  const isBannerEffectivelyHidden = Boolean(
+    displaySettings.hideHeroBanner || (displaySettings.enableAdsUrlParam && isAdsUrlActive)
+  );
+
+  const toggleBannerVisibility = () => {
+    // Được kiểm soát hoàn toàn bởi Setting Admin
+  };
+
   const getShippingFee = useCallback((type = 'timeslot', subtotal = 0) => {
     const { 
       shippingMode = 'admin_confirm', 
@@ -719,6 +788,10 @@ export const ShopProvider = ({ children }) => {
             setFacebookSettingsState(prev => ({ ...prev, ...apiSettings.facebookSettings }));
             if (typeof localStorage !== 'undefined') localStorage.setItem('flameguard_facebook_settings', JSON.stringify(apiSettings.facebookSettings));
           }
+          if (apiSettings.displaySettings) {
+            setDisplaySettingsState(prev => ({ ...prev, ...apiSettings.displaySettings }));
+            if (typeof localStorage !== 'undefined') localStorage.setItem('flameguard_display_settings', JSON.stringify(apiSettings.displaySettings));
+          }
           if (typeof localStorage !== 'undefined') localStorage.setItem('flameguard_settings_updated_at', apiSettings.updatedAt);
         } else if (localSettingsTime > serverSettingsTime) {
           // Local mới hơn server -> GIỮ NGUYÊN LOCAL & Rehydrate container server ngầm!
@@ -728,6 +801,7 @@ export const ShopProvider = ({ children }) => {
             telegramChatId: typeof localStorage !== 'undefined' ? localStorage.getItem('flameguard_tg_chat_id') : undefined,
             shippingSettings: shippingSettings,
             facebookSettings: facebookSettings,
+            displaySettings: displaySettings,
             updatedAt: localSettingsTimestamp
           };
           saveSettingsApi(localSettingsPayload).catch(() => {});
@@ -740,7 +814,7 @@ export const ShopProvider = ({ children }) => {
       if (!isSilent) console.warn('Lỗi refreshShopData:', err);
       return false;
     }
-  }, [updateProductsLocalAndBroadcast, shippingSettings, facebookSettings]);
+  }, [updateProductsLocalAndBroadcast, shippingSettings, facebookSettings, displaySettings]);
 
   // Khởi tạo và lắng nghe Real-time SSE & BroadcastChannel (trì hoãn sau first paint)
   useEffect(() => {
@@ -1391,6 +1465,10 @@ export const ShopProvider = ({ children }) => {
         setIsZaloMode,
         quickViewProduct,
         setQuickViewProduct,
+        displaySettings,
+        updateDisplaySettings,
+        isBannerEffectivelyHidden,
+        toggleBannerVisibility,
         orders,
         activeOrder,
         inventory,

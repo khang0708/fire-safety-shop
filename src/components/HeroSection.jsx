@@ -1,12 +1,50 @@
 import React from 'react';
 import { useShop } from '../context/ShopContext';
 import { SHOP_CATEGORIES } from '../data/flowers';
-import { Sparkles, ShieldCheck, Gauge, ArrowRight, Award } from 'lucide-react';
+import { Sparkles, ShieldCheck, Gauge, ArrowRight, Award, Phone } from 'lucide-react';
+
+export const CompactTrustBar = () => (
+  <div className="bg-slate-900 border-b border-red-900/40 text-white py-2.5 px-4 shadow-sm animate-fade-in">
+    <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 bg-red-600/20 border border-red-500/40 px-2.5 py-1 rounded-lg text-red-300 font-bold font-mono text-[11px]">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
+          100% TEM KIỂM ĐỊNH BCA
+        </div>
+        <span className="hidden sm:inline text-slate-300 font-medium text-[11px]">
+          • Tiêu chuẩn TCVN 3890:2023 • Sẵn sàng nghiệm thu & xuất hóa đơn VAT
+        </span>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <a
+          href="tel:0843066604"
+          className="flex items-center gap-1.5 text-slate-200 hover:text-white font-bold text-xs bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700 hover:border-slate-600 transition-colors"
+        >
+          <Phone className="w-3.5 h-3.5 text-red-400" />
+          <span>Hotline: 0843.066.604</span>
+        </a>
+      </div>
+    </div>
+  </div>
+);
 
 export const HeroSection = () => {
-  const { setIsAIFloristOpen, setSelectedOccasion, activeCategory, setActiveCategory } = useShop();
+  const { 
+    setIsAIFloristOpen, 
+    setSelectedOccasion, 
+    activeCategory, 
+    setActiveCategory,
+    isBannerEffectivelyHidden, 
+    displaySettings
+  } = useShop();
 
   const currentCategory = SHOP_CATEGORIES.find(c => c.id === activeCategory) || SHOP_CATEGORIES[0];
+
+  if (isBannerEffectivelyHidden) {
+    if (displaySettings?.bannerMode === 'hidden') return null;
+    return <CompactTrustBar />;
+  }
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-[#0F172A] via-[#1E293B] to-[#0F172A] py-12 md:py-18 text-white">
