@@ -79,16 +79,6 @@ export const Header = () => {
             >
               <span>📐 Định Mức TCVN 3890</span>
             </button>
-
-            <a
-              href="/Huong_Dan_Su_Dung_PCCC.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden lg:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-white/10 hover:bg-white/20 text-white transition-all border border-white/10"
-              title="Xem cẩm nang an toàn & hướng dẫn sử dụng thiết bị PCCC (.PDF)"
-            >
-              <span>📖 Cẩm Nang (.PDF)</span>
-            </a>
           </div>
 
         </div>

@@ -819,17 +819,6 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
               <span>Về Cửa Hàng</span>
             </button>
 
-            {/* Nút xem trực tiếp Cẩm Nang PDF */}
-            <a
-              href="/Huong_Dan_Su_Dung_FlameGuard_Pro.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full flex items-center justify-center gap-2 bg-red-600/20 hover:bg-red-600/30 text-red-200 hover:text-white py-2 rounded-xl text-xs font-bold transition-all border border-red-500/30"
-              title="Mở cẩm nang hướng dẫn sử dụng file PDF (9 trang chuẩn TCVN 3890)"
-            >
-              <span>📖 Cẩm Nang HDSD (.PDF - 9 Trang)</span>
-            </a>
-
             <div className="flex items-center justify-between pt-1">
               <div className="flex items-center gap-2 min-w-0">
                 <img
