@@ -22,6 +22,14 @@ import {
 } from 'lucide-react';
 import { generateNativeXlsxBlob } from '../utils/excelGenerator';
 
+const statusLabels = {
+  'NEW': 'Tiếp nhận đơn',
+  'ARRANGING': 'Đo áp suất & Dán tem BCA',
+  'PHOTO_READY': 'Chờ duyệt ảnh áp suất',
+  'DELIVERING': 'Đang vận chuyển PCCC',
+  'COMPLETED': 'Đã hoàn tất nghiệm thu'
+};
+
 // Hàm chuẩn hóa trích xuất ngày thực tế của đơn hàng từ orderDate, createdAt hoặc deliverySlot
 export const getOrderDateObj = (order) => {
   if (!order) return new Date();
