@@ -17,6 +17,27 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// ----------------------------------------------------
+// TIMEOUT HELPERS
+// Tránh việc function bị treo tới giới hạn tối đa của Vercel (300s)
+// khi DB hoặc API bên thứ 3 không phản hồi.
+// ----------------------------------------------------
+const DEFAULT_TIMEOUT_MS = 12000;
+
+const withTimeout = (promise, ms = DEFAULT_TIMEOUT_MS, label = 'operation') => {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+};
+
+const fetchWithTimeout = (url, options = {}, ms = DEFAULT_TIMEOUT_MS) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+};
+
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '25mb' }));
@@ -46,13 +67,13 @@ let isTableInitialized = false;
 const ensureTable = async () => {
   if (!sql || isTableInitialized) return;
   try {
-    await sql`
+    await withTimeout(sql`
       CREATE TABLE IF NOT EXISTS flameguard_store (
         key VARCHAR(50) PRIMARY KEY,
         data JSONB NOT NULL,
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
-    `;
+    `, DEFAULT_TIMEOUT_MS, 'Neon ensureTable');
     isTableInitialized = true;
   } catch (err) {
     console.warn('ensureTable note:', err.message);
@@ -70,7 +91,7 @@ const readJson = async (fileName) => {
   if (sql) {
     try {
       await ensureTable();
-      const rows = await sql`SELECT data FROM flameguard_store WHERE key = ${key}`;
+      const rows = await withTimeout(sql`SELECT data FROM flameguard_store WHERE key = ${key}`, DEFAULT_TIMEOUT_MS, `Neon read ${key}`);
       if (rows && rows.length > 0 && rows[0].data !== undefined) {
         const data = rows[0].data;
         memoryDb.set(fileName, data);
@@ -121,11 +142,11 @@ const writeJson = async (fileName, data) => {
     try {
       await ensureTable();
       const jsonStr = JSON.stringify(data);
-      await sql`
+      await withTimeout(sql`
         INSERT INTO flameguard_store (key, data, updated_at)
         VALUES (${key}, ${jsonStr}, NOW())
         ON CONFLICT (key) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()
-      `;
+      `, DEFAULT_TIMEOUT_MS, `Neon write ${key}`);
     } catch (dbErr) {
       console.error(`[Neon DB] Lỗi ghi ${key}:`, dbErr.message);
     }
@@ -162,11 +183,26 @@ export const broadcastAdminEvent = (eventPayload) => {
 };
 
 // GET /api/admin/events (SSE Stream)
+// LƯU Ý QUAN TRỌNG: Vercel Serverless Functions không hỗ trợ giữ kết nối mở
+// vô thời hạn — mỗi function instance chỉ chạy tối đa tới giới hạn thời gian
+// cấu hình (mặc định 300s) rồi bị hạ, và các instance cũng không dùng chung
+// bộ nhớ nên broadcastAdminEvent() không thể đảm bảo tới các client trên
+// instance khác. Giữ handler này mở trên Vercel gây ra lỗi
+// "Task timed out after 300 seconds" lặp lại liên tục, vì trình duyệt
+// (EventSource) tự động kết nối lại ngay khi bị đóng, tạo vòng lặp vô hạn.
+// => Trên Vercel, đóng kết nối ngay lập tức để tránh treo function;
+//    client sẽ tự chuyển sang cơ chế polling (đã có sẵn) làm phương án dự phòng.
 app.get('/api/admin/events', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   res.flushHeaders?.();
+
+  if (process.env.VERCEL) {
+    res.write(`data: ${JSON.stringify({ type: 'SSE_UNSUPPORTED', message: 'Realtime SSE not supported on serverless; use polling' })}\n\n`);
+    res.end();
+    return;
+  }
 
   res.write(`data: ${JSON.stringify({ type: 'CONNECTED', message: 'SSE Admin Stream Active' })}\n\n`);
   sseClients.add(res);
@@ -384,7 +420,7 @@ const sendTelegramNotificationForOrder = async (order, customToken = null, custo
       `👉 <i>FLAMEGUARD PRO: Sẵn sàng kiểm định và xuất kho!</i>`;
 
     const telegramUrl = `https://api.telegram.org/bot${token}/sendMessage`;
-    const tgRes = await fetch(telegramUrl, {
+    const tgRes = await fetchWithTimeout(telegramUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -499,7 +535,7 @@ app.post('/api/notifications/telegram-get-chat-id', async (req, res) => {
 
     const token = cleanTelegramToken(rawToken);
     const updatesUrl = `https://api.telegram.org/bot${token}/getUpdates`;
-    const tgRes = await fetch(updatesUrl);
+    const tgRes = await fetchWithTimeout(updatesUrl);
     const tgData = await tgRes.json();
 
     if (!tgData.ok) {
@@ -576,7 +612,7 @@ app.post('/api/notifications/telegram-test', async (req, res) => {
       `👉 <i>Hãy mở Bảng Điều Hành Admin Flora & Bloom để duyệt ảnh và cắm hoa nhé!</i>`;
 
     const telegramUrl = `https://api.telegram.org/bot${token}/sendMessage`;
-    const tgRes = await fetch(telegramUrl, {
+    const tgRes = await fetchWithTimeout(telegramUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -720,7 +756,7 @@ app.post('/api/zalo/send-zns', async (req, res) => {
 
     if (accessToken) {
       try {
-        const response = await fetch('https://business.openapi.zalo.me/message/template', {
+        const response = await fetchWithTimeout('https://business.openapi.zalo.me/message/template', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -823,7 +859,7 @@ const callFacebookSendApi = async (pageAccessToken, recipientId, messageText, qu
   }
 
   const graphUrl = `https://graph.facebook.com/v19.0/me/messages?access_token=${encodeURIComponent(pageAccessToken)}`;
-  const response = await fetch(graphUrl, {
+  const response = await fetchWithTimeout(graphUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

@@ -931,6 +931,12 @@ export const ShopProvider = ({ children }) => {
       eventSource.onmessage = (e) => {
         try {
           const payload = JSON.parse(e.data);
+          // Server (khi chạy trên Vercel serverless) báo không hỗ trợ SSE dài hạn
+          // => đóng kết nối ngay để tránh EventSource tự retry vô hạn, chỉ dựa vào polling.
+          if (payload.type === 'SSE_UNSUPPORTED') {
+            if (eventSource) eventSource.close();
+            return;
+          }
           if (payload.type === 'NEW_ORDER' && payload.order) {
             setOrders(prev => {
               const exists = prev.some(o => o.id === payload.order.id);
