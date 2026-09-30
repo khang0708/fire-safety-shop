@@ -15,7 +15,17 @@ fi
 DOMAIN=$1
 EMAIL=$2
 
-echo "🔒 Đang yêu cầu cấp chứng chỉ SSL cho tên miền: $DOMAIN và www.$DOMAIN..."
+echo "🔒 Đang kiểm tra cấu hình DNS cho tên miền: $DOMAIN..."
+
+# Tự động kiểm tra xem www.$DOMAIN đã được trỏ DNS chưa
+DOMAIN_ARGS="-d $DOMAIN"
+if getent ahostsv4 "www.$DOMAIN" >/dev/null 2>&1 || ping -c 1 -W 2 "www.$DOMAIN" >/dev/null 2>&1; then
+    echo "✅ Đã tìm thấy bản ghi DNS cho www.$DOMAIN -> Sẽ cấp SSL cho cả $DOMAIN và www.$DOMAIN"
+    DOMAIN_ARGS="-d $DOMAIN -d www.$DOMAIN"
+else
+    echo "⚠️ Chưa tìm thấy bản ghi DNS cho www.$DOMAIN trên TenTen."
+    echo "👉 Hệ thống sẽ tự động cấp chứng chỉ SSL trước cho tên miền chính: $DOMAIN"
+fi
 
 # 1. Đảm bảo Nginx HTTP đang chạy để xác thực challenge
 docker compose up -d nginx web
@@ -24,8 +34,7 @@ docker compose up -d nginx web
 docker compose run --rm --entrypoint "\
   certbot certonly --webroot -w /var/www/certbot \
     --email $EMAIL \
-    -d $DOMAIN \
-    -d www.$DOMAIN \
+    $DOMAIN_ARGS \
     --rsa-key-size 4096 \
     --agree-tos \
     --force-renewal \
