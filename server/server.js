@@ -1079,6 +1079,20 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// ----------------------------------------------------
+// 8. PHỤC VỤ GIAO DIỆN FRONTEND & SPA ROUTING (VPS / DOCKER)
+// ----------------------------------------------------
+const distPath = path.join(__dirname, '../dist');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+
 if (!process.env.VERCEL) {
   const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`🔥 FLAMEGUARD PRO API Server đang chạy tại: http://127.0.0.1:${PORT}`);

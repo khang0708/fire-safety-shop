@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flameguard-web
+    restart: always
+    environment:
+      - PORT=3001
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL:-}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+    volumes:
+      # Giữ nguyên dữ liệu sản phẩm, đơn hàng, cài đặt khi cập nhật container
+      - ./server/data:/app/server/data
+    expose:
+      - "3001"
+    networks:
+      - flameguard-net
+
+  nginx:
+    image: nginx:alpine
+    container_name: flameguard-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    depends_on:
+      - web
+    networks:
+      - flameguard-net
+
+  certbot:
+    image: certbot/certbot
+    container_name: flameguard-certbot
+    restart: unless-stopped
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - flameguard-net
+
+networks:
+  flameguard-net:
+    driver: bridge
