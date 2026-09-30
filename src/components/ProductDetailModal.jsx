@@ -10,13 +10,13 @@ import { ZaloIcon } from './ZaloIcon';
 export const ProductDetailModal = () => {
   const { quickViewProduct, setQuickViewProduct, addToCart, shopZaloPhone, facebookSettings, openZaloInquiry } = useShop();
 
-  if (!quickViewProduct) return null;
-
   const [selectedSize, setSelectedSize] = useState(BOUQUET_SIZES[0]);
   const [selectedWrapper, setSelectedWrapper] = useState(WRAPPING_PAPERS[0]);
   const [selectedAddons, setSelectedAddons] = useState([]);
   const [cardMessage, setCardMessage] = useState('VỊ TRÍ LẮP ĐẶT: Cạnh cửa chính ra vào. HƯỚNG DẪN 4 BƯỚC: Giật chốt hãm - Hướng vòi phun vào gốc lửa - Giữ cự ly 1.5m - Bóp van dập lửa liên tục.');
   const [senderSign, setSenderSign] = useState('Cán bộ phụ trách an toàn');
+
+  if (!quickViewProduct) return null;
 
   const toggleAddon = (addon) => {
     setSelectedAddons(prev => 

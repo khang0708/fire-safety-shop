@@ -79,8 +79,6 @@ export const CheckoutModal = () => {
     shopZaloPhone
   } = useShop();
 
-  if (!isCheckoutOpen) return null;
-
   // Coupon state in Checkout
   const [couponInput, setCouponInput] = useState('');
   const [couponError, setCouponError] = useState('');
@@ -165,6 +163,8 @@ export const CheckoutModal = () => {
       paymentMethod,
     });
   };
+
+  if (!isCheckoutOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">

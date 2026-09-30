@@ -1,0 +1,81 @@
+name: CI/CD Pipeline - Deploy to VPS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  test-and-build:
+    name: 🧪 Kiểm thử & Đóng gói (CI)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Tải mã nguồn từ GitHub
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Cài đặt môi trường Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 📦 Cài đặt gói phụ thuộc
+        run: npm ci
+
+      - name: 🔍 Kiểm tra tiêu chuẩn mã nguồn (Lint)
+        run: npm run lint
+
+      - name: 🧪 Chạy bộ kiểm thử toàn diện (Unit, Security & Conflict Resolution)
+        run: npm test
+
+      - name: 🏗️ Kiểm tra đóng gói ứng dụng (Build)
+        run: npm run build
+
+  deploy-to-vps:
+    name: 🚀 Tự động Deploy lên VPS (CD)
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: 🔐 Kết nối SSH và chạy script cập nhật VPS
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          passphrase: ${{ secrets.VPS_SSH_PASSPHRASE }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script_stop: true
+          command_timeout: 30m
+          script: |
+            set -e
+            echo "🚀 Kết nối tới VPS thành công!"
+            
+            TARGET_DIR="${{ secrets.VPS_TARGET_DIR }}"
+            if [ -z "$TARGET_DIR" ]; then
+              if [ -d "$HOME/fire-safety-shop" ]; then
+                TARGET_DIR="$HOME/fire-safety-shop"
+              elif [ -d "/root/fire-safety-shop" ]; then
+                TARGET_DIR="/root/fire-safety-shop"
+              elif [ -d "/var/www/fire-safety-shop" ]; then
+                TARGET_DIR="/var/www/fire-safety-shop"
+              else
+                TARGET_DIR="fire-safety-shop"
+              fi
+            fi
+
+            echo "📂 Thư mục triển khai: $TARGET_DIR"
+            cd "$TARGET_DIR"
+
+            # Đảm bảo quyền thực thi cho script deploy
+            chmod +x deploy.sh init-ssl.sh 2>/dev/null || true
+
+            # Chạy quy trình deploy tự động
+            ./deploy.sh

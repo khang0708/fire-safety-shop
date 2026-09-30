@@ -55,26 +55,52 @@ chmod +x deploy.sh init-ssl.sh
 
 ---
 
-## 🔄 PHẦN 4: QUY TRÌNH CẬP NHẬT CODE MỚI (UPDATE WORKFLOW)
+## 🔄 PHẦN 4: TỰ ĐỘNG HÓA DEPLOY VỚI GITHUB ACTIONS (CI/CD)
 
-Mỗi khi bạn sửa giao diện, cập nhật tính năng mới trên máy tính:
+Hệ thống đã được tích hợp quy trình **CI/CD hoàn toàn tự động** qua GitHub Actions. Mỗi khi bạn đẩy code lên nhánh `main`, hệ thống sẽ:
+1. **CI:** Tự động chạy kiểm thử đơn vị, kiểm thử bảo mật (`npm test`), kiểm tra linter (`npm run lint`) và đóng gói (`npm run build`). Nếu có lỗi, quy trình sẽ dừng lại ngay để bảo vệ VPS.
+2. **CD:** Nếu kiểm thử thành công, GitHub Actions tự động kết nối SSH vào VPS và thực thi `./deploy.sh`, cập nhật website tức thì mà không gián đoạn dịch vụ.
 
-### Bước 4.1: Tại máy tính cá nhân
+### 🔑 Các bước cài đặt GitHub Secrets (Chỉ làm 1 lần trên GitHub):
+
+1. Truy cập vào kho chứa GitHub của bạn: `https://github.com/khang0708/fire-safety-shop`
+2. Vào **Settings** > **Secrets and variables** > **Actions** > Nhấn **New repository secret**.
+3. Thêm các Secret sau:
+
+| Tên Secret | Giá trị mẫu | Giải thích |
+| :--- | :--- | :--- |
+| `VPS_HOST` | `45.252.251.189` | Địa chỉ IP của VPS AZDIGI |
+| `VPS_USERNAME` | `root` | Tài khoản đăng nhập SSH vào VPS |
+| `VPS_SSH_KEY` | `-----BEGIN OPENSSH PRIVATE KEY----- ...` | Khóa SSH Private Key (Khuyên dùng) |
+| `VPS_PASSWORD` | `MatKhauVpsCuaBan` | Mật khẩu root VPS (Dùng nếu không cài SSH Key) |
+| `VPS_PORT` | `22` | Cổng SSH (Mặc định 22) |
+| `VPS_TARGET_DIR` | `/root/fire-safety-shop` | Thư mục chứa mã nguồn trên VPS |
+
+> 💡 **Cách tạo SSH Key nhanh cho GitHub Actions (nếu chưa có):**
+> Trên máy tính hoặc Terminal VPS, chạy lệnh:
+> ```bash
+> ssh-keygen -t ed25519 -C "github-actions" -f ~/.ssh/github_actions
+> cat ~/.ssh/github_actions.pub >> ~/.ssh/authorized_keys
+> chmod 600 ~/.ssh/authorized_keys
+> ```
+> Sau đó copy toàn bộ nội dung file `~/.ssh/github_actions` (khóa private) dán vào secret `VPS_SSH_KEY`.
+
+---
+
+## 🚀 PHẦN 5: QUY TRÌNH PHÁT TRIỂN & CẬP NHẬT CODE MỖI NGÀY
+
+Bây giờ bạn chỉ cần làm việc trên máy tính:
 ```bash
-# Lưu và đẩy code lên GitHub
+# 1. Lưu các thay đổi
 git add .
-git commit -m "feat: mo ta tinh nang moi vua cap nhat"
+git commit -m "feat: cap nhat giao dien hoac tinh nang moi"
+
+# 2. Đẩy lên GitHub -> Tự động test và deploy lên VPS!
 git push origin main
 ```
+Sau khi push, bạn có thể vào tab **Actions** trên GitHub để theo dõi tiến trình kiểm thử và deploy trực tiếp.
 
-### Bước 4.2: Tại Terminal VPS AZDIGI
-Đăng nhập SSH vào VPS và chạy đúng 1 lệnh:
-```bash
-cd fire-safety-shop
-./deploy.sh
-```
-
-> 🛡️ **Bảo toàn dữ liệu 100%:** Dữ liệu đơn hàng mới, sản phẩm, bài đánh giá và cấu hình trong `server/data/` được gắn vào Docker Volume cố định trên VPS nên **hoàn toàn không bị mất hay ghi đè** khi cập nhật code.
+> 🛡️ **Bảo toàn dữ liệu 100%:** Dữ liệu đơn hàng mới, sản phẩm, bài đánh giá và cấu hình trong `server/data/` cùng file SSL Nginx được script sao lưu và khôi phục tự động trong mỗi lần deploy.
 
 ---
 
