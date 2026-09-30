@@ -74,8 +74,30 @@ jobs:
             echo "📂 Thư mục triển khai: $TARGET_DIR"
             cd "$TARGET_DIR"
 
-            # Đảm bảo quyền thực thi cho script deploy
-            chmod +x deploy.sh init-ssl.sh 2>/dev/null || true
+            # 1. Sao lưu tạm thời dữ liệu thực tế tại server/data và cấu hình SSL
+            BACKUP_DIR="/tmp/flameguard_deploy_backup_$(date +%s)"
+            mkdir -p "$BACKUP_DIR"
+            if [ -d "server/data" ]; then
+              cp -r server/data "$BACKUP_DIR/"
+            fi
+            if [ -f "nginx/conf.d/app.conf" ]; then
+              cp nginx/conf.d/app.conf "$BACKUP_DIR/app.conf"
+            fi
 
-            # Chạy quy trình deploy tự động
+            # 2. Đồng bộ mã nguồn mới nhất từ nhánh main (giải quyết triệt để lỗi xung đột git pull)
+            echo "📥 Đồng bộ mã nguồn mới nhất từ GitHub..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            # 3. Khôi phục lại dữ liệu và cấu hình SSL
+            if [ -d "$BACKUP_DIR/data" ]; then
+              cp -r "$BACKUP_DIR/data"/* server/data/ 2>/dev/null || true
+            fi
+            if [ -f "$BACKUP_DIR/app.conf" ]; then
+              cp "$BACKUP_DIR/app.conf" nginx/conf.d/app.conf
+            fi
+            rm -rf "$BACKUP_DIR"
+
+            # 4. Đảm bảo quyền thực thi và chạy deploy
+            chmod +x deploy.sh init-ssl.sh 2>/dev/null || true
             ./deploy.sh
