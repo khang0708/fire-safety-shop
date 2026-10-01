@@ -7,14 +7,13 @@ import {
   User,
   Lock,
   Eye,
-  EyeOff,
-  Sparkles
+  EyeOff
 } from 'lucide-react';
 import { authLoginApi } from '../api';
 
 export const AdminLoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
   const [authMode, setAuthMode] = useState('credentials'); // 'credentials' | 'pin'
-  const [username, setUsername] = useState('admin');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [pin, setPin] = useState('');
@@ -139,7 +138,7 @@ export const AdminLoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
                   autoFocus
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="admin hoặc admin.pccc@flameguard.vn"
+                  placeholder="Tên đăng nhập hoặc email quản trị..."
                   className="w-full text-sm py-2.5 px-3.5 rounded-xl border border-slate-300 focus:outline-none focus:border-red-600 bg-slate-50 font-medium"
                 />
               </div>
@@ -212,21 +211,11 @@ export const AdminLoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
             </form>
           )}
 
-          {/* Gợi ý đăng nhập ban đầu & Bảo mật */}
-          <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-xl text-[11px] text-amber-900 space-y-1">
-            <div className="font-bold flex items-center gap-1.5 text-amber-950">
-              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-              <span>Thông tin đăng nhập mặc định:</span>
-            </div>
-            <p className="text-slate-600">
-              • Tài khoản: <code className="bg-amber-100/80 px-1 py-0.5 rounded font-mono font-bold text-amber-900">admin</code>
-              <br />
-              • Mật khẩu: <code className="bg-amber-100/80 px-1 py-0.5 rounded font-mono font-bold text-amber-900">FlameGuard@2026</code>
-              <br />
-              • Hoặc mã PIN nhanh: <code className="bg-amber-100/80 px-1 py-0.5 rounded font-mono font-bold text-amber-900">1234</code>
-            </p>
-            <p className="text-[10px] text-amber-700 italic pt-0.5">
-              💡 Bạn có thể đổi tài khoản/mật khẩu bất kỳ lúc nào tại mục Cài Đặt sau khi đăng nhập.
+          {/* Thông báo chuẩn bảo mật */}
+          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl text-[11px] text-slate-500 flex items-center gap-2.5">
+            <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            <p className="leading-relaxed">
+              Cổng quản trị được mã hóa bảo mật chuẩn quân sự. Tự động khóa đăng nhập sau 5 lần nhập sai.
             </p>
           </div>
 

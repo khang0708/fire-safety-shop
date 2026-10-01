@@ -3005,7 +3005,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                         required
                         value={securityForm.currentPassword}
                         onChange={(e) => setSecurityForm({ ...securityForm, currentPassword: e.target.value })}
-                        placeholder="Nhập mật khẩu đang dùng (mặc định: FlameGuard@2026)"
+                        placeholder="Nhập mật khẩu đang dùng..."
                         className="w-full text-sm py-2.5 px-3.5 rounded-xl border border-slate-300 focus:outline-none focus:border-red-600 bg-slate-50 font-medium"
                       />
                     </div>
@@ -3051,7 +3051,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                         maxLength={10}
                         value={securityForm.newPin}
                         onChange={(e) => setSecurityForm({ ...securityForm, newPin: e.target.value })}
-                        placeholder="Để trống nếu không muốn đổi mã PIN (mặc định: 1234)"
+                        placeholder="Để trống nếu không muốn đổi mã PIN..."
                         className="w-full text-sm py-2.5 px-3.5 rounded-xl border border-slate-300 focus:outline-none focus:border-red-600 bg-slate-50 font-mono font-bold"
                       />
                       <span className="text-[11px] text-slate-400 block mt-1">
