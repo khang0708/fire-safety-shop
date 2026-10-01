@@ -1,6 +1,15 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { 
+  hashPassword, 
+  verifyPassword, 
+  createAdminToken, 
+  verifyAdminToken, 
+  authenticateAdmin, 
+  recordFailedAttempt, 
+  resetRateLimit 
+} from '../server/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -187,6 +196,55 @@ srcFiles.forEach(f => {
   }
 });
 assert(!hasHardcodedFbToken, 'Mã nguồn Client không chứa hardcode Meta Page Access Token bí mật');
+
+// ----------------------------------------------------
+// 7. KIỂM TRA MÃ HÓA MẬT KHẨU & JWT SESSION TOKEN (REAL AUTH HARDENING)
+// ----------------------------------------------------
+console.log('\n7️⃣ KIỂM TRA MÃ HÓA MẬT KHẨU & JWT SESSION TOKEN:');
+
+// Test 1: Băm mật khẩu có muối salt
+const testPass = 'FlameGuard@2026';
+const hashed = hashPassword(testPass);
+assert(typeof hashed === 'string' && hashed.includes(':'), 'Mật khẩu được băm an toàn theo chuẩn Salt:Hash (Scrypt)');
+
+// Test 2: Xác minh mật khẩu đúng và sai
+assert(verifyPassword(testPass, hashed), 'Xác thực mật khẩu chính xác thành công');
+assert(!verifyPassword('WrongPass123', hashed), 'Từ chối mật khẩu sai');
+assert(!verifyPassword('', hashed), 'Từ chối mật khẩu rỗng');
+assert(!verifyPassword(testPass, 'invalid_hash_format'), 'Xử lý an toàn khi hash bị hỏng format');
+
+// Test 3: Tạo và xác thực Session Token JWT (HMAC-SHA256)
+const sampleUser = { id: 'admin_test', username: 'admin', name: 'Chỉ Huy Trưởng', role: 'SUPER_ADMIN' };
+const token = createAdminToken(sampleUser, 3600);
+assert(typeof token === 'string' && token.split('.').length === 3, 'Tạo JWT Session Token đúng chuẩn 3 phần (header.payload.signature)');
+
+const decoded = verifyAdminToken(token);
+assert(decoded && decoded.sub === sampleUser.id && decoded.username === sampleUser.username, 'Giải mã và xác minh chữ ký điện tử HMAC-SHA256 thành công');
+
+// Test 4: Chặn Token bị chỉnh sửa (Tampered Token)
+const tamperedToken = token.slice(0, -5) + 'XXXXX';
+assert(!verifyAdminToken(tamperedToken), 'Chặn và từ chối Token bị giả mạo chữ ký (Tampered Signature)');
+
+// Test 5: Chặn Token hết hạn
+const expiredToken = createAdminToken(sampleUser, -10);
+assert(!verifyAdminToken(expiredToken), 'Chặn và từ chối Token đã hết hạn (Expired Token)');
+
+// Test 6: Kiểm tra phòng chống Brute-force (Rate Limiting)
+const testIpKey = 'test_ip_192.168.1.99';
+resetRateLimit(testIpKey);
+for (let i = 0; i < 4; i++) {
+  recordFailedAttempt(testIpKey);
+}
+const fifthAttempt = recordFailedAttempt(testIpKey);
+assert(fifthAttempt.isLocked === true, 'Hệ thống tự động kích hoạt khóa tài khoản sau 5 lần nhập sai');
+resetRateLimit(testIpKey);
+
+// Test 7: Xác thực đăng nhập qua authenticateAdmin
+const authSuccess = authenticateAdmin({ username: 'admin', password: 'FlameGuard@2026', clientIp: 'test_auth_ip' });
+assert(authSuccess.success && Boolean(authSuccess.token), 'Đăng nhập thành công với tài khoản và mật khẩu khởi tạo');
+
+const authFail = authenticateAdmin({ username: 'admin', password: 'SaiMatKhau@123', clientIp: 'test_auth_fail_ip' });
+assert(!authFail.success && authFail.error === 'INVALID_CREDENTIALS', 'Trả về lỗi INVALID_CREDENTIALS khi sai mật khẩu');
 
 // ----------------------------------------------------
 // TỔNG KẾT

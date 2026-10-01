@@ -3,6 +3,11 @@ import react from '@vitejs/plugin-react';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { 
+  authenticateAdmin, 
+  verifyAdminToken, 
+  changeAdminPassword 
+} from './server/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -153,6 +158,56 @@ function fullstackApiPlugin() {
           });
           req.on('error', () => resolve({}));
         });
+
+        // 0. AUTH API
+        if (url === '/api/auth/login' && req.method === 'POST') {
+          const body = await readBody();
+          const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || '127.0.0.1';
+          const result = authenticateAdmin({ ...body, clientIp });
+          res.statusCode = result.success ? 200 : (result.error === 'LOCKED' ? 429 : 401);
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify(result));
+          return;
+        }
+
+        if (url === '/api/auth/me' && req.method === 'GET') {
+          const authHeader = req.headers['authorization'];
+          const token = (authHeader && authHeader.startsWith('Bearer ')) ? authHeader.slice(7).trim() : req.headers['x-admin-token'];
+          const user = token ? verifyAdminToken(token) : null;
+          if (user) {
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: true, user }));
+          } else {
+            res.statusCode = 401;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: false, error: 'UNAUTHORIZED' }));
+          }
+          return;
+        }
+
+        if (url === '/api/auth/change-password' && req.method === 'POST') {
+          const authHeader = req.headers['authorization'];
+          const token = (authHeader && authHeader.startsWith('Bearer ')) ? authHeader.slice(7).trim() : req.headers['x-admin-token'];
+          const user = token ? verifyAdminToken(token) : null;
+          if (!user) {
+            res.statusCode = 401;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: false, error: 'UNAUTHORIZED' }));
+            return;
+          }
+          const body = await readBody();
+          const result = changeAdminPassword(user.sub, body);
+          res.statusCode = result.success ? 200 : 400;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify(result));
+          return;
+        }
+
+        if (url === '/api/auth/logout' && req.method === 'POST') {
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ success: true, message: 'Đã đăng xuất' }));
+          return;
+        }
 
         // 3. Settings API (Lưu Token & Cấu hình máy chủ)
         if (url === '/api/settings') {

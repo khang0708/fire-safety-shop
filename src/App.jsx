@@ -17,6 +17,8 @@ const AIFloristModal = lazy(() => import('./components/AIFloristModal').then(m =
 const OrderTrackingModal = lazy(() => import('./components/OrderTrackingModal').then(m => ({ default: m.OrderTrackingModal })));
 const ZaloInquiryModal = lazy(() => import('./components/ZaloInquiryModal').then(m => ({ default: m.ZaloInquiryModal })));
 const AdminLoginModal = lazy(() => import('./components/AdminLoginModal').then(m => ({ default: m.AdminLoginModal })));
+import { authMeApi, authLogoutApi } from './api';
+
 const AdminDashboard = lazy(() => import('./components/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 
 function AppContent() {
@@ -28,12 +30,45 @@ function AppContent() {
   const [adminUser, setAdminUser] = useState(() => {
     try {
       const cached = localStorage.getItem('flameguard_admin_user');
-      if (cached) return JSON.parse(cached);
-    } catch (e) {}
+      const token = localStorage.getItem('flameguard_admin_token');
+      if (cached && token) return JSON.parse(cached);
+    } catch (_e) {}
     return null;
   });
 
   const isAdminAuthenticated = Boolean(adminUser);
+
+  // Xác thực token với máy chủ khi tải trang
+  useEffect(() => {
+    const token = localStorage.getItem('flameguard_admin_token');
+    if (token) {
+      authMeApi()
+        .then(res => {
+          if (res.success && res.user) {
+            setAdminUser(res.user);
+          }
+        })
+        .catch(() => {
+          localStorage.removeItem('flameguard_admin_token');
+          localStorage.removeItem('flameguard_admin_user');
+          setAdminUser(null);
+          if (window.location.hash === '#admin') {
+            setIsAdminLoginOpen(true);
+          }
+        });
+    }
+  }, []);
+
+  // Lắng nghe sự kiện phiên làm việc hết hạn (401)
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      setAdminUser(null);
+      setIsAdminView(false);
+      setIsAdminLoginOpen(true);
+    };
+    window.addEventListener('flameguard:unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('flameguard:unauthorized', handleUnauthorized);
+  }, []);
 
   // Lắng nghe URL Hash (#admin) hoặc phím tắt bảo mật
   useEffect(() => {
@@ -81,8 +116,8 @@ function AppContent() {
     window.location.hash = '';
   };
 
-  const handleLogoutAdmin = () => {
-    localStorage.removeItem('flameguard_admin_user');
+  const handleLogoutAdmin = async () => {
+    await authLogoutApi();
     setAdminUser(null);
     setIsAdminView(false);
     window.location.hash = '';

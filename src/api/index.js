@@ -5,9 +5,11 @@ const API_BASE = '/api';
 
 async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('flameguard_admin_token') : null;
   const isAdminLoggedIn = typeof localStorage !== 'undefined' && Boolean(localStorage.getItem('flameguard_admin_user'));
   const headers = {
     'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     ...(isAdminLoggedIn ? { 'x-admin-auth': 'true' } : {}),
     ...(options.headers || {})
   };
@@ -18,8 +20,18 @@ async function request(endpoint, options = {}) {
     let data;
     try {
       data = JSON.parse(text);
-    } catch (e) {
+    } catch (_e) {
       throw new Error(`Máy chủ trả về phản hồi không hợp lệ: ${text.slice(0, 100)}`);
+    }
+
+    if (response.status === 401 && endpoint !== '/auth/login' && endpoint !== '/auth/me') {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('flameguard_admin_token');
+        localStorage.removeItem('flameguard_admin_user');
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('flameguard:unauthorized'));
+      }
     }
 
     if (!response.ok) {
@@ -31,6 +43,39 @@ async function request(endpoint, options = {}) {
     throw err;
   }
 }
+
+// ----------------------------------------------------
+// 0. AUTH API (Xác Thực Quản Trị Viên)
+// ----------------------------------------------------
+export const authLoginApi = async ({ username, password, pin }) => {
+  return await request('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ username, password, pin })
+  });
+};
+
+export const authMeApi = async () => {
+  return await request('/auth/me', {
+    method: 'GET'
+  });
+};
+
+export const authChangePasswordApi = async ({ currentPassword, newPassword, newPin }) => {
+  return await request('/auth/change-password', {
+    method: 'POST',
+    body: JSON.stringify({ currentPassword, newPassword, newPin })
+  });
+};
+
+export const authLogoutApi = async () => {
+  try {
+    await request('/auth/logout', { method: 'POST' });
+  } catch (_e) {}
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem('flameguard_admin_token');
+    localStorage.removeItem('flameguard_admin_user');
+  }
+};
 
 // ----------------------------------------------------
 // 1. PRODUCTS API

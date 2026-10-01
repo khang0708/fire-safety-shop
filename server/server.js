@@ -10,6 +10,11 @@ if (fs.existsSync('.env.local')) {
   dotenv.config({ path: '.env.local', override: true });
 }
 import { neon } from '@neondatabase/serverless';
+import { 
+  authenticateAdmin, 
+  verifyAdminToken, 
+  changeAdminPassword 
+} from './auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -42,6 +47,36 @@ const fetchWithTimeout = (url, options = {}, ms = DEFAULT_TIMEOUT_MS) => {
 app.use(cors());
 app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
+
+// ----------------------------------------------------
+// AUTHENTICATION MIDDLEWARE
+// ----------------------------------------------------
+export const requireAdminAuth = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = (authHeader && authHeader.startsWith('Bearer ')) 
+    ? authHeader.slice(7).trim() 
+    : (req.headers['x-admin-token'] || req.query.admin_token);
+
+  if (token) {
+    const user = verifyAdminToken(token);
+    if (user) {
+      req.adminUser = user;
+      return next();
+    }
+  }
+
+  // Hỗ trợ backwards-compatibility cho môi trường test
+  if (process.env.NODE_ENV === 'test' && req.headers['x-admin-auth'] === 'true') {
+    req.adminUser = { id: 'admin_test', username: 'test', role: 'SUPER_ADMIN' };
+    return next();
+  }
+
+  return res.status(401).json({
+    success: false,
+    error: 'UNAUTHORIZED',
+    message: 'Yêu cầu phiên đăng nhập quản trị viên hợp lệ (Token không hợp lệ hoặc đã hết hạn)'
+  });
+};
 
 const DATA_DIR = path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) {
@@ -213,6 +248,56 @@ app.get('/api/admin/events', (req, res) => {
 });
 
 // ----------------------------------------------------
+// 0. AUTHENTICATION REST API (Xác Thực Quản Trị Viên)
+// ----------------------------------------------------
+
+// POST /api/auth/login
+app.post('/api/auth/login', (req, res) => {
+  const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || req.socket?.remoteAddress || '127.0.0.1';
+  const { username, password, pin } = req.body || {};
+  const result = authenticateAdmin({ username, password, pin, clientIp });
+
+  if (result.success) {
+    return res.json(result);
+  }
+  const statusCode = result.error === 'LOCKED' ? 429 : 401;
+  return res.status(statusCode).json(result);
+});
+
+// GET /api/auth/me (Kiểm tra token còn hợp lệ không)
+app.get('/api/auth/me', (req, res) => {
+  const authHeader = req.headers['authorization'];
+  const token = (authHeader && authHeader.startsWith('Bearer ')) 
+    ? authHeader.slice(7).trim() 
+    : req.headers['x-admin-token'];
+
+  if (!token) {
+    return res.status(401).json({ success: false, error: 'NO_TOKEN', message: 'Chưa cung cấp token xác thực' });
+  }
+
+  const user = verifyAdminToken(token);
+  if (!user) {
+    return res.status(401).json({ success: false, error: 'INVALID_TOKEN', message: 'Phiên làm việc đã hết hạn hoặc không hợp lệ' });
+  }
+
+  return res.json({ success: true, user });
+});
+
+// POST /api/auth/change-password (Đổi mật khẩu / PIN admin)
+app.post('/api/auth/change-password', requireAdminAuth, (req, res) => {
+  const result = changeAdminPassword(req.adminUser.sub, req.body || {});
+  if (result.success) {
+    return res.json(result);
+  }
+  return res.status(400).json(result);
+});
+
+// POST /api/auth/logout
+app.post('/api/auth/logout', (req, res) => {
+  res.json({ success: true, message: 'Đã đăng xuất phiên làm việc' });
+});
+
+// ----------------------------------------------------
 // 1. PRODUCTS REST API (Quản Lý Sản Phẩm Mẫu Hoa)
 // ----------------------------------------------------
 
@@ -228,7 +313,7 @@ app.get('/api/products', async (req, res) => {
 });
 
 // POST /api/products (Thêm mẫu hoa mới)
-app.post('/api/products', async (req, res) => {
+app.post('/api/products', requireAdminAuth, async (req, res) => {
   try {
     const products = (await readJson('products.json')) || [];
     const newProduct = {
@@ -263,7 +348,7 @@ app.post('/api/products', async (req, res) => {
 });
 
 // PUT /api/products/:id (Cập nhật mẫu hoa)
-app.put('/api/products/:id', async (req, res) => {
+app.put('/api/products/:id', requireAdminAuth, async (req, res) => {
   try {
     const { id } = req.params;
     let products = (await readJson('products.json')) || [];
@@ -312,7 +397,7 @@ app.put('/api/products/:id', async (req, res) => {
 });
 
 // PATCH /api/products/:id/toggle (Bật/Tắt hiển thị)
-app.patch('/api/products/:id/toggle', async (req, res) => {
+app.patch('/api/products/:id/toggle', requireAdminAuth, async (req, res) => {
   try {
     const { id } = req.params;
     let products = (await readJson('products.json')) || [];
@@ -334,7 +419,7 @@ app.patch('/api/products/:id/toggle', async (req, res) => {
 });
 
 // DELETE /api/products/:id (Xóa mẫu hoa)
-app.delete('/api/products/:id', async (req, res) => {
+app.delete('/api/products/:id', requireAdminAuth, async (req, res) => {
   try {
     const { id } = req.params;
     let products = (await readJson('products.json')) || [];
@@ -493,7 +578,7 @@ app.post('/api/orders', async (req, res) => {
 });
 
 // PATCH /api/orders/:id/status
-app.patch('/api/orders/:id/status', async (req, res) => {
+app.patch('/api/orders/:id/status', requireAdminAuth, async (req, res) => {
   try {
     const { id } = req.params;
     let orders = (await readJson('orders.json')) || [];
@@ -583,7 +668,7 @@ app.post('/api/notifications/telegram-get-chat-id', async (req, res) => {
 });
 
 // Endpoint test gửi thông báo đơn hàng qua Telegram
-app.post('/api/notifications/telegram-test', async (req, res) => {
+app.post('/api/notifications/telegram-test', requireAdminAuth, async (req, res) => {
   try {
     const { botToken, chatId, testOrder } = req.body;
     if (!botToken || !chatId) {
@@ -652,7 +737,7 @@ app.get('/api/inventory', async (req, res) => {
   }
 });
 
-app.put('/api/inventory', async (req, res) => {
+app.put('/api/inventory', requireAdminAuth, async (req, res) => {
   try {
     const newInventory = req.body;
     await writeJson('inventory.json', newInventory);
@@ -796,7 +881,10 @@ app.get('/api/settings', async (req, res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     const settings = (await readJson('settings.json')) || {};
 
-    const isAdmin = req.headers['x-admin-auth'] === 'true' || req.query.scope === 'admin';
+    const authHeader = req.headers['authorization'];
+    const token = (authHeader && authHeader.startsWith('Bearer ')) ? authHeader.slice(7).trim() : req.headers['x-admin-token'];
+    const adminUser = token ? verifyAdminToken(token) : null;
+    const isAdmin = Boolean(adminUser) || (process.env.NODE_ENV === 'test' && req.headers['x-admin-auth'] === 'true');
 
     const safeSettings = {
       ...settings,
@@ -811,7 +899,7 @@ app.get('/api/settings', async (req, res) => {
   }
 });
 
-app.post('/api/settings', async (req, res) => {
+app.post('/api/settings', requireAdminAuth, async (req, res) => {
   try {
     const current = (await readJson('settings.json')) || {};
     const payload = { ...req.body };

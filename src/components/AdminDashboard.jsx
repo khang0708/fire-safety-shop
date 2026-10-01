@@ -15,7 +15,7 @@ import {
   requestBrowserNotificationPermission, 
   getBrowserNotificationPermission 
 } from '../services/notificationService';
-import { sendTelegramTestApi, getTelegramChatIdAutoApi, sendFacebookTestApi } from '../api';
+import { sendTelegramTestApi, getTelegramChatIdAutoApi, sendFacebookTestApi, authChangePasswordApi } from '../api';
 import { PrintInvoiceModal } from './PrintInvoiceModal';
 import { SalesAnalyticsView } from './SalesAnalyticsView';
 import { 
@@ -43,6 +43,9 @@ import {
   Zap,
   Copy,
   Bell,
+  KeyRound,
+  Lock,
+  ShieldAlert,
   Volume2,
   VolumeX,
   Radio,
@@ -166,6 +169,55 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
     freeShippingNote: shippingSettings?.freeShippingNote ?? 'FLAMEGUARD sẽ kiểm tra địa chỉ & xác nhận phí vận chuyển thiết bị PCCC chính xác theo quãng đường & tải trọng thực tế qua Zalo/Hotline'
   });
   const [isShippingSaved, setIsShippingSaved] = useState(false);
+
+  // State Bảo mật & Đổi Mật Khẩu Admin
+  const [securityForm, setSecurityForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+    newPin: ''
+  });
+  const [securityStatus, setSecurityStatus] = useState({ type: '', message: '' });
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  const handleChangePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setSecurityStatus({ type: '', message: '' });
+
+    if (securityForm.newPassword && securityForm.newPassword.length < 6) {
+      setSecurityStatus({ type: 'error', message: 'Mật khẩu mới phải có tối thiểu 6 ký tự.' });
+      return;
+    }
+
+    if (securityForm.newPassword && securityForm.newPassword !== securityForm.confirmPassword) {
+      setSecurityStatus({ type: 'error', message: 'Mật khẩu mới và xác nhận mật khẩu không khớp nhau.' });
+      return;
+    }
+
+    if (!securityForm.newPassword && !securityForm.newPin) {
+      setSecurityStatus({ type: 'error', message: 'Vui lòng điền mật khẩu mới hoặc mã PIN mới cần thay đổi.' });
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const res = await authChangePasswordApi({
+        currentPassword: securityForm.currentPassword,
+        newPassword: securityForm.newPassword,
+        newPin: securityForm.newPin
+      });
+      if (res.success) {
+        setSecurityStatus({ type: 'success', message: res.message || 'Đổi mật khẩu thành công!' });
+        setSecurityForm({ currentPassword: '', newPassword: '', confirmPassword: '', newPin: '' });
+      } else {
+        setSecurityStatus({ type: 'error', message: res.message || 'Không thể đổi mật khẩu.' });
+      }
+    } catch (err) {
+      setSecurityStatus({ type: 'error', message: err.message || 'Lỗi khi cập nhật mật khẩu.' });
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
 
   useEffect(() => {
     if (shippingSettings) {
@@ -755,7 +807,8 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                 items: [
                   { id: 'shipping_config', label: 'Vận Chuyển Chuyên Dụng', icon: Truck },
                   { id: 'zalo_config', label: 'Cấu Hình Zalo / FB / Tele', icon: Smartphone },
-                  { id: 'display_config', label: 'Giao Diện & Chạy Ads', icon: EyeOff }
+                  { id: 'display_config', label: 'Giao Diện & Chạy Ads', icon: EyeOff },
+                  { id: 'security_config', label: 'Bảo Mật & Mật Khẩu Admin', icon: KeyRound }
                 ]
               }
             ].map((group, gIdx) => (
@@ -874,6 +927,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                   {activeTab === 'shipping_config' && '🚚 Cấu Hình Vận Chuyển'}
                   {activeTab === 'zalo_config' && '💬 Kênh Chat & Khẩn Cấp'}
                   {activeTab === 'display_config' && '🎨 Giao Diện & Chạy Ads (Landing Page)'}
+                  {activeTab === 'security_config' && '🔐 Bảo Mật & Đổi Mật Khẩu Admin'}
                 </h1>
                 <span className="text-[10px] text-slate-400 hidden sm:block truncate">FLAMEGUARD PRO • Trung Tâm Điều Hành & Kiểm Định Kỹ Thuật PCCC</span>
               </div>
@@ -2812,6 +2866,226 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB: BẢO MẬT & ĐỔI MẬT KHẨU ADMIN */}
+        {activeTab === 'security_config' && (
+          <div className="space-y-6 animate-fade-in">
+            {/* Header Tab */}
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h3 className="font-heading text-2xl font-bold text-slate-900 flex items-center gap-2">
+                  <KeyRound className="w-6 h-6 text-red-600" />
+                  <span>Quản Trị & Cấu Hình Bảo Mật Portal</span>
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Kiểm soát xác thực đăng nhập, đổi mật khẩu quản trị viên cấp cao và quản lý mã PIN nội bộ chuẩn an toàn.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-800 px-3.5 py-1.5 rounded-full text-xs font-bold">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Phiên Làm Việc Đã Xác Thực Server</span>
+              </div>
+            </div>
+
+            {/* Thông báo trạng thái đổi mật khẩu */}
+            {securityStatus.message && (
+              <div className={`p-4 rounded-2xl text-xs font-bold flex items-center gap-3 border animate-fade-in ${
+                securityStatus.type === 'success'
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                  : 'bg-red-50 text-red-800 border-red-200'
+              }`}>
+                {securityStatus.type === 'success' ? (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                ) : (
+                  <ShieldAlert className="w-5 h-5 text-red-600 flex-shrink-0" />
+                )}
+                <span>{securityStatus.message}</span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              
+              {/* Cột 1: Thông tin phiên làm việc */}
+              <div className="space-y-6">
+                <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
+                  <h4 className="font-bold text-sm text-slate-800 flex items-center gap-2">
+                    <UserCheck className="w-4 h-4 text-red-600" />
+                    <span>Tài Khoản Đang Đăng Nhập</span>
+                  </h4>
+
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                    <img 
+                      src={adminUser?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"}
+                      alt="Avatar"
+                      className="w-12 h-12 rounded-2xl object-cover border border-slate-200"
+                    />
+                    <div className="min-w-0">
+                      <span className="font-bold text-sm text-slate-900 block truncate">
+                        {adminUser?.name || 'Chỉ Huy Trưởng PCCC'}
+                      </span>
+                      <span className="text-[11px] text-slate-500 block truncate font-mono">
+                        @{adminUser?.username || 'admin'}
+                      </span>
+                      <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                        {adminUser?.role || 'SUPER_ADMIN'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 text-xs text-slate-600 pt-2 border-t border-slate-100">
+                    <div className="flex justify-between py-1">
+                      <span className="text-slate-400">Hình thức đăng nhập:</span>
+                      <span className="font-bold text-slate-800">
+                        {adminUser?.provider === 'pin' ? 'Mã PIN bảo mật' : 'Tài khoản & Mật khẩu'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span className="text-slate-400">Token JWT:</span>
+                      <span className="font-bold text-emerald-600 flex items-center gap-1">
+                        <Check className="w-3.5 h-3.5" />
+                        HMAC-SHA256 (7 ngày)
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span className="text-slate-400">Trạng thái máy chủ:</span>
+                      <span className="font-bold text-slate-800">Đã đồng bộ</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tiêu chuẩn an ninh */}
+                <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white p-6 rounded-3xl shadow-sm space-y-3">
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-red-400 flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-red-500" />
+                    <span>Cơ Chế Bảo Vệ Đa Lớp</span>
+                  </h4>
+                  <ul className="text-xs space-y-2.5 text-slate-300">
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-400 font-bold">✓</span>
+                      <span><b>Mã hóa Salted Scrypt:</b> Mật khẩu băm 64-byte với muối salt ngẫu nhiên chống Rainbow table.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-400 font-bold">✓</span>
+                      <span><b>Timing-Safe Equal:</b> Ngăn chặn hoàn toàn tấn công phân tích thời gian phản hồi (Timing attack).</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-400 font-bold">✓</span>
+                      <span><b>Brute-force Shield:</b> Tự động khóa IP 15 phút nếu nhập sai quá 5 lần liên tiếp.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Cột 2-3: Form Đổi Mật Khẩu & Mã PIN */}
+              <div className="lg:col-span-2">
+                <form onSubmit={handleChangePasswordSubmit} className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6">
+                  <div>
+                    <h4 className="font-bold text-base text-slate-900 flex items-center gap-2">
+                      <Lock className="w-4 h-4 text-red-600" />
+                      <span>Cập Nhật Thông Tin Xác Thực Quản Trị</span>
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Vui lòng nhập mật khẩu hiện tại để xác nhận danh tính trước khi cập nhật mật khẩu hoặc mã PIN mới.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* Mật khẩu hiện tại */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                        <Lock className="w-3.5 h-3.5 text-red-600" />
+                        Mật khẩu hiện tại (Bắt buộc):
+                      </label>
+                      <input
+                        type="password"
+                        required
+                        value={securityForm.currentPassword}
+                        onChange={(e) => setSecurityForm({ ...securityForm, currentPassword: e.target.value })}
+                        placeholder="Nhập mật khẩu đang dùng (mặc định: FlameGuard@2026)"
+                        className="w-full text-sm py-2.5 px-3.5 rounded-xl border border-slate-300 focus:outline-none focus:border-red-600 bg-slate-50 font-medium"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                      {/* Mật khẩu mới */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          Mật khẩu mới (Tối thiểu 6 ký tự):
+                        </label>
+                        <input
+                          type="password"
+                          value={securityForm.newPassword}
+                          onChange={(e) => setSecurityForm({ ...securityForm, newPassword: e.target.value })}
+                          placeholder="Nhập mật khẩu mới..."
+                          className="w-full text-sm py-2.5 px-3.5 rounded-xl border border-slate-300 focus:outline-none focus:border-red-600 bg-slate-50 font-medium"
+                        />
+                      </div>
+
+                      {/* Xác nhận mật khẩu mới */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          Xác nhận mật khẩu mới:
+                        </label>
+                        <input
+                          type="password"
+                          value={securityForm.confirmPassword}
+                          onChange={(e) => setSecurityForm({ ...securityForm, confirmPassword: e.target.value })}
+                          placeholder="Nhập lại mật khẩu mới..."
+                          className="w-full text-sm py-2.5 px-3.5 rounded-xl border border-slate-300 focus:outline-none focus:border-red-600 bg-slate-50 font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Đổi mã PIN nhanh */}
+                    <div className="pt-2">
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                        <KeyRound className="w-3.5 h-3.5 text-slate-500" />
+                        Mã PIN truy cập nhanh mới (4 - 6 chữ số):
+                      </label>
+                      <input
+                        type="password"
+                        maxLength={10}
+                        value={securityForm.newPin}
+                        onChange={(e) => setSecurityForm({ ...securityForm, newPin: e.target.value })}
+                        placeholder="Để trống nếu không muốn đổi mã PIN (mặc định: 1234)"
+                        className="w-full text-sm py-2.5 px-3.5 rounded-xl border border-slate-300 focus:outline-none focus:border-red-600 bg-slate-50 font-mono font-bold"
+                      />
+                      <span className="text-[11px] text-slate-400 block mt-1">
+                        Mã PIN được dùng khi cần mở nhanh portal trên điện thoại hoặc máy tính bảng cứu hỏa.
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-xs text-slate-400">
+                      * Thay đổi sẽ có hiệu lực ngay lập tức trên máy chủ
+                    </span>
+
+                    <button
+                      type="submit"
+                      disabled={isChangingPassword || !securityForm.currentPassword}
+                      className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold px-6 py-3 rounded-2xl shadow-md transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
+                    >
+                      {isChangingPassword ? (
+                        <>
+                          <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span>Đang Lưu Cập Nhật...</span>
+                        </>
+                      ) : (
+                        <>
+                          <ShieldCheck className="w-4 h-4" />
+                          <span>Lưu Thay Đổi Bảo Mật</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
             </div>
           </div>
         )}
