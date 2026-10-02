@@ -4,25 +4,26 @@ import { SHOP_CATEGORIES } from '../data/flowers';
 import { Sparkles, ShieldCheck, Gauge, ArrowRight, Award, Phone } from 'lucide-react';
 
 export const CompactTrustBar = () => (
-  <div className="bg-slate-900 border-b border-red-900/40 text-white py-2.5 px-4 shadow-sm animate-fade-in">
-    <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1.5 bg-red-600/20 border border-red-500/40 px-2.5 py-1 rounded-lg text-red-300 font-bold font-mono text-[11px]">
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
-          100% TEM KIỂM ĐỊNH BCA
+  <div className="bg-slate-900 border-b border-red-900/40 text-white py-1.5 sm:py-2.5 px-3 sm:px-4 shadow-sm animate-fade-in">
+    <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 text-xs">
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 bg-red-600/20 border border-red-500/40 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg text-red-300 font-bold font-mono text-[10px] sm:text-[11px]">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping shrink-0" />
+          <span className="shrink-0">100% TEM KIỂM ĐỊNH BCA</span>
         </div>
-        <span className="hidden sm:inline text-slate-300 font-medium text-[11px]">
+        <span className="hidden md:inline text-slate-300 font-medium text-[11px]">
           • Tiêu chuẩn TCVN 3890:2023 • Sẵn sàng nghiệm thu & xuất hóa đơn VAT
         </span>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 shrink-0">
         <a
           href="tel:0843066604"
-          className="flex items-center gap-1.5 text-slate-200 hover:text-white font-bold text-xs bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700 hover:border-slate-600 transition-colors"
+          className="flex items-center gap-1 text-slate-200 hover:text-white font-bold text-[11px] sm:text-xs bg-slate-800/80 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg border border-slate-700 hover:border-slate-600 transition-colors"
         >
-          <Phone className="w-3.5 h-3.5 text-red-400" />
-          <span>Hotline: 0843.066.604</span>
+          <Phone className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-400 shrink-0" />
+          <span className="hidden xs:inline">Hotline: </span>
+          <span>0843.066.604</span>
         </a>
       </div>
     </div>
@@ -31,7 +32,6 @@ export const CompactTrustBar = () => (
 
 export const HeroSection = () => {
   const { 
-    setIsAIFloristOpen, 
     setSelectedOccasion, 
     activeCategory, 
     setActiveCategory,
@@ -113,13 +113,13 @@ export const HeroSection = () => {
 
             {/* 2 Nút CTA Hành Động Kỹ Thuật */}
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3.5 pt-2">
-              <button
-                onClick={() => setIsAIFloristOpen(true)}
+              <a
+                href="#catalog"
                 className="bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-bold px-6 py-3.5 rounded-xl shadow-lg shadow-red-600/30 hover:shadow-red-600/50 transition-all flex items-center gap-2 active:scale-95 group"
               >
-                <span>📐 Tính Toán Định Mức PCCC Theo Mặt Bằng</span>
+                <span>🧯 Xem Danh Mục Thiết Bị PCCC Chuẩn BCA</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </button>
+              </a>
 
               <a
                 href="#catalog"

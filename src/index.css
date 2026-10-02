@@ -33,6 +33,15 @@
   background: #DC2626;
 }
 
+/* Utility to hide scrollbar while preserving scrollability */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 @keyframes fadeInScale {
   from {
     opacity: 0;

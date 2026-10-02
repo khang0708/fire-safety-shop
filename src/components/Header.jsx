@@ -4,7 +4,6 @@ import { SHOP_CATEGORIES } from '../data/flowers';
 import { 
   ShoppingBag, 
   Heart, 
-  Sparkles, 
   Search, 
   Smartphone, 
   PackageCheck,
@@ -17,7 +16,6 @@ export const Header = () => {
     cart, 
     wishlist, 
     setIsCartOpen, 
-    setIsAIFloristOpen, 
     setIsTrackingOpen,
     isZaloMode,
     setIsZaloMode,
@@ -72,13 +70,13 @@ export const Header = () => {
               <span>🛡️ Tra Cứu Tem Kiểm Định</span>
             </button>
 
-            <button
-              onClick={() => setIsAIFloristOpen(true)}
+            <a
+              href="#catalog"
               className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 transition-all"
-              title="Tính toán số lượng bình và thiết bị theo diện tích m² TCVN 3890"
+              title="Tra cứu danh mục thiết bị theo tiêu chuẩn TCVN 3890"
             >
-              <span>📐 Định Mức TCVN 3890</span>
-            </button>
+              <span>📐 Danh Mục TCVN 3890</span>
+            </a>
           </div>
 
         </div>
@@ -135,17 +133,6 @@ export const Header = () => {
         {/* Action Buttons Cho Khách Hàng */}
         <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
           
-          {/* Nút Trợ lý AI Thẩm Định Rủi Ro PCCC */}
-          <button
-            onClick={() => setIsAIFloristOpen(true)}
-            className="flex items-center gap-1 sm:gap-1.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-[11px] sm:text-xs font-bold px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 group flex-shrink-0"
-            aria-label="Trợ lý thẩm định rủi ro PCCC bằng AI"
-          >
-            <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-300 group-hover:rotate-12 transition-transform" />
-            <span className="hidden sm:inline">Thẩm Định PCCC AI</span>
-            <span className="sm:hidden">AI PCCC</span>
-          </button>
-
           {/* Theo dõi đơn hàng & Kiểm định */}
           <button
             onClick={() => setIsTrackingOpen(true)}
