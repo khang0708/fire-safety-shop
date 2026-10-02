@@ -1,12 +1,10 @@
 import React from 'react';
 import { useShop } from '../context/ShopContext';
-import { SHOP_CATEGORIES, OCCASIONS, COLOR_TONES } from '../data/flowers';
+import { OCCASIONS, COLOR_TONES } from '../data/flowers';
 import { ShieldAlert, Layers } from 'lucide-react';
 
 export const OccasionFilter = () => {
   const { 
-    activeCategory,
-    setActiveCategory,
     selectedOccasion, 
     setSelectedOccasion, 
     selectedColor, 
@@ -15,39 +13,8 @@ export const OccasionFilter = () => {
   } = useShop();
 
   return (
-    <div id="catalog" className={`max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 ${isBannerEffectivelyHidden ? 'pt-1.5 pb-2 sm:pt-5 sm:pb-8' : 'pt-2 pb-3 sm:py-10'}`}>
-      
-      {/* 3 Trụ Cột Danh Mục Chuyển Đổi Nhanh (Pillar Segmented Tabs) */}
-      <div className="bg-slate-100 p-1 sm:p-2 rounded-xl sm:rounded-2xl border border-slate-200 shadow-xs max-w-3xl mx-auto mb-2 sm:mb-8">
-        <div className="grid grid-cols-3 gap-1 sm:gap-2">
-          {SHOP_CATEGORIES.map((cat) => {
-            const isActive = activeCategory === cat.id;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setActiveCategory(cat.id)}
-                className={`py-1.5 px-1 sm:py-2.5 sm:px-4 rounded-lg sm:rounded-xl font-bold transition-all duration-200 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2 active:scale-95 cursor-pointer text-xs min-w-0 overflow-hidden ${
-                  isActive
-                    ? 'bg-red-600 text-white shadow-md shadow-red-600/25'
-                    : 'text-slate-700 hover:text-red-600 hover:bg-white'
-                }`}
-              >
-                <span className="text-base sm:text-lg shrink-0 leading-none">{cat.icon}</span>
-                <span className="font-heading text-[10.5px] sm:text-xs leading-tight sm:leading-normal text-center sm:text-left line-clamp-1 w-full min-w-0 truncate">
-                  <span className="sm:hidden">{cat.shortName || cat.label}</span>
-                  <span className="hidden sm:inline">{cat.label}</span>
-                </span>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-normal hidden lg:inline shrink-0 ${
-                  isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
-                }`}>
-                  {cat.badge}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+    <div id="catalog" className={`max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 ${isBannerEffectivelyHidden ? 'pt-2 pb-2 sm:pt-4 sm:pb-6' : 'pt-2 pb-3 sm:py-8'}`}>
+
 
       {/* Tiêu đề & Phân Loại Công Trình TCVN 3890 - Ẩn trên Mobile để nhường chỗ hiển thị sản phẩm ngay lập tức */}
       <div className="text-center mb-6 sm:mb-8 hidden sm:block">
