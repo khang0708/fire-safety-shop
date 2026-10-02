@@ -256,7 +256,7 @@ export const ShopProvider = ({ children }) => {
   const openZaloInquiry = useCallback((product, specs = {}, selectedSize = null) => {
     if (!product) return;
     const cleanPhone = (shopZaloPhone || '0843066604').replace(/\D/g, '');
-    const currentUrl = typeof window !== 'undefined' ? window.location.origin : 'https://fire-safety-shop.vercel.app';
+    const currentUrl = typeof window !== 'undefined' ? window.location.origin : '';
     const sizeText = selectedSize?.name ? ` [Quy cách: ${selectedSize.name}]` : '';
     const price = selectedSize?.price || product.price || 0;
     

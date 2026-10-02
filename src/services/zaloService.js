@@ -12,7 +12,7 @@ export const isRunningInZalo = () => {
 // Hàm định dạng thông tin sản phẩm chi tiết để gửi kèm qua Zalo
 export const formatProductZaloMessage = (product, specs = {}, selectedSize = null) => {
   if (!product) return '';
-  const currentUrl = typeof window !== 'undefined' ? window.location.origin : 'https://fire-safety-shop.vercel.app';
+  const currentUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const sizeText = selectedSize?.name ? ` [Quy cách: ${selectedSize.name}]` : '';
   const price = selectedSize?.price || product.price || 0;
   

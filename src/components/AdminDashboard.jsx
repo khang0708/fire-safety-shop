@@ -383,7 +383,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
   };
 
   const handleCopyAdLink = () => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://fire-safety-shop.vercel.app';
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const adUrl = `${origin}/?view=catalog`;
     if (navigator?.clipboard?.writeText) {
       navigator.clipboard.writeText(adUrl);
@@ -2646,7 +2646,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
 
                   <div className="p-3 bg-slate-900 text-slate-100 rounded-2xl space-y-2 border border-slate-700 font-mono text-[11px]">
                     <div className="truncate text-amber-300">
-                      https://fire-safety-shop.vercel.app/?view=catalog
+                      {(typeof window !== 'undefined' ? window.location.origin : '') + '/?view=catalog'}
                     </div>
                     <button
                       type="button"
