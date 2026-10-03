@@ -239,7 +239,5 @@ const run = async () => {
   process.on('SIGTERM', cleanup);
 };
 
-// Chỉ tự chạy nếu được gọi trực tiếp từ command line
-if (process.argv[1] && process.argv[1].endsWith('server-watchdog.js')) {
-  run();
-}
+// Khởi chạy tiến trình giám sát Watchdog
+run();
