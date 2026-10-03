@@ -477,13 +477,14 @@ export const notifyServerStartup = async (extraInfo = {}) => {
   const mem = getMemoryStats();
   const timeStr = getVnTimeString();
   const port = process.env.PORT || 3001;
-  const domain = process.env.DOMAIN || 'pcccphatantam.com';
+  const rawDomain = process.env.DOMAIN || 'pcccphatantam.com';
+  const cleanDomain = rawDomain.replace(/^https?:\/\//i, '').replace(/\/+$/, '');
   const nodeEnv = process.env.NODE_ENV || 'production';
   const hostname = os.hostname();
 
   const htmlMessage = `🟢 <b>[MÁY CHỦ ĐÃ KHỞI ĐỘNG THÀNH CÔNG]</b>\n\n` +
     `🚀 <b>Dịch vụ:</b> FLAMEGUARD PRO PCCC Backend API\n` +
-    `🌐 <b>Domain:</b> <code>https://${escapeTelegramHtml(domain)}</code>\n` +
+    `🌐 <b>Domain:</b> <code>https://${escapeTelegramHtml(cleanDomain)}</code>\n` +
     `🔌 <b>Cổng (Port):</b> <code>${port}</code>\n` +
     `📡 <b>Môi trường:</b> <code>${escapeTelegramHtml(nodeEnv)}</code>\n` +
     `💻 <b>Node.js:</b> <code>${process.version}</code> (PID: ${process.pid} | Host: ${escapeTelegramHtml(hostname)})\n` +

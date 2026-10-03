@@ -19,7 +19,9 @@ const ROOT_DIR = path.join(__dirname, '..');
 const STATE_FILE = path.join(ROOT_DIR, 'server', 'data', '.watchdog_state.json');
 
 // Cấu hình giám sát
-const DEFAULT_DOMAIN = process.env.DOMAIN || 'pcccphatantam.com';
+const RAW_DOMAIN = process.env.DOMAIN || 'pcccphatantam.com';
+const CLEAN_DOMAIN = RAW_DOMAIN.replace(/^https?:\/\//i, '').replace(/\/+$/, '');
+const DEFAULT_DOMAIN = CLEAN_DOMAIN;
 const HEALTH_URL = process.env.HEALTH_URL || `https://${DEFAULT_DOMAIN}/api/health`;
 const CHECK_INTERVAL_SECONDS = parseInt(process.env.CHECK_INTERVAL_SECONDS || '60', 10);
 const MAX_CONSECUTIVE_FAILURES = parseInt(process.env.MAX_CONSECUTIVE_FAILURES || '2', 10);
@@ -110,7 +112,7 @@ export const performHealthCheck = async (options = {}) => {
   const candidateUrls = customUrl 
     ? [customUrl] 
     : [
-        `https://${process.env.DOMAIN || 'pcccphatantam.com'}/api/health`,
+        `https://${CLEAN_DOMAIN}/api/health`,
         'http://127.0.0.1/api/health',
         `http://127.0.0.1:${process.env.PORT || 3001}/api/health`
       ];
