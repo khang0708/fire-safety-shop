@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://fire-safety-shop.vercel.app/</loc>
-    <lastmod>2026-09-22</lastmod>
+    <loc>https://pcccphatantam.com/</loc>
+    <lastmod>2026-10-03</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://fire-safety-shop.vercel.app/#catalog</loc>
-    <lastmod>2026-09-22</lastmod>
+    <loc>https://pcccphatantam.com/#catalog</loc>
+    <lastmod>2026-10-03</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://fire-safety-shop.vercel.app/#reviews</loc>
-    <lastmod>2026-09-22</lastmod>
+    <loc>https://pcccphatantam.com/#reviews</loc>
+    <lastmod>2026-10-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://fire-safety-shop.vercel.app/llms.txt</loc>
-    <lastmod>2026-09-22</lastmod>
+    <loc>https://pcccphatantam.com/llms.txt</loc>
+    <lastmod>2026-10-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>

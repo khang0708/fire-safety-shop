@@ -3,6 +3,6 @@ Allow: /
 
 # LLMs & AI Agent Specifications
 # https://llmstxt.org/
-LLM-Full: https://fire-safety-shop.vercel.app/llms.txt
+LLM-Full: https://pcccphatantam.com/llms.txt
 
-Sitemap: https://fire-safety-shop.vercel.app/sitemap.xml
+Sitemap: https://pcccphatantam.com/sitemap.xml

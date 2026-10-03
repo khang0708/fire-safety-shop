@@ -216,7 +216,7 @@ async function generateManuals() {
           </div>
           <div class="header-right">
             <strong>BẢN DEMO &amp; SẢN XUẤT 2026</strong><br>
-            Link: fire-safety-shop.vercel.app
+            Link: pcccphatantam.com
           </div>
         </div>
 
@@ -586,7 +586,7 @@ async function generateManuals() {
             <div class="card-title">🔗 Cách 1: Thêm Đường Dẫn #admin Trên URL</div>
             <p style="color: #475569; margin-bottom: 8px;">Trên thanh địa chỉ trình duyệt, gõ thêm đuôi <code>#admin</code> vào sau tên miền:</p>
             <div style="background: white; border: 1px solid #cbd5e1; padding: 6px 10px; font-family: monospace; font-size: 11px; border-radius: 4px; color: #b91c1c;">
-              👉 https://fire-safety-shop.vercel.app/#admin
+              👉 https://pcccphatantam.com/#admin
             </div>
             <p style="font-size: 11px; color: #64748b; margin-top: 6px;">Hộp thoại xác thực Admin Login Modal sẽ lập tức hiển thị trên màn hình.</p>
           </div>
@@ -1056,7 +1056,7 @@ async function generateManuals() {
       </div>
 
       <div class="footer">
-        <div>FLAMEGUARD PRO VIETNAM • Hotline PCCC: 0843.066.604 • fire-safety-shop.vercel.app</div>
+        <div>FLAMEGUARD PRO VIETNAM • Hotline PCCC: 0843.066.604 • pcccphatantam.com</div>
         <div>Trang 1 / 2 • TCVN 3890:2023</div>
       </div>
     </div>
@@ -1135,12 +1135,12 @@ async function generateManuals() {
 
         <div class="alert-banner" style="margin-top: 6px;">
           <strong>📞 TRUNG TÂM HỖ TRỢ KỸ THUẬT &amp; CỨU HỘ FLAMEGUARD PRO:</strong><br>
-          Hotline tiếp nhận sự cố: <strong>0843.066.604</strong> • Đường dây nóng Cứu Hỏa Quốc Gia: <strong>114</strong> • Website: <strong>fire-safety-shop.vercel.app</strong>
+          Hotline tiếp nhận sự cố: <strong>0843.066.604</strong> • Đường dây nóng Cứu Hỏa Quốc Gia: <strong>114</strong> • Website: <strong>pcccphatantam.com</strong>
         </div>
       </div>
 
       <div class="footer">
-        <div>FLAMEGUARD PRO VIETNAM • Hotline PCCC: 0843.066.604 • fire-safety-shop.vercel.app</div>
+        <div>FLAMEGUARD PRO VIETNAM • Hotline PCCC: 0843.066.604 • pcccphatantam.com</div>
         <div>Trang 2 / 2 • Bản Quyền Thuộc Về FLAMEGUARD PRO</div>
       </div>
     </div>
