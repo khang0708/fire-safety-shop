@@ -28,7 +28,7 @@ const STATE_FILE = path.join(ROOT_DIR, 'server', 'data', '.watchdog_state.json')
 const HEALTH_URL = process.env.HEALTH_URL || `http://127.0.0.1:${process.env.PORT || 3001}/api/health`;
 const CHECK_INTERVAL_SECONDS = parseInt(process.env.CHECK_INTERVAL_SECONDS || '60', 10);
 const MAX_CONSECUTIVE_FAILURES = parseInt(process.env.MAX_CONSECUTIVE_FAILURES || '2', 10);
-const RESTART_COMMAND = process.env.RESTART_CMD || 'pm2 restart fire-safety-api || pm2 restart all';
+const RESTART_COMMAND = process.env.RESTART_CMD || 'docker restart flameguard-web || docker compose restart web || pm2 restart fire-safety-api || pm2 restart all';
 
 // ----------------------------------------------------
 // 1. QUẢN LÝ TRẠNG THÁI (PERSISTENT STATE)

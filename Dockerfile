@@ -30,6 +30,7 @@ RUN npm ci --omit=dev && npm cache clean --force
 # Copy built frontend assets and server application
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/server ./server
+COPY --from=builder /app/scripts ./scripts
 
 # Expose backend port
 EXPOSE 3001
