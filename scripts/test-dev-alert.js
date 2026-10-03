@@ -4,19 +4,12 @@
 // Cú pháp: node scripts/test-dev-alert.js [BOT_TOKEN] [CHAT_ID]
 // ====================================================
 
-import fs from 'fs';
 import os from 'os';
-import dotenv from 'dotenv';
 import { 
   cleanTelegramToken, 
   cleanTelegramChatId, 
   getDeveloperTelegramConfig 
 } from '../server/monitoringBot.js';
-
-dotenv.config();
-if (fs.existsSync('.env.local')) {
-  dotenv.config({ path: '.env.local', override: true });
-}
 
 const args = process.argv.slice(2);
 let inputToken = args[0];

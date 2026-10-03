@@ -8,15 +8,44 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
-import dotenv from 'dotenv';
-
-dotenv.config();
-if (fs.existsSync('.env.local')) {
-  dotenv.config({ path: '.env.local', override: true });
-}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Tự động nạp file .env thuần Node.js không phụ thuộc vào node_modules
+const loadEnvSafely = () => {
+  const rootDir = path.resolve(__dirname, '..');
+  const candidateFiles = [
+    path.join(rootDir, '.env'),
+    path.join(rootDir, '.env.local'),
+    path.join(process.cwd(), '.env'),
+    path.join(process.cwd(), '.env.local')
+  ];
+
+  for (const envFile of candidateFiles) {
+    try {
+      if (fs.existsSync(envFile)) {
+        const content = fs.readFileSync(envFile, 'utf8');
+        for (const line of content.split(/\r?\n/)) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith('#')) continue;
+          const eqIdx = trimmed.indexOf('=');
+          if (eqIdx > 0) {
+            const key = trimmed.slice(0, eqIdx).trim();
+            let val = trimmed.slice(eqIdx + 1).trim();
+            if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+              val = val.slice(1, -1);
+            }
+            if (process.env[key] === undefined) {
+              process.env[key] = val;
+            }
+          }
+        }
+      }
+    } catch {}
+  }
+};
+loadEnvSafely();
 
 // ----------------------------------------------------
 // 1. HELPERS: XỬ LÝ CHUỖI & DỌN DẸP DỮ LIỆU TELEGRAM
