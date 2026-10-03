@@ -962,6 +962,23 @@ app.post('/api/settings', requireAdminAuth, async (req, res) => {
       ...payload,
       updatedAt: req.body.updatedAt || new Date().toISOString()
     };
+
+    if (payload.brandSettings) {
+      updated.brandSettings = {
+        ...(current.brandSettings || {}),
+        ...payload.brandSettings
+      };
+      if (payload.brandSettings.hotline && !payload.shopZaloPhone) {
+        updated.shopZaloPhone = payload.brandSettings.hotline;
+      }
+    }
+    if (payload.shopZaloPhone) {
+      updated.brandSettings = {
+        ...(updated.brandSettings || current.brandSettings || {}),
+        hotline: payload.shopZaloPhone
+      };
+    }
+
     await writeJson('settings.json', updated);
     res.json({ success: true, data: updated, message: 'Đã lưu cấu hình cài đặt thành công!' });
   } catch (error) {
@@ -1221,11 +1238,36 @@ app.get('/api/health', (req, res) => {
 const distPath = path.join(__dirname, '../dist');
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
-  app.get('*', (req, res, next) => {
+  app.get('*', async (req, res, next) => {
     if (req.path.startsWith('/api')) {
       return next();
     }
-    res.sendFile(path.join(distPath, 'index.html'));
+    const indexPath = path.join(distPath, 'index.html');
+    if (!fs.existsSync(indexPath)) {
+      return next();
+    }
+    try {
+      const settings = (await readJson('settings.json')) || {};
+      const brand = settings.brandSettings;
+      if (brand && (brand.seoTitle || brand.seoDescription || brand.brandName)) {
+        let html = fs.readFileSync(indexPath, 'utf-8');
+        if (brand.seoTitle) {
+          html = html.replace(/<title>.*?<\/title>/i, `<title>${brand.seoTitle}</title>`);
+          html = html.replace(/(<meta\s+property=["']og:title["']\s+content=["']).*?(["'])/i, `$1${brand.seoTitle}$2`);
+          html = html.replace(/(<meta\s+name=["']twitter:title["']\s+content=["']).*?(["'])/i, `$1${brand.seoTitle}$2`);
+        }
+        if (brand.seoDescription) {
+          html = html.replace(/(<meta\s+name=["']description["']\s+content=["']).*?(["'])/i, `$1${brand.seoDescription}$2`);
+          html = html.replace(/(<meta\s+property=["']og:description["']\s+content=["']).*?(["'])/i, `$1${brand.seoDescription}$2`);
+          html = html.replace(/(<meta\s+name=["']twitter:description["']\s+content=["']).*?(["'])/i, `$1${brand.seoDescription}$2`);
+        }
+        if (brand.brandName) {
+          html = html.replace(/(<meta\s+property=["']og:site_name["']\s+content=["']).*?(["'])/i, `$1${brand.brandName}$2`);
+        }
+        return res.send(html);
+      }
+    } catch (_e) {}
+    res.sendFile(indexPath);
   });
 }
 

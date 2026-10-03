@@ -1,34 +1,41 @@
 import React from 'react';
-import { useShop } from '../context/ShopContext';
+import { useShop, formatPhoneNumber, getCleanPhoneNumber } from '../context/ShopContext';
 import { SHOP_CATEGORIES } from '../data/flowers';
 import { Sparkles, ShieldCheck, Gauge, ArrowRight, Award, Phone } from 'lucide-react';
 
-export const CompactTrustBar = () => (
-  <div className="bg-slate-900 border-b border-red-900/40 text-white py-1.5 sm:py-2.5 px-3 sm:px-4 shadow-sm animate-fade-in">
-    <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 text-xs">
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 bg-red-600/20 border border-red-500/40 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg text-red-300 font-bold font-mono text-[10px] sm:text-[11px]">
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping shrink-0" />
-          <span className="shrink-0">100% TEM KIỂM ĐỊNH BCA</span>
-        </div>
-        <span className="hidden md:inline text-slate-300 font-medium text-[11px]">
-          • Tiêu chuẩn TCVN 3890:2023 • Sẵn sàng nghiệm thu & xuất hóa đơn VAT
-        </span>
-      </div>
+export const CompactTrustBar = () => {
+  const { shopZaloPhone, brandSettings } = useShop();
+  const currentHotline = shopZaloPhone || brandSettings?.hotline || '0843066604';
+  const cleanPhone = getCleanPhoneNumber(currentHotline);
+  const formattedPhone = formatPhoneNumber(currentHotline);
 
-      <div className="flex items-center gap-2 shrink-0">
-        <a
-          href="tel:0843066604"
-          className="flex items-center gap-1 text-slate-200 hover:text-white font-bold text-[11px] sm:text-xs bg-slate-800/80 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg border border-slate-700 hover:border-slate-600 transition-colors"
-        >
-          <Phone className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-400 shrink-0" />
-          <span className="hidden xs:inline">Hotline: </span>
-          <span>0843.066.604</span>
-        </a>
+  return (
+    <div className="bg-slate-900 border-b border-red-900/40 text-white py-1.5 sm:py-2.5 px-3 sm:px-4 shadow-sm animate-fade-in">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 text-xs">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 bg-red-600/20 border border-red-500/40 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg text-red-300 font-bold font-mono text-[10px] sm:text-[11px]">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping shrink-0" />
+            <span className="shrink-0">100% TEM KIỂM ĐỊNH BCA</span>
+          </div>
+          <span className="hidden md:inline text-slate-300 font-medium text-[11px]">
+            • Tiêu chuẩn TCVN 3890:2023 • Sẵn sàng nghiệm thu & xuất hóa đơn VAT
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <a
+            href={`tel:${cleanPhone}`}
+            className="flex items-center gap-1 text-slate-200 hover:text-white font-bold text-[11px] sm:text-xs bg-slate-800/80 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg border border-slate-700 hover:border-slate-600 transition-colors"
+          >
+            <Phone className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-400 shrink-0" />
+            <span className="hidden xs:inline">Hotline: </span>
+            <span>{formattedPhone}</span>
+          </a>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 export const HeroSection = () => {
   const { 

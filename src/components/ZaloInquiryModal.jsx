@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useShop } from '../context/ShopContext';
+import { useShop, formatPhoneNumber } from '../context/ShopContext';
 import { ZaloIcon } from './ZaloIcon';
 import { Check, Copy, ExternalLink, X, ShieldCheck } from 'lucide-react';
 
@@ -57,7 +57,7 @@ export const ZaloInquiryModal = () => {
                 Tư Vấn Thiết Bị Qua Zalo
               </h3>
               <p className="text-[11px] text-blue-100 font-medium">
-                Hotline Kỹ Sư PCCC: <strong>{shopZaloPhone || '0843.066.604'}</strong>
+                Hotline Kỹ Sư PCCC: <strong>{formatPhoneNumber(shopZaloPhone || '0843.066.604')}</strong>
               </p>
             </div>
           </div>

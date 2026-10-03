@@ -38,6 +38,61 @@ import {
 
 const ShopContext = createContext();
 
+export const DEFAULT_BRAND_SETTINGS = {
+  brandName: 'FLAMEGUARD PRO',
+  brandSlogan: 'Hệ Thống Thiết Bị PCCC & CNCH Chuẩn Kiểm Định BCA',
+  logoUrl: '',
+  hotline: '0843.066.604',
+  address: 'Kho Tổng Nam: 128 Nguyễn Trãi, P. Bến Thành, Quận 1, TP.HCM',
+  secondaryAddress: 'Trạm Kỹ Thuật Bắc: 45 Lý Thường Kiệt, Q. Hoàn Kiếm, Hà Nội',
+  addresses: [
+    'Kho Tổng Nam: 128 Nguyễn Trãi, P. Bến Thành, Quận 1, TP.HCM',
+    'Trạm Kỹ Thuật Bắc: 45 Lý Thường Kiệt, Q. Hoàn Kiếm, Hà Nội'
+  ],
+  email: 'kythuat@flameguard.vn',
+  seoTitle: 'FLAMEGUARD PRO | Thiết Bị Cứu Hỏa & An Toàn PCCC Chuẩn Kiểm Định',
+  seoDescription: 'FLAMEGUARD PRO - Hệ thống phân phối thiết bị phòng cháy chữa cháy (PCCC) đạt chuẩn tem kiểm định Bộ Công An. Bình chữa cháy bột ABC, khí CO2, bọt foam, mặt nạ chống khói, thang dây thoát hiểm, kiểm tra áp suất trước khi giao.',
+  seoKeywords: 'bình chữa cháy, thiết bị pccc, bình cứu hỏa, mặt nạ chống khói độc, thang dây thoát hiểm, pccc gia đình, pccc chung cư, nạp sạc bình chữa cháy'
+};
+
+export const formatPhoneNumber = (phone) => {
+  if (!phone) return '0843.066.604';
+  const clean = String(phone).trim();
+  if (clean.includes('.') || clean.includes(' ') || clean.includes('-')) {
+    return clean;
+  }
+  const digits = clean.replace(/\D/g, '');
+  if (digits.length === 10) {
+    return `${digits.slice(0, 4)}.${digits.slice(4, 7)}.${digits.slice(7)}`;
+  }
+  if (digits.length === 11) {
+    return `${digits.slice(0, 4)}.${digits.slice(4, 7)}.${digits.slice(7)}`;
+  }
+  return clean || '0843.066.604';
+};
+
+export const getCleanPhoneNumber = (phone) => {
+  if (!phone) return '0843066604';
+  const digits = String(phone).replace(/\D/g, '');
+  return digits || '0843066604';
+};
+
+export const getShopAddresses = (brandSettings) => {
+  if (Array.isArray(brandSettings?.addresses) && brandSettings.addresses.length > 0) {
+    const valid = brandSettings.addresses
+      .map(a => (typeof a === 'string' ? a.trim() : (a && a.address ? String(a.address).trim() : '')))
+      .filter(a => a.length > 0);
+    if (valid.length > 0) return valid;
+  }
+  const fallback = [];
+  if (brandSettings?.address && String(brandSettings.address).trim()) fallback.push(String(brandSettings.address).trim());
+  if (brandSettings?.secondaryAddress && String(brandSettings.secondaryAddress).trim()) fallback.push(String(brandSettings.secondaryAddress).trim());
+  return fallback.length > 0 ? fallback : [
+    'Kho Tổng Nam: 128 Nguyễn Trãi, P. Bến Thành, Quận 1, TP.HCM',
+    'Trạm Kỹ Thuật Bắc: 45 Lý Thường Kiệt, Q. Hoàn Kiếm, Hà Nội'
+  ];
+};
+
 const INITIAL_ORDERS = [
   {
     id: 'FG-89241',
@@ -216,6 +271,13 @@ export const ShopProvider = ({ children }) => {
     const now = updateSettingsTimestamp();
     setShopZaloPhoneState(clean);
     localStorage.setItem('flameguard_shop_zalo_phone', clean);
+    setBrandSettingsState(prev => {
+      const next = { ...prev, hotline: clean };
+      try {
+        localStorage.setItem('flameguard_brand_settings', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
     saveSettingsApi({ shopZaloPhone: clean, updatedAt: now }).catch(() => {});
   };
 
@@ -387,6 +449,97 @@ export const ShopProvider = ({ children }) => {
       return merged;
     });
   };
+
+  // 3.4. Cấu hình Thương Hiệu & SEO
+  const [brandSettings, setBrandSettingsState] = useState(() => {
+    const cachedPhone = typeof localStorage !== 'undefined' ? localStorage.getItem('flameguard_shop_zalo_phone') : null;
+    try {
+      const cached = localStorage.getItem('flameguard_brand_settings');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        const addresses = getShopAddresses(parsed);
+        const activeHotline = cachedPhone || parsed.hotline || DEFAULT_BRAND_SETTINGS.hotline;
+        return { ...DEFAULT_BRAND_SETTINGS, ...parsed, addresses, hotline: activeHotline };
+      }
+    } catch (e) {}
+    return { ...DEFAULT_BRAND_SETTINGS, hotline: cachedPhone || DEFAULT_BRAND_SETTINGS.hotline };
+  });
+
+  // Tự động giữ hotline trong brandSettings đồng bộ 100% với shopZaloPhone
+  useEffect(() => {
+    if (shopZaloPhone) {
+      setBrandSettingsState(prev => {
+        if (prev?.hotline === shopZaloPhone) return prev;
+        const next = { ...prev, hotline: shopZaloPhone };
+        try {
+          localStorage.setItem('flameguard_brand_settings', JSON.stringify(next));
+        } catch (e) {}
+        return next;
+      });
+    }
+  }, [shopZaloPhone]);
+
+  const updateBrandSettings = (newSettings) => {
+    const now = updateSettingsTimestamp();
+    setBrandSettingsState(prev => {
+      const merged = { ...prev, ...newSettings };
+      if (Array.isArray(merged.addresses) && merged.addresses.length > 0) {
+        merged.address = merged.addresses[0] || '';
+        merged.secondaryAddress = merged.addresses[1] || '';
+      } else if (merged.address) {
+        merged.addresses = [merged.address, ...(merged.secondaryAddress ? [merged.secondaryAddress] : [])];
+      }
+      try {
+        localStorage.setItem('flameguard_brand_settings', JSON.stringify(merged));
+      } catch (e) {}
+
+      // Đồng bộ sang shopZaloPhone nếu có hotline
+      if (newSettings.hotline) {
+        const cleanHotline = String(newSettings.hotline).trim();
+        setShopZaloPhoneState(cleanHotline);
+        try {
+          localStorage.setItem('flameguard_shop_zalo_phone', cleanHotline);
+        } catch (e) {}
+      }
+
+      saveSettingsApi({ 
+        brandSettings: merged, 
+        ...(newSettings.hotline ? { shopZaloPhone: String(newSettings.hotline).trim() } : {}),
+        updatedAt: now 
+      }).catch(() => {});
+      return merged;
+    });
+  };
+
+  // Cập nhật động SEO Meta Tags & Document Title
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (brandSettings?.seoTitle) {
+      document.title = brandSettings.seoTitle;
+      const ogTitle = document.querySelector('meta[property="og:title"]');
+      if (ogTitle) ogTitle.setAttribute('content', brandSettings.seoTitle);
+      const twitterTitle = document.querySelector('meta[name="twitter:title"]');
+      if (twitterTitle) twitterTitle.setAttribute('content', brandSettings.seoTitle);
+    }
+    if (brandSettings?.seoDescription) {
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) metaDesc.setAttribute('content', brandSettings.seoDescription);
+      const ogDesc = document.querySelector('meta[property="og:description"]');
+      if (ogDesc) ogDesc.setAttribute('content', brandSettings.seoDescription);
+      const twitterDesc = document.querySelector('meta[name="twitter:description"]');
+      if (twitterDesc) twitterDesc.setAttribute('content', brandSettings.seoDescription);
+    }
+    if (brandSettings?.brandName) {
+      const ogSiteName = document.querySelector('meta[property="og:site_name"]');
+      if (ogSiteName) ogSiteName.setAttribute('content', brandSettings.brandName);
+    }
+    if (brandSettings?.logoUrl) {
+      const ogImage = document.querySelector('meta[property="og:image"]');
+      if (ogImage) ogImage.setAttribute('content', brandSettings.logoUrl);
+      const twitterImage = document.querySelector('meta[name="twitter:image"]');
+      if (twitterImage) twitterImage.setAttribute('content', brandSettings.logoUrl);
+    }
+  }, [brandSettings?.seoTitle, brandSettings?.seoDescription, brandSettings?.brandName, brandSettings?.logoUrl]);
 
   // Kiểm tra nếu URL có tham số quảng cáo / catalog mode
   const [isAdsUrlActive, setIsAdsUrlActive] = useState(() => {
@@ -853,6 +1006,13 @@ export const ShopProvider = ({ children }) => {
             setDisplaySettingsState(prev => ({ ...prev, ...apiSettings.displaySettings }));
             if (typeof localStorage !== 'undefined') localStorage.setItem('flameguard_display_settings', JSON.stringify(apiSettings.displaySettings));
           }
+          if (apiSettings.brandSettings) {
+            const serverHotline = apiSettings.shopZaloPhone || apiSettings.brandSettings.hotline || '0843.066.604';
+            setBrandSettingsState(prev => ({ ...prev, ...apiSettings.brandSettings, hotline: serverHotline }));
+            if (typeof localStorage !== 'undefined') localStorage.setItem('flameguard_brand_settings', JSON.stringify({ ...apiSettings.brandSettings, hotline: serverHotline }));
+          } else if (apiSettings.shopZaloPhone) {
+            setBrandSettingsState(prev => ({ ...prev, hotline: apiSettings.shopZaloPhone }));
+          }
           if (typeof localStorage !== 'undefined') localStorage.setItem('flameguard_settings_updated_at', apiSettings.updatedAt);
         } else if (localSettingsTime > serverSettingsTime) {
           // Local mới hơn server -> Chỉ Rehydrate server ngầm nếu là Quản trị viên có Token hợp lệ
@@ -865,6 +1025,7 @@ export const ShopProvider = ({ children }) => {
               shippingSettings: shippingSettings,
               facebookSettings: facebookSettings,
               displaySettings: displaySettings,
+              brandSettings: brandSettings,
               updatedAt: localSettingsTimestamp
             };
             saveSettingsApi(localSettingsPayload).catch(() => {});
@@ -878,7 +1039,7 @@ export const ShopProvider = ({ children }) => {
       if (!isSilent) console.warn('Lỗi refreshShopData:', err);
       return false;
     }
-  }, [updateProductsLocalAndBroadcast, shippingSettings, facebookSettings, displaySettings]);
+  }, [updateProductsLocalAndBroadcast, shippingSettings, facebookSettings, displaySettings, brandSettings]);
 
   // Khởi tạo và lắng nghe Real-time SSE & BroadcastChannel (trì hoãn sau first paint)
   useEffect(() => {
@@ -1537,6 +1698,11 @@ export const ShopProvider = ({ children }) => {
         setQuickViewProduct,
         displaySettings,
         updateDisplaySettings,
+        brandSettings,
+        updateBrandSettings,
+        getShopAddresses,
+        formatPhoneNumber,
+        getCleanPhoneNumber,
         isBannerEffectivelyHidden,
         toggleBannerVisibility,
         orders,

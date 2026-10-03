@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { useShop } from '../context/ShopContext';
+import { useShop, formatPhoneNumber } from '../context/ShopContext';
 import { Printer, X, ShieldCheck, FileCheck, QrCode, Download } from 'lucide-react';
 
 export const PrintInvoiceModal = ({ isOpen, onClose, order }) => {
-  const { shopZaloPhone } = useShop();
+  const { shopZaloPhone, brandSettings } = useShop();
+  const currentHotline = shopZaloPhone || brandSettings?.hotline || '0843.066.604';
+  const formattedHotline = formatPhoneNumber(currentHotline);
   const [printSection, setPrintSection] = useState('all'); // 'all' | 'invoice_only' | 'card_only'
 
   if (!isOpen || !order) return null;
@@ -276,10 +278,10 @@ export const PrintInvoiceModal = ({ isOpen, onClose, order }) => {
               <div className="flex justify-between items-start border-b-2 border-slate-900 pb-3">
                 <div>
                   <h2 className="font-heading text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
-                    FLAMEGUARD PRO VIETNAM
+                    {brandSettings?.brandName ? `${brandSettings.brandName} VIETNAM` : 'FLAMEGUARD PRO VIETNAM'}
                   </h2>
-                  <p className="text-[11px] text-slate-700 font-bold">HỆ THỐNG CUNG CẤP THIẾT BỊ PCCC CHUẨN KIỂM ĐỊNH BCA</p>
-                  <p className="text-[10px] text-slate-600 mt-0.5">📍 Kho tổng: 128 Nguyễn Trãi, Q.1, TP.HCM • Hotline kỹ thuật: {shopZaloPhone} • TCVN 3890:2023</p>
+                  <p className="text-[11px] text-slate-700 font-bold uppercase">{brandSettings?.brandSlogan || 'HỆ THỐNG CUNG CẤP THIẾT BỊ PCCC CHUẨN KIỂM ĐỊNH BCA'}</p>
+                  <p className="text-[10px] text-slate-600 mt-0.5">📍 {brandSettings?.address || 'Kho tổng: 128 Nguyễn Trãi, Q.1, TP.HCM'} • Hotline kỹ thuật: {formattedHotline} • TCVN 3890:2023</p>
                 </div>
 
                 <div className="text-right">
@@ -294,10 +296,10 @@ export const PrintInvoiceModal = ({ isOpen, onClose, order }) => {
               {/* Thông Tin Bên Giao & Bên Nhận */}
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-300 space-y-1">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Bên Giao (FLAMEGUARD PRO):</span>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Bên Giao ({brandSettings?.brandName || 'FLAMEGUARD PRO'}):</span>
                   <p className="font-bold text-slate-950 text-sm">Kỹ Sư Kiểm Định Nguyễn Tuấn</p>
                   <p className="text-slate-700">Bộ phận: Trạm Kiểm Định & Cấp Tem BCA</p>
-                  <p className="text-slate-700">Hotline bàn giao: <span className="font-mono font-bold text-red-600">{shopZaloPhone}</span></p>
+                  <p className="text-slate-700">Hotline bàn giao: <span className="font-mono font-bold text-red-600">{formattedHotline}</span></p>
                 </div>
 
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-300 space-y-1">

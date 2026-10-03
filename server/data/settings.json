@@ -1,5 +1,5 @@
 {
-  "shopZaloPhone": "0843066604",
+  "shopZaloPhone": "0909888777",
   "telegramBotToken": "",
   "telegramChatId": "",
   "isSoundEnabled": true,
@@ -25,5 +25,20 @@
     "welcomeMessage": "Chào bạn! FLAMEGUARD PRO sẵn sàng tư vấn giải pháp trang bị PCCC và thiết bị cứu hỏa chuẩn kiểm định cho gia đình và doanh nghiệp.",
     "autoReplyEnabled": true
   },
-  "updatedAt": "2026-09-25T03:48:15.334Z"
+  "brandSettings": {
+    "brandName": "PCCC Phát An Tâm",
+    "brandSlogan": "Hệ Thống Thiết Bị PCCC & CNCH Chuẩn Kiểm Định BCA",
+    "logoUrl": "",
+    "address": "Kho Tổng Nam: 128 Nguyễn Trãi, P. Bến Thành, Quận 1, TP.HCM",
+    "secondaryAddress": "",
+    "addresses": [
+      "Kho Tổng Nam: 128 Nguyễn Trãi, P. Bến Thành, Quận 1, TP.HCM"
+    ],
+    "email": "kythuat@flameguard1.vn",
+    "hotline": "0909888777",
+    "seoTitle": "PCCC Phát An Tâm | Thiết Bị Cứu Hỏa & An Toàn PCCC Chuẩn Kiểm Định",
+    "seoDescription": "PCCC Phát An Tâm - Hệ thống phân phối thiết bị phòng cháy chữa cháy (PCCC) đạt chuẩn tem kiểm định Bộ Công An. Bình chữa cháy bột ABC, khí CO2, bọt foam, mặt nạ chống khói, thang dây thoát hiểm, kiểm tra áp suất trước khi giao.",
+    "seoKeywords": "bình chữa cháy, thiết bị pccc, bình cứu hỏa, mặt nạ chống khói độc, thang dây thoát hiểm, pccc gia đình, pccc chung cư, nạp sạc bình chữa cháy"
+  },
+  "updatedAt": "2026-10-03T16:56:06.661Z"
 }

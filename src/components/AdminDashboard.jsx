@@ -67,8 +67,19 @@ import {
   Menu,
   RefreshCw,
   Gauge,
-  Sliders
+  Sliders,
+  Globe,
+  Mail,
+  MapPin,
+  Building2
 } from 'lucide-react';
+
+export const getBrandInitials = (name) => {
+  if (!name) return 'FG';
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+};
 
 export const ORDER_STATUS_MAP = {
   'NEW': { label: 'Tiếp Nhận Đơn', bg: 'bg-blue-100 text-blue-900 border-blue-300' },
@@ -118,6 +129,8 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
     updateFacebookSettings,
     displaySettings,
     updateDisplaySettings,
+    brandSettings,
+    updateBrandSettings,
     refreshShopData
   } = useShop();
 
@@ -216,6 +229,157 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
       setSecurityStatus({ type: 'error', message: err.message || 'Lỗi khi cập nhật mật khẩu.' });
     } finally {
       setIsChangingPassword(false);
+    }
+  };
+
+  // State Cấu hình Thương Hiệu & SEO
+  const initialAddresses = Array.isArray(brandSettings?.addresses) && brandSettings.addresses.length > 0
+    ? brandSettings.addresses
+    : [
+        brandSettings?.address || 'Kho Tổng Nam: 128 Nguyễn Trãi, P. Bến Thành, Quận 1, TP.HCM',
+        ...(brandSettings?.secondaryAddress ? [brandSettings.secondaryAddress] : ['Trạm Kỹ Thuật Bắc: 45 Lý Thường Kiệt, Q. Hoàn Kiếm, Hà Nội'])
+      ].filter(Boolean);
+
+  const [brandForm, setBrandForm] = useState({
+    brandName: brandSettings?.brandName ?? 'FLAMEGUARD PRO',
+    brandSlogan: brandSettings?.brandSlogan ?? 'Hệ Thống Thiết Bị PCCC & CNCH Chuẩn Kiểm Định BCA',
+    logoUrl: brandSettings?.logoUrl ?? '',
+    hotline: brandSettings?.hotline || shopZaloPhone || '0843.066.604',
+    address: brandSettings?.address ?? 'Kho Tổng Nam: 128 Nguyễn Trãi, P. Bến Thành, Quận 1, TP.HCM',
+    secondaryAddress: brandSettings?.secondaryAddress ?? 'Trạm Kỹ Thuật Bắc: 45 Lý Thường Kiệt, Q. Hoàn Kiếm, Hà Nội',
+    addresses: initialAddresses.length > 0 ? initialAddresses : ['Kho Tổng Nam: 128 Nguyễn Trãi, P. Bến Thành, Quận 1, TP.HCM'],
+    email: brandSettings?.email ?? 'kythuat@flameguard.vn',
+    seoTitle: brandSettings?.seoTitle ?? 'FLAMEGUARD PRO | Thiết Bị Cứu Hỏa & An Toàn PCCC Chuẩn Kiểm Định',
+    seoDescription: brandSettings?.seoDescription ?? 'FLAMEGUARD PRO - Hệ thống phân phối thiết bị phòng cháy chữa cháy (PCCC) đạt chuẩn tem kiểm định Bộ Công An. Bình chữa cháy bột ABC, khí CO2, bọt foam, mặt nạ chống khói, thang dây thoát hiểm, kiểm tra áp suất trước khi giao.',
+    seoKeywords: brandSettings?.seoKeywords ?? 'bình chữa cháy, thiết bị pccc, bình cứu hỏa, mặt nạ chống khói độc, thang dây thoát hiểm'
+  });
+  const [isBrandSaved, setIsBrandSaved] = useState(false);
+  const [logoUploadError, setLogoUploadError] = useState('');
+  const [logoInputMode, setLogoInputMode] = useState('upload'); // 'upload' | 'url'
+
+  useEffect(() => {
+    if (brandSettings) {
+      const addrs = Array.isArray(brandSettings.addresses) && brandSettings.addresses.length > 0
+        ? brandSettings.addresses
+        : [
+            brandSettings.address || 'Kho Tổng Nam: 128 Nguyễn Trãi, P. Bến Thành, Quận 1, TP.HCM',
+            ...(brandSettings.secondaryAddress ? [brandSettings.secondaryAddress] : [])
+          ].filter(Boolean);
+
+      setBrandForm({
+        brandName: brandSettings.brandName ?? 'FLAMEGUARD PRO',
+        brandSlogan: brandSettings.brandSlogan ?? 'Hệ Thống Thiết Bị PCCC & CNCH Chuẩn Kiểm Định BCA',
+        logoUrl: brandSettings.logoUrl ?? '',
+        hotline: brandSettings.hotline || shopZaloPhone || '0843.066.604',
+        address: brandSettings.address ?? 'Kho Tổng Nam: 128 Nguyễn Trãi, P. Bến Thành, Quận 1, TP.HCM',
+        secondaryAddress: brandSettings.secondaryAddress ?? 'Trạm Kỹ Thuật Bắc: 45 Lý Thường Kiệt, Q. Hoàn Kiếm, Hà Nội',
+        addresses: addrs.length > 0 ? addrs : ['Kho Tổng Nam: 128 Nguyễn Trãi, P. Bến Thành, Quận 1, TP.HCM'],
+        email: brandSettings.email ?? 'kythuat@flameguard.vn',
+        seoTitle: brandSettings.seoTitle ?? 'FLAMEGUARD PRO | Thiết Bị Cứu Hỏa & An Toàn PCCC Chuẩn Kiểm Định',
+        seoDescription: brandSettings.seoDescription ?? 'FLAMEGUARD PRO - Hệ thống phân phối thiết bị phòng cháy chữa cháy (PCCC) đạt chuẩn tem kiểm định Bộ Công An. Bình chữa cháy bột ABC, khí CO2, bọt foam, mặt nạ chống khói, thang dây thoát hiểm, kiểm tra áp suất trước khi giao.',
+        seoKeywords: brandSettings.seoKeywords ?? 'bình chữa cháy, thiết bị pccc, bình cứu hỏa, mặt nạ chống khói độc, thang dây thoát hiểm'
+      });
+    }
+  }, [brandSettings, shopZaloPhone]);
+
+  const handleAddressChange = (index, value) => {
+    setBrandForm(prev => {
+      const next = [...(prev.addresses || [])];
+      next[index] = value;
+      return {
+        ...prev,
+        addresses: next,
+        address: next[0] || '',
+        secondaryAddress: next[1] || ''
+      };
+    });
+  };
+
+  const handleAddAddress = () => {
+    setBrandForm(prev => {
+      const next = [...(prev.addresses || []), ''];
+      return {
+        ...prev,
+        addresses: next,
+        address: next[0] || '',
+        secondaryAddress: next[1] || ''
+      };
+    });
+  };
+
+  const handleRemoveAddress = (index) => {
+    setBrandForm(prev => {
+      const current = prev.addresses || [];
+      if (current.length <= 1) {
+        return {
+          ...prev,
+          addresses: [''],
+          address: '',
+          secondaryAddress: ''
+        };
+      }
+      const next = current.filter((_, idx) => idx !== index);
+      return {
+        ...prev,
+        addresses: next,
+        address: next[0] || '',
+        secondaryAddress: next[1] || ''
+      };
+    });
+  };
+
+  const handleLogoFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setLogoUploadError('Kích thước ảnh logo tối đa 2MB');
+      return;
+    }
+    setLogoUploadError('');
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setBrandForm(prev => ({ ...prev, logoUrl: event.target.result }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveBrandSettings = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    try {
+      await updateBrandSettings(brandForm);
+      if (brandForm.hotline) {
+        setShopZaloPhone(brandForm.hotline);
+      }
+      setIsBrandSaved(true);
+      setTimeout(() => setIsBrandSaved(false), 3000);
+    } catch (err) {
+      console.error('Lỗi khi lưu cấu hình thương hiệu & SEO:', err);
+    }
+  };
+
+  const handleResetBrandDefaults = () => {
+    if (typeof window !== 'undefined' && window.confirm('Khôi phục toàn bộ thông tin Thương Hiệu, Địa chỉ, Email và SEO về giá trị mặc định của FLAMEGUARD PRO?')) {
+      const defaults = {
+        brandName: 'FLAMEGUARD PRO',
+        brandSlogan: 'Hệ Thống Thiết Bị PCCC & CNCH Chuẩn Kiểm Định BCA',
+        logoUrl: '',
+        hotline: '0843.066.604',
+        address: 'Kho Tổng Nam: 128 Nguyễn Trãi, P. Bến Thành, Quận 1, TP.HCM',
+        secondaryAddress: 'Trạm Kỹ Thuật Bắc: 45 Lý Thường Kiệt, Q. Hoàn Kiếm, Hà Nội',
+        addresses: [
+          'Kho Tổng Nam: 128 Nguyễn Trãi, P. Bến Thành, Quận 1, TP.HCM',
+          'Trạm Kỹ Thuật Bắc: 45 Lý Thường Kiệt, Q. Hoàn Kiếm, Hà Nội'
+        ],
+        email: 'kythuat@flameguard.vn',
+        seoTitle: 'FLAMEGUARD PRO | Thiết Bị Cứu Hỏa & An Toàn PCCC Chuẩn Kiểm Định',
+        seoDescription: 'FLAMEGUARD PRO - Hệ thống phân phối thiết bị phòng cháy chữa cháy (PCCC) đạt chuẩn tem kiểm định Bộ Công An. Bình chữa cháy bột ABC, khí CO2, bọt foam, mặt nạ chống khói, thang dây thoát hiểm, kiểm tra áp suất trước khi giao.',
+        seoKeywords: 'bình chữa cháy, thiết bị pccc, bình cứu hỏa, mặt nạ chống khói độc, thang dây thoát hiểm'
+      };
+      setBrandForm(defaults);
+      updateBrandSettings(defaults);
+      setShopZaloPhone('0843.066.604');
+      setIsBrandSaved(true);
+      setTimeout(() => setIsBrandSaved(false), 3000);
     }
   };
 
@@ -478,6 +642,11 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
     setTelegramBotToken(cleanToken);
     setTelegramChatId(cleanChatId);
 
+    if (cleanPhone) {
+      setBrandForm(prev => ({ ...prev, hotline: cleanPhone }));
+      updateBrandSettings({ hotline: cleanPhone });
+    }
+
     if (updateFacebookSettings) {
       updateFacebookSettings({
         pageId: (inputFbPageId || '').trim(),
@@ -557,7 +726,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
   const handleSendShippingZaloQuote = (order) => {
     const shipFee = Number(order.shippingFee || 0);
     const shipText = shipFee === 0 ? 'Miễn phí vận chuyển (Freeship 0đ)' : `${shipFee.toLocaleString('vi-VN')}đ`;
-    const message = `🧯 Chào ${order.customerName}, FLAMEGUARD PRO xin gửi thông tin xác nhận & báo giá đơn thiết bị PCCC #${order.orderCode || order.id}:\n\n` +
+    const message = `🧯 Chào ${order.customerName}, ${brandSettings?.brandName || 'FLAMEGUARD PRO'} xin gửi thông tin xác nhận & báo giá đơn thiết bị PCCC #${order.orderCode || order.id}:\n\n` +
       `📦 Thiết bị: ${order.productName}\n` +
       `📍 Bàn giao đến: ${order.receiverAddress}\n` +
       `⏱️ Tiến độ bàn giao: ${order.deliverySlot}\n` +
@@ -757,15 +926,36 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
         `}>
           {/* Sidebar Top: Brand Header */}
           <div className="p-5 border-b border-white/10 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-red-600 flex items-center justify-center text-white font-black text-sm shadow-xs">
-                FG
-              </div>
-              <div>
-                <h2 className="font-heading text-base font-bold text-white leading-tight">FLAMEGUARD PRO</h2>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
-                  <span className="text-[10px] text-red-300 uppercase font-bold tracking-wider">Trạm Kiểm Định PCCC</span>
+            <div className="flex items-center gap-3 min-w-0">
+              {brandSettings?.logoUrl ? (
+                <div className="w-9 h-9 rounded-xl bg-white p-1 border border-slate-700 overflow-hidden flex-shrink-0 flex items-center justify-center shadow-xs">
+                  <img
+                    src={brandSettings.logoUrl}
+                    alt={brandSettings?.brandName || 'Logo'}
+                    className="w-full h-full object-contain"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  />
+                </div>
+              ) : (
+                <div className="w-9 h-9 rounded-xl bg-red-600 flex items-center justify-center text-white font-black text-xs shadow-xs flex-shrink-0">
+                  {getBrandInitials(brandSettings?.brandName || 'FG')}
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <h2 
+                  className="font-heading text-base font-bold text-white leading-tight truncate block"
+                  title={brandSettings?.brandName || 'FLAMEGUARD PRO'}
+                >
+                  {brandSettings?.brandName || 'FLAMEGUARD PRO'}
+                </h2>
+                <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping flex-shrink-0" />
+                  <span 
+                    className="text-[10px] text-red-300 uppercase font-bold tracking-wider truncate block"
+                    title={brandSettings?.brandSlogan || 'Trạm Kiểm Định PCCC'}
+                  >
+                    {brandSettings?.brandSlogan || 'Trạm Kiểm Định PCCC'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -805,6 +995,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
               {
                 groupTitle: 'CÀI ĐẶT HỆ THỐNG',
                 items: [
+                  { id: 'brand_seo_config', label: 'Thương Hiệu & SEO', icon: Globe },
                   { id: 'shipping_config', label: 'Vận Chuyển Chuyên Dụng', icon: Truck },
                   { id: 'zalo_config', label: 'Cấu Hình Zalo / FB / Tele', icon: Smartphone },
                   { id: 'display_config', label: 'Giao Diện & Chạy Ads', icon: EyeOff },
@@ -924,12 +1115,15 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                   {activeTab === 'discounts' && '🎟️ Voucher & Khuyến Mãi'}
                   {activeTab === 'reviews' && '⭐ Đánh Giá Nghiệm Thu'}
                   {activeTab === 'analytics' && '📊 Báo Cáo Doanh Thu & VAT'}
+                  {activeTab === 'brand_seo_config' && '🏷️ Thương Hiệu & Cấu Hình SEO'}
                   {activeTab === 'shipping_config' && '🚚 Cấu Hình Vận Chuyển'}
                   {activeTab === 'zalo_config' && '💬 Kênh Chat & Khẩn Cấp'}
                   {activeTab === 'display_config' && '🎨 Giao Diện & Chạy Ads (Landing Page)'}
                   {activeTab === 'security_config' && '🔐 Bảo Mật & Đổi Mật Khẩu Admin'}
                 </h1>
-                <span className="text-[10px] text-slate-400 hidden sm:block truncate">FLAMEGUARD PRO • Trung Tâm Điều Hành & Kiểm Định Kỹ Thuật PCCC</span>
+                <span className="text-[10px] text-slate-400 hidden sm:block truncate">
+                  {brandSettings?.brandName || 'FLAMEGUARD PRO'} • {brandSettings?.brandSlogan || 'Trung Tâm Điều Hành & Kiểm Định Kỹ Thuật PCCC'}
+                </span>
               </div>
             </div>
 
@@ -2865,6 +3059,617 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                     })}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB: CẤU HÌNH THƯƠNG HIỆU & TỐI ƯU SEO */}
+        {activeTab === 'brand_seo_config' && (
+          <div className="space-y-6 animate-fade-in">
+            {/* Header Tab */}
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h3 className="font-heading text-2xl font-bold text-slate-900 flex items-center gap-2.5">
+                  <Globe className="w-6 h-6 text-red-600" />
+                  <span>Cấu Hình Thương Hiệu & Tối Ưu SEO (Brand & Meta SEO)</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+                  Chỉnh sửa logo, tên thương hiệu, địa chỉ kho hàng, email liên hệ và các thông số thẻ Meta SEO (Title, Description). Hệ thống tự động đồng bộ thời gian thực sang Header, Footer, Hóa đơn xuất kho và dữ liệu tìm kiếm Google / Facebook.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1.5 rounded-full text-xs font-bold border bg-red-50 text-red-700 border-red-200 flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5" />
+                  <span>{brandForm.brandName || 'Chưa đặt tên'}</span>
+                </span>
+                <span className={`px-3 py-1.5 rounded-full text-xs font-bold border ${brandForm.logoUrl ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                  {brandForm.logoUrl ? '🖼️ Có Logo Riêng' : '🧯 Huy Hiệu PCCC Mặc Định'}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* CỘT TRÁI: FORM CẤU HÌNH (7 CỘT) */}
+              <div className="lg:col-span-7 space-y-6">
+                <form onSubmit={handleSaveBrandSettings} className="space-y-6">
+                  {/* PHẦN 1: NHẬN DIỆN THƯƠNG HIỆU & LOGO */}
+                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-5">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <h4 className="font-heading text-base font-bold text-slate-900 flex items-center gap-2">
+                        <Building2 className="w-5 h-5 text-red-600" />
+                        <span>1. Nhận Diện Thương Hiệu & Logo</span>
+                      </h4>
+                      <span className="text-[10px] text-slate-400 font-mono">Brand Identity</span>
+                    </div>
+
+                    <div className="space-y-4 text-xs">
+                      {/* Tên thương hiệu */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-800 mb-1.5">
+                          Tên Thương Hiệu (Brand Name) <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={brandForm.brandName}
+                          onChange={(e) => setBrandForm({ ...brandForm, brandName: e.target.value })}
+                          placeholder="Ví dụ: FLAMEGUARD PRO"
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 font-bold text-slate-900 text-sm"
+                        />
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          Hiển thị ở Logo Header, Chân trang (Footer), Bản quyền và Biên bản bàn giao xuất kho.
+                        </p>
+                      </div>
+
+                      {/* Slogan */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-800 mb-1.5">
+                          Khẩu Hiệu / Slogan Thương Hiệu
+                        </label>
+                        <input
+                          type="text"
+                          value={brandForm.brandSlogan}
+                          onChange={(e) => setBrandForm({ ...brandForm, brandSlogan: e.target.value })}
+                          placeholder="Ví dụ: Hệ Thống Thiết Bị PCCC & CNCH Chuẩn Kiểm Định BCA"
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 text-slate-900 font-medium"
+                        />
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          Dòng chữ nhỏ dưới logo Header và Footer, khẳng định uy tín & tiêu chuẩn nghiệp vụ.
+                        </p>
+                      </div>
+
+                      {/* Logo Thương Hiệu */}
+                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-bold text-slate-800">
+                            Logo Thương Hiệu
+                          </label>
+                          <div className="flex rounded-lg bg-slate-200 p-0.5 text-[11px]">
+                            <button
+                              type="button"
+                              onClick={() => setLogoInputMode('upload')}
+                              className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${logoInputMode === 'upload' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900'}`}
+                            >
+                              Tải Lên Tệp
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setLogoInputMode('url')}
+                              className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${logoInputMode === 'url' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900'}`}
+                            >
+                              Link URL
+                            </button>
+                          </div>
+                        </div>
+
+                        {logoInputMode === 'upload' ? (
+                          <div className="space-y-2">
+                            <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-300 hover:border-red-500 rounded-xl cursor-pointer bg-white transition-all group">
+                              <Upload className="w-6 h-6 text-slate-400 group-hover:text-red-600 transition-colors" />
+                              <span className="text-xs font-bold text-slate-700 group-hover:text-red-600 mt-1.5">
+                                Bấm để chọn ảnh logo từ thiết bị
+                              </span>
+                              <span className="text-[10px] text-slate-400 mt-0.5">
+                                Hỗ trợ PNG, JPG, WEBP, SVG (tối đa 2MB, nên dùng ảnh nền trong suốt)
+                              </span>
+                              <input
+                                type="file"
+                                accept="image/png, image/jpeg, image/webp, image/svg+xml"
+                                onChange={handleLogoFileUpload}
+                                className="sr-only"
+                              />
+                            </label>
+                            {logoUploadError && (
+                              <p className="text-xs text-red-600 font-bold">{logoUploadError}</p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            <input
+                              type="url"
+                              value={brandForm.logoUrl}
+                              onChange={(e) => setBrandForm({ ...brandForm, logoUrl: e.target.value })}
+                              placeholder="https://example.com/logo.png"
+                              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-red-600 text-xs bg-white"
+                            />
+                            <p className="text-[10px] text-slate-500">
+                              Dán đường dẫn ảnh logo trực tiếp từ website, Cloudinary, Imgur hoặc CDN.
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Live Preview Box cho Logo */}
+                        <div className="pt-2 border-t border-slate-200">
+                          <span className="text-[11px] font-bold text-slate-700 block mb-2">
+                            Xem trước hiển thị Logo:
+                          </span>
+                          <div className="grid grid-cols-2 gap-3">
+                            {/* Nền sáng (Header) */}
+                            <div className="p-3 bg-white rounded-xl border border-slate-200 flex flex-col items-center justify-center min-h-[70px] text-center">
+                              <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold mb-1.5">Trên Nền Sáng (Header)</span>
+                              {brandForm.logoUrl ? (
+                                <img
+                                  src={brandForm.logoUrl}
+                                  alt="Preview Logo Light"
+                                  className="h-10 max-w-full object-contain"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                    if (e.currentTarget.nextElementSibling) e.currentTarget.nextElementSibling.style.display = 'block';
+                                  }}
+                                />
+                              ) : (
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-slate-900 flex items-center justify-center text-white text-base">
+                                  🧯
+                                </div>
+                              )}
+                              <span className="hidden text-[10px] text-red-500 font-bold">Lỗi ảnh</span>
+                            </div>
+
+                            {/* Nền tối (Footer) */}
+                            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex flex-col items-center justify-center min-h-[70px] text-center">
+                              <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold mb-1.5">Trên Nền Tối (Footer)</span>
+                              {brandForm.logoUrl ? (
+                                <img
+                                  src={brandForm.logoUrl}
+                                  alt="Preview Logo Dark"
+                                  className="h-10 max-w-full object-contain"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                    if (e.currentTarget.nextElementSibling) e.currentTarget.nextElementSibling.style.display = 'block';
+                                  }}
+                                />
+                              ) : (
+                                <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white font-black text-xs">
+                                  {brandForm.brandName?.slice(0, 2).toUpperCase() || 'FG'}
+                                </div>
+                              )}
+                              <span className="hidden text-[10px] text-red-400 font-bold">Lỗi ảnh</span>
+                            </div>
+                          </div>
+
+                          {brandForm.logoUrl && (
+                            <div className="pt-2 flex justify-end">
+                              <button
+                                type="button"
+                                onClick={() => setBrandForm({ ...brandForm, logoUrl: '' })}
+                                className="text-xs text-rose-600 hover:text-rose-700 font-bold flex items-center gap-1 hover:underline cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Xóa logo & quay về biểu tượng PCCC mặc định</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* PHẦN 2: THÔNG TIN LIÊN HỆ & ĐỊA CHỈ KHO HÀNG (CẤU HÌNH ĐỘNG) */}
+                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-5">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div>
+                        <h4 className="font-heading text-base font-bold text-slate-900 flex items-center gap-2">
+                          <MapPin className="w-5 h-5 text-red-600" />
+                          <span>2. Hệ Thống Kho Hàng & Trạm Kiểm Định (Động)</span>
+                        </h4>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Thêm, sửa, xóa linh hoạt các kho hàng và trạm kiểm định. Tự động hiển thị đầy đủ tại Chân trang (Footer).
+                        </p>
+                      </div>
+                      <span className="text-[10px] bg-red-50 text-red-700 font-bold px-2.5 py-1 rounded-full border border-red-200">
+                        {brandForm.addresses?.length || 0} Kho Hàng
+                      </span>
+                    </div>
+
+                    <div className="space-y-3.5 text-xs">
+                      {/* Dynamic Address List */}
+                      {(brandForm.addresses || []).map((addr, idx) => (
+                        <div key={idx} className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 relative group hover:border-slate-300 transition-all">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-slate-800 text-[11px] flex items-center gap-1.5">
+                              <span className="w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center text-[10px] font-mono font-bold">
+                                {idx + 1}
+                              </span>
+                              <span>
+                                {idx === 0 ? 'Kho Tổng / Trụ Sở Chính (Mặc định)' : `Kho Hàng / Trạm Chi Nhánh #${idx + 1}`}
+                              </span>
+                            </span>
+
+                            {brandForm.addresses.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveAddress(idx)}
+                                className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1 rounded-lg transition-all flex items-center gap-1 text-[11px] font-bold cursor-pointer"
+                                title="Xóa địa chỉ kho này"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Xóa</span>
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="relative">
+                            <input
+                              type="text"
+                              required={idx === 0}
+                              value={addr}
+                              onChange={(e) => handleAddressChange(idx, e.target.value)}
+                              placeholder={
+                                idx === 0
+                                  ? 'Ví dụ: Kho Tổng Nam: 128 Nguyễn Trãi, P. Bến Thành, Quận 1, TP.HCM'
+                                  : 'Ví dụ: Trạm Kỹ Thuật Bắc: 45 Lý Thường Kiệt, Q. Hoàn Kiếm, Hà Nội'
+                              }
+                              className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 text-slate-900 font-medium bg-white text-xs"
+                            />
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Nút Thêm Địa Chỉ Mới */}
+                      <button
+                        type="button"
+                        onClick={handleAddAddress}
+                        className="w-full py-2.5 px-4 rounded-2xl border-2 border-dashed border-red-300 hover:border-red-500 bg-red-50/40 hover:bg-red-50 text-red-700 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs active:scale-[0.99]"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Thêm Địa Chỉ Kho Hàng / Trạm Kỹ Thuật Mới</span>
+                      </button>
+
+                      {/* Hotline & Email liên hệ */}
+                      <div className="pt-3 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-800 mb-1.5 flex items-center justify-between">
+                            <span>Hotline / SĐT Tư Vấn & Cứu Hộ <span className="text-red-500">*</span></span>
+                            <Phone className="w-3.5 h-3.5 text-slate-400" />
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={brandForm.hotline}
+                            onChange={(e) => setBrandForm({ ...brandForm, hotline: e.target.value })}
+                            placeholder="Ví dụ: 0843.066.604"
+                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 text-slate-900 font-bold font-mono"
+                          />
+                          <p className="text-[11px] text-slate-500 mt-1">
+                            Đồng bộ tự động lên Topbar banner, Trustbar, Footer và In phiếu nghiệm thu.
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-800 mb-1.5 flex items-center justify-between">
+                            <span>Email Kỹ Thuật & Báo Giá <span className="text-red-500">*</span></span>
+                            <Mail className="w-3.5 h-3.5 text-slate-400" />
+                          </label>
+                          <input
+                            type="email"
+                            required
+                            value={brandForm.email}
+                            onChange={(e) => setBrandForm({ ...brandForm, email: e.target.value })}
+                            placeholder="Ví dụ: kythuat@flameguard.vn"
+                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 text-slate-900 font-medium font-mono"
+                          />
+                          <p className="text-[11px] text-slate-500 mt-1">
+                            Email nhận thư báo giá thiết bị PCCC từ khách hàng, có link bấm trực tiếp ở Footer.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* PHẦN 3: CẤU HÌNH THẺ META SEO GOOGLE */}
+                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-5">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <h4 className="font-heading text-base font-bold text-slate-900 flex items-center gap-2">
+                        <Globe className="w-5 h-5 text-red-600" />
+                        <span>3. Tối Ưu Tìm Kiếm SEO (Title & Description)</span>
+                      </h4>
+                      <span className="text-[10px] text-slate-400 font-mono">Meta SEO</span>
+                    </div>
+
+                    <div className="space-y-4 text-xs">
+                      {/* SEO Title */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-xs font-bold text-slate-800">
+                            Tiêu Đề Trang SEO (SEO Title) <span className="text-red-500">*</span>
+                          </label>
+                          <div className="flex items-center gap-1.5">
+                            <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
+                              (brandForm.seoTitle || '').length >= 40 && (brandForm.seoTitle || '').length <= 70
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-amber-100 text-amber-800'
+                            }`}>
+                              {(brandForm.seoTitle || '').length}/70 ký tự
+                            </span>
+                            <span className="text-[10px] text-slate-400">(Khuyên dùng 50-65)</span>
+                          </div>
+                        </div>
+                        <input
+                          type="text"
+                          required
+                          value={brandForm.seoTitle}
+                          onChange={(e) => setBrandForm({ ...brandForm, seoTitle: e.target.value })}
+                          placeholder="Ví dụ: FLAMEGUARD PRO | Thiết Bị Cứu Hỏa & An Toàn PCCC Chuẩn Kiểm Định"
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 text-slate-900 font-bold"
+                        />
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          Tiêu đề xuất hiện ở dòng chữ xanh trên kết quả Google và thanh tiêu đề của trình duyệt web.
+                        </p>
+                      </div>
+
+                      {/* SEO Description */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-xs font-bold text-slate-800">
+                            Mô Tả Tìm Kiếm SEO (SEO Description) <span className="text-red-500">*</span>
+                          </label>
+                          <div className="flex items-center gap-1.5">
+                            <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
+                              (brandForm.seoDescription || '').length >= 100 && (brandForm.seoDescription || '').length <= 165
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-amber-100 text-amber-800'
+                            }`}>
+                              {(brandForm.seoDescription || '').length}/165 ký tự
+                            </span>
+                            <span className="text-[10px] text-slate-400">(Khuyên dùng 120-160)</span>
+                          </div>
+                        </div>
+                        <textarea
+                          rows={3}
+                          required
+                          value={brandForm.seoDescription}
+                          onChange={(e) => setBrandForm({ ...brandForm, seoDescription: e.target.value })}
+                          placeholder="Ví dụ: FLAMEGUARD PRO - Hệ thống phân phối thiết bị phòng cháy chữa cháy đạt chuẩn tem kiểm định Bộ Công An..."
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 text-slate-900 leading-relaxed"
+                        />
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          Đoạn văn ngắn tóm tắt nội dung khi tìm kiếm trên Google và khi dán link gửi qua Zalo/Facebook.
+                        </p>
+                      </div>
+
+                      {/* SEO Keywords */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-800 mb-1.5">
+                          Từ Khóa SEO (Meta Keywords)
+                        </label>
+                        <input
+                          type="text"
+                          value={brandForm.seoKeywords}
+                          onChange={(e) => setBrandForm({ ...brandForm, seoKeywords: e.target.value })}
+                          placeholder="Ví dụ: bình chữa cháy, thiết bị pccc, bình cứu hỏa, mặt nạ chống khói..."
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 text-slate-900"
+                        />
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          Các từ khóa phân cách bởi dấu phẩy giúp máy tìm kiếm hiểu đúng các mặt hàng kinh doanh.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Nút Submit & Reset */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="submit"
+                        className="bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-3 rounded-2xl text-xs shadow-md shadow-red-600/25 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+                      >
+                        <Check className="w-4 h-4" />
+                        <span>Lưu Cấu Hình Thương Hiệu & SEO</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleResetBrandDefaults}
+                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-3 rounded-2xl text-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                        title="Khôi phục lại toàn bộ dữ liệu ban đầu"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Khôi Phục Mặc Định</span>
+                      </button>
+                    </div>
+
+                    {isBrandSaved && (
+                      <div className="flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 px-3.5 py-2 rounded-xl border border-emerald-200 animate-fade-in font-bold">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        <span>Đã lưu thành công! Header, Footer và Meta SEO đã cập nhật.</span>
+                      </div>
+                    )}
+                  </div>
+                </form>
+              </div>
+
+              {/* CỘT PHẢI: TRỰC QUAN HÓA & LIVE PREVIEWS (5 CỘT) */}
+              <div className="lg:col-span-5 space-y-6">
+                {/* 1. GOOGLE SERP PREVIEW */}
+                <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">🔍</span>
+                      <h5 className="font-bold text-slate-900 text-xs">Mô Phỏng Kết Quả Tìm Kiếm Google (SERP)</h5>
+                    </div>
+                    <span className="text-[10px] bg-blue-50 text-blue-700 font-mono font-bold px-2 py-0.5 rounded-full border border-blue-200">
+                      Desktop / Mobile
+                    </span>
+                  </div>
+
+                  {/* Google Search Card Simulation */}
+                  <div className="p-4 bg-slate-50/70 rounded-2xl border border-slate-200/80 space-y-1.5">
+                    {/* Breadcrumb Google */}
+                    <div className="flex items-center gap-2 text-xs">
+                      {brandForm.logoUrl ? (
+                        <img
+                          src={brandForm.logoUrl}
+                          alt="Favicon"
+                          className="w-4 h-4 rounded-full object-contain"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      ) : (
+                        <div className="w-4 h-4 rounded-full bg-red-600 text-white flex items-center justify-center text-[10px]">🧯</div>
+                      )}
+                      <div className="flex flex-col">
+                        <span className="text-slate-900 text-[11px] font-semibold leading-none">{brandForm.brandName || 'FLAMEGUARD PRO'}</span>
+                        <span className="text-slate-500 text-[10px] leading-none mt-0.5 font-mono">https://pcccphatantam.com</span>
+                      </div>
+                    </div>
+
+                    {/* Google Blue Title */}
+                    <div className="pt-1">
+                      <a
+                        href="#"
+                        onClick={(e) => e.preventDefault()}
+                        className="text-[#1a0dab] hover:underline text-sm sm:text-base font-medium leading-snug line-clamp-2 block"
+                      >
+                        {brandForm.seoTitle || `${brandForm.brandName || 'FLAMEGUARD PRO'} | Thiết Bị Cứu Hỏa Chuẩn Kiểm Định`}
+                      </a>
+                    </div>
+
+                    {/* Google Snippet Description */}
+                    <p className="text-slate-600 text-xs leading-relaxed line-clamp-3">
+                      {brandForm.seoDescription || 'Hệ thống cung cấp thiết bị phòng cháy chữa cháy đạt chuẩn tem kiểm định Bộ Công An TCVN 3890...'}
+                    </p>
+                  </div>
+
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    💡 <b>Mẹo SEO:</b> Đặt từ khóa chính (bình chữa cháy, thiết bị PCCC) ngay ở đầu tiêu đề và cam kết dịch vụ (kiểm tra áp suất, giao hỏa tốc) ở đoạn mô tả để tăng tỷ lệ bấm (CTR).
+                  </p>
+                </div>
+
+                {/* 2. FACEBOOK / ZALO SHARE PREVIEW */}
+                <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">💬</span>
+                      <h5 className="font-bold text-slate-900 text-xs">Mô Phỏng Chia Sẻ Link (Zalo & Facebook)</h5>
+                    </div>
+                    <span className="text-[10px] bg-slate-100 text-slate-600 font-mono font-bold px-2 py-0.5 rounded-full">
+                      OpenGraph Card
+                    </span>
+                  </div>
+
+                  {/* OpenGraph Card Simulation */}
+                  <div className="border border-slate-300 rounded-2xl overflow-hidden bg-white shadow-2xs">
+                    <div className="h-32 bg-gradient-to-br from-slate-900 via-red-950 to-slate-900 flex items-center justify-center p-4 relative">
+                      {brandForm.logoUrl ? (
+                        <img
+                          src={brandForm.logoUrl}
+                          alt="Brand Logo"
+                          className="max-h-20 max-w-[80%] object-contain"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      ) : (
+                        <div className="flex items-center gap-3 text-white">
+                          <span className="text-4xl">🧯</span>
+                          <div>
+                            <span className="font-black text-xl tracking-tight block uppercase">{brandForm.brandName || 'FLAMEGUARD PRO'}</span>
+                            <span className="text-[10px] text-red-400 uppercase tracking-widest block">Chuẩn Kiểm Định Bộ Công An</span>
+                          </div>
+                        </div>
+                      )}
+                      <span className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-xs text-white text-[9px] px-1.5 py-0.5 rounded font-mono">
+                        PCCC PHÁT AN TÂM
+                      </span>
+                    </div>
+                    <div className="p-3 bg-slate-50 border-t border-slate-200 space-y-1">
+                      <span className="text-[10px] uppercase font-bold text-slate-500 font-mono block">
+                        PCCCPHATANTAM.COM
+                      </span>
+                      <h6 className="font-bold text-slate-900 text-xs line-clamp-1">
+                        {brandForm.seoTitle || brandForm.brandName}
+                      </h6>
+                      <p className="text-[11px] text-slate-600 line-clamp-2 leading-relaxed">
+                        {brandForm.seoDescription}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. LIVE MINI STORE HEADER & FOOTER SIMULATION */}
+                <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-3">
+                  <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    <h5 className="font-bold text-slate-900 text-xs">Mô Phỏng Trực Tiếp Trên Giao Diện Web</h5>
+                  </div>
+
+                  {/* Mini Header Simulation */}
+                  <div className="p-3 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-2">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Mini Header & Topbar:</span>
+                    {/* Simulated Top Bar */}
+                    <div className="bg-[#0F172A] text-amber-300 text-[9px] font-bold px-2.5 py-1 rounded-lg flex items-center justify-between truncate">
+                      <span className="truncate">🚨 CỨU HỘ & TƯ VẤN: <span className="text-white underline">{brandForm.hotline || shopZaloPhone}</span></span>
+                      <span className="text-slate-400 text-[8px] shrink-0 ml-1">TCVN 3890</span>
+                    </div>
+                    <div className="flex items-center gap-2 pt-0.5">
+                      {brandForm.logoUrl ? (
+                        <img
+                          src={brandForm.logoUrl}
+                          alt="Logo"
+                          className="w-7 h-7 rounded-lg object-contain border border-slate-200 bg-white p-0.5"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      ) : (
+                        <div className="w-7 h-7 rounded-lg bg-red-600 flex items-center justify-center text-white text-xs">🧯</div>
+                      )}
+                      <div className="min-w-0">
+                        <span className="font-black text-xs text-slate-900 block truncate uppercase font-heading">
+                          {brandForm.brandName || 'FLAMEGUARD PRO'}
+                        </span>
+                        <span className="text-[9px] text-slate-500 block truncate font-sans">
+                          {brandForm.brandSlogan}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Mini Footer Simulation */}
+                  <div className="p-3 rounded-2xl bg-slate-950 text-slate-300 border border-slate-800 space-y-2 text-[11px]">
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Mini Footer:</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-black text-white text-xs">{brandForm.brandName || 'FLAMEGUARD PRO'}</span>
+                      <span className="text-[9px] text-red-400 uppercase">TCVN 3890</span>
+                    </div>
+                    <div className="space-y-1 text-[10px] text-slate-400">
+                      {(brandForm.addresses && brandForm.addresses.length > 0 ? brandForm.addresses : [brandForm.address]).filter(Boolean).map((addr, aIdx) => (
+                        <p key={aIdx} className="truncate flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-red-400 shrink-0" />
+                          <span className="truncate">{addr}</span>
+                        </p>
+                      ))}
+                      <p className="truncate flex items-center gap-1">
+                        <Phone className="w-3 h-3 text-red-400 shrink-0" />
+                        <span className="truncate">Hotline: {brandForm.hotline || shopZaloPhone}</span>
+                      </p>
+                      <p className="truncate flex items-center gap-1">
+                        <Mail className="w-3 h-3 text-red-400 shrink-0" />
+                        <span className="truncate">{brandForm.email}</span>
+                      </p>
+                    </div>
+                    <p className="text-[9px] text-slate-600 pt-1 border-t border-slate-900">
+                      © 2026 {brandForm.brandName || 'FLAMEGUARD PRO'} Vietnam. All rights reserved.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

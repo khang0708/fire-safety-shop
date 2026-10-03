@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useShop } from '../context/ShopContext';
+import { useShop, formatPhoneNumber, getCleanPhoneNumber } from '../context/ShopContext';
 import { SHOP_CATEGORIES } from '../data/flowers';
 import { 
   ShoppingBag, 
@@ -24,12 +24,17 @@ export const Header = () => {
     activeOrder,
     shopZaloPhone,
     activeCategory,
-    setActiveCategory
+    setActiveCategory,
+    brandSettings
   } = useShop();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const categoryNavRef = useRef(null);
+
+  const currentHotline = shopZaloPhone || brandSettings?.hotline || '0843066604';
+  const cleanPhone = getCleanPhoneNumber(currentHotline);
+  const formattedPhone = formatPhoneNumber(currentHotline);
 
   // Tự động căn giữa danh mục đang chọn trên mobile
   useEffect(() => {
@@ -55,7 +60,7 @@ export const Header = () => {
               <span className="w-2 h-2 rounded-full bg-red-500 animate-ping flex-shrink-0" />
               <span className="text-red-400 flex-shrink-0">🚨</span>
               <strong className="tracking-tight uppercase">CỨU HỘ & TƯ VẤN:</strong>
-              <a href="tel:0843066604" className="text-white hover:text-amber-300 font-mono underline decoration-amber-400 underline-offset-2 flex-shrink-0">0843.066.604</a>
+              <a href={`tel:${cleanPhone}`} className="text-white hover:text-amber-300 font-mono underline decoration-amber-400 underline-offset-2 flex-shrink-0">{formattedPhone}</a>
               <span className="hidden xl:inline text-slate-400 font-normal truncate">• GIAO HỎA TỐC 60 PHÚT NỘI THÀNH • ĐẦY ĐỦ TEM BCA & BIÊN BẢN NGHIỆM THU</span>
             </span>
           </div>
@@ -95,21 +100,52 @@ export const Header = () => {
             {mobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
           </button>
           
-          <a href="#" className="flex items-center gap-2 sm:gap-2.5 group min-w-0" aria-label="Trang chủ FLAMEGUARD PRO">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-red-600 via-red-700 to-slate-900 flex items-center justify-center text-white shadow-md shadow-red-600/25 border border-red-500/40 group-hover:scale-105 transition-transform flex-shrink-0">
-              <span className="text-base sm:text-xl">🧯</span>
-            </div>
+          <a href="#" className="flex items-center gap-2 sm:gap-2.5 group min-w-0" aria-label={`Trang chủ ${brandSettings?.brandName || 'FLAMEGUARD PRO'}`}>
+            {brandSettings?.logoUrl ? (
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white flex items-center justify-center p-0.5 shadow-md shadow-red-600/10 border border-slate-200 group-hover:scale-105 transition-transform flex-shrink-0 overflow-hidden">
+                <img 
+                  src={brandSettings.logoUrl} 
+                  alt={brandSettings.brandName || 'Logo'} 
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    if (e.currentTarget.nextElementSibling) {
+                      e.currentTarget.nextElementSibling.style.display = 'flex';
+                    }
+                  }}
+                />
+                <div className="hidden w-full h-full bg-gradient-to-br from-red-600 via-red-700 to-slate-900 items-center justify-center text-white rounded-lg">
+                  <span className="text-base sm:text-xl">🧯</span>
+                </div>
+              </div>
+            ) : (
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-red-600 via-red-700 to-slate-900 flex items-center justify-center text-white shadow-md shadow-red-600/25 border border-red-500/40 group-hover:scale-105 transition-transform flex-shrink-0">
+                <span className="text-base sm:text-xl">🧯</span>
+              </div>
+            )}
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-1 sm:gap-1.5 min-w-0">
                 <span className="font-extrabold text-base sm:text-2xl tracking-tight text-slate-900 leading-none uppercase font-heading truncate">
-                  FLAMEGUARD<span className="text-red-600">PRO</span>
+                  {(() => {
+                    const name = brandSettings?.brandName || 'FLAMEGUARD PRO';
+                    const parts = name.trim().split(' ');
+                    if (parts.length > 1) {
+                      const last = parts.pop();
+                      return (
+                        <>
+                          {parts.join(' ')} <span className="text-red-600">{last}</span>
+                        </>
+                      );
+                    }
+                    return name;
+                  })()}
                 </span>
                 <span className="hidden xs:inline-block text-[9px] sm:text-[10px] bg-red-100 text-red-700 font-mono font-bold px-1 sm:px-1.5 py-0.5 rounded border border-red-200 flex-shrink-0">
                   TCVN 3890
                 </span>
               </div>
               <span className="hidden md:block text-[9px] uppercase tracking-[0.16em] text-slate-500 font-bold mt-1 font-sans truncate">
-                Hệ Thống Thiết Bị PCCC & CNCH Chuẩn Kiểm Định BCA
+                {brandSettings?.brandSlogan || 'Hệ Thống Thiết Bị PCCC & CNCH Chuẩn Kiểm Định BCA'}
               </span>
             </div>
           </a>

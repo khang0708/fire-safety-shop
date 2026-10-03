@@ -106,6 +106,14 @@ assert(Boolean(settings.facebookSettings), 'Cấu hình facebookSettings tồn t
 assert(Boolean(settings.facebookSettings?.pageId), 'Facebook Page ID được cấu hình mặc định');
 assert(Boolean(settings.facebookSettings?.verifyToken), 'Facebook Webhook Verify Token được thiết lập');
 
+// 7.1. Brand & SEO Configuration
+assert(Boolean(settings.brandSettings), 'Cấu hình brandSettings tồn tại trong settings.json');
+assert(settings.brandSettings?.brandName === 'FLAMEGUARD PRO', 'Tên thương hiệu mặc định là FLAMEGUARD PRO');
+assert(Boolean(settings.brandSettings?.address), 'Địa chỉ trụ sở/kho hàng được cấu hình');
+assert(Boolean(settings.brandSettings?.email), 'Email liên hệ được cấu hình');
+assert(Boolean(settings.brandSettings?.seoTitle), 'SEO Title được cấu hình');
+assert(Boolean(settings.brandSettings?.seoDescription), 'SEO Description được cấu hình');
+
 assert(cleanFacebookPageId('https://facebook.com/flameguardpccc') === 'flameguardpccc', 'cleanFacebookPageId làm sạch URL https://facebook.com/...');
 assert(cleanFacebookPageId('https://m.me/flameguardpccc/') === 'flameguardpccc', 'cleanFacebookPageId làm sạch link m.me/...');
 assert(cleanFacebookPageId('@flameguardpccc') === 'flameguardpccc', 'cleanFacebookPageId loại bỏ ký tự @');

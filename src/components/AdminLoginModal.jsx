@@ -10,8 +10,10 @@ import {
   EyeOff
 } from 'lucide-react';
 import { authLoginApi } from '../api';
+import { useShop } from '../context/ShopContext';
 
 export const AdminLoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
+  const { brandSettings } = useShop();
   const [authMode, setAuthMode] = useState('credentials'); // 'credentials' | 'pin'
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -73,11 +75,26 @@ export const AdminLoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
         
         {/* Header */}
         <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-red-950 text-white p-6 text-center relative border-b border-red-900/50">
-          <div className="w-12 h-12 rounded-2xl bg-red-600/30 border border-red-500/50 flex items-center justify-center mx-auto mb-3 shadow-inner">
-            <ShieldCheck className="w-6 h-6 text-red-400" />
-          </div>
-          <h3 className="font-heading text-xl font-bold tracking-tight">FLAMEGUARD Admin Portal</h3>
-          <p className="text-[11px] text-red-300 mt-1">Cổng điều hành & kiểm định kỹ thuật PCCC chuẩn BCA</p>
+          {brandSettings?.logoUrl ? (
+            <div className="w-12 h-12 rounded-2xl bg-white border border-slate-700 p-1 flex items-center justify-center mx-auto mb-3 shadow-inner overflow-hidden">
+              <img
+                src={brandSettings.logoUrl}
+                alt={brandSettings?.brandName || 'Logo'}
+                className="w-full h-full object-contain"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              />
+            </div>
+          ) : (
+            <div className="w-12 h-12 rounded-2xl bg-red-600/30 border border-red-500/50 flex items-center justify-center mx-auto mb-3 shadow-inner">
+              <ShieldCheck className="w-6 h-6 text-red-400" />
+            </div>
+          )}
+          <h3 className="font-heading text-xl font-bold tracking-tight">
+            {brandSettings?.brandName ? `${brandSettings.brandName} Portal` : 'FLAMEGUARD Admin Portal'}
+          </h3>
+          <p className="text-[11px] text-red-300 mt-1">
+            {brandSettings?.brandSlogan || 'Cổng điều hành & kiểm định kỹ thuật PCCC chuẩn BCA'}
+          </p>
           
           <button
             onClick={onClose}

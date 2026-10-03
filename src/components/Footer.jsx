@@ -1,11 +1,17 @@
 import React from 'react';
-import { useShop } from '../context/ShopContext';
+import { useShop, formatPhoneNumber, getCleanPhoneNumber } from '../context/ShopContext';
 import { openPersonalZaloChat } from '../services/zaloService';
 import { Phone, Mail, MapPin, ShieldCheck, Globe, MessageCircle, Lock, Flame } from 'lucide-react';
 import { ZaloIcon } from './ZaloIcon';
 
 export const Footer = ({ onOpenAdminLogin }) => {
-  const { shopZaloPhone } = useShop();
+  const { shopZaloPhone, brandSettings, getShopAddresses } = useShop();
+  const currentHotline = shopZaloPhone || brandSettings?.hotline || '0843066604';
+  const cleanPhone = getCleanPhoneNumber(currentHotline);
+  const formattedPhone = formatPhoneNumber(currentHotline);
+  const addressList = typeof getShopAddresses === 'function' 
+    ? getShopAddresses(brandSettings) 
+    : [brandSettings?.address || 'Kho Tổng Nam: 128 Nguyễn Trãi, P. Bến Thành, Quận 1, TP.HCM'];
   return (
     <footer className="bg-slate-950 text-slate-300 pt-16 pb-10 border-t border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -16,15 +22,34 @@ export const Footer = ({ onOpenAdminLogin }) => {
           <div className="space-y-4">
             <div>
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white font-black text-sm">
-                  FG
-                </div>
+                {brandSettings?.logoUrl ? (
+                  <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center p-0.5 overflow-hidden border border-slate-700 flex-shrink-0">
+                    <img
+                      src={brandSettings.logoUrl}
+                      alt={brandSettings.brandName || 'Logo'}
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        if (e.currentTarget.nextElementSibling) {
+                          e.currentTarget.nextElementSibling.style.display = 'flex';
+                        }
+                      }}
+                    />
+                    <div className="hidden w-full h-full rounded-lg bg-red-600 items-center justify-center text-white font-black text-xs">
+                      {brandSettings?.brandName?.slice(0, 2).toUpperCase() || 'FG'}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white font-black text-sm flex-shrink-0">
+                    {brandSettings?.brandName?.slice(0, 2).toUpperCase() || 'FG'}
+                  </div>
+                )}
                 <span className="font-heading text-2xl font-black tracking-tight text-white block">
-                  FLAMEGUARD PRO
+                  {brandSettings?.brandName || 'FLAMEGUARD PRO'}
                 </span>
               </div>
               <span className="text-[10px] uppercase tracking-[0.25em] text-red-400 font-bold block mt-1">
-                Thiết Bị PCCC Chuẩn Kiểm Định BCA
+                {brandSettings?.brandSlogan || 'Thiết Bị PCCC Chuẩn Kiểm Định BCA'}
               </span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed font-normal">
@@ -36,13 +61,13 @@ export const Footer = ({ onOpenAdminLogin }) => {
               </a>
               <button 
                 type="button"
-                onClick={() => openPersonalZaloChat(shopZaloPhone, 'Chào FLAMEGUARD PRO, tôi cần tư vấn thiết bị PCCC!')}
+                onClick={() => openPersonalZaloChat(cleanPhone, 'Chào FLAMEGUARD PRO, tôi cần tư vấn thiết bị PCCC!')}
                 className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-[#0068FF] hover:text-white flex items-center justify-center transition-all" 
-                title={`Chat Zalo (${shopZaloPhone})`}
+                title={`Chat Zalo (${formattedPhone})`}
               >
                 <ZaloIcon className="w-4 h-4" />
               </button>
-              <a href={`tel:${shopZaloPhone.replace(/\s+/g, '')}`} className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-red-600 hover:text-white flex items-center justify-center transition-all" title="Hotline">
+              <a href={`tel:${cleanPhone}`} className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-red-600 hover:text-white flex items-center justify-center transition-all" title="Hotline">
                 <Phone className="w-4 h-4" />
               </a>
             </div>
@@ -77,25 +102,23 @@ export const Footer = ({ onOpenAdminLogin }) => {
           <div className="space-y-3 text-xs text-slate-400">
             <h4 className="font-heading text-base font-bold text-white">Kho Hàng & Trạm Kiểm Định</h4>
             <div className="space-y-2">
-              <p className="flex items-start gap-2">
-                <MapPin className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                <span>Kho Tổng Nam: 128 Nguyễn Trãi, P. Bến Thành, Quận 1, TP.HCM</span>
-              </p>
-              <p className="flex items-start gap-2">
-                <MapPin className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                <span>Trạm Kỹ Thuật Bắc: 45 Lý Thường Kiệt, Q. Hoàn Kiếm, Hà Nội</span>
-              </p>
+              {addressList.map((addr, idx) => (
+                <p key={idx} className="flex items-start gap-2">
+                  <MapPin className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                  <span>{addr}</span>
+                </p>
+              ))}
               <p className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                <a href={`tel:${shopZaloPhone.replace(/\s+/g, '')}`} className="font-bold text-white hover:text-red-400 transition-colors">
-                  Hotline/Zalo PCCC: {shopZaloPhone} (24/7)
+                <a href={`tel:${cleanPhone}`} className="font-bold text-white hover:text-red-400 transition-colors">
+                  Hotline/Zalo PCCC: {formattedPhone} (24/7)
                 </a>
               </p>
               <p className="flex items-center gap-2">
                 <MessageCircle className="w-4 h-4 text-[#0068FF] flex-shrink-0" />
                 <button
                   type="button"
-                  onClick={() => openPersonalZaloChat(shopZaloPhone, 'Chào kỹ sư FLAMEGUARD PRO, tôi cần hỗ trợ kỹ thuật PCCC!')}
+                  onClick={() => openPersonalZaloChat(cleanPhone, `Chào kỹ sư ${brandSettings?.brandName || 'FLAMEGUARD PRO'}, tôi cần hỗ trợ kỹ thuật PCCC!`)}
                   className="text-slate-400 hover:text-white transition-colors underline flex items-center gap-1 text-[11px]"
                 >
                   Kênh Hỗ Trợ Kỹ Thuật Zalo Khẩn Cấp
@@ -103,7 +126,9 @@ export const Footer = ({ onOpenAdminLogin }) => {
               </p>
               <p className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-red-400 flex-shrink-0" />
-                <span>kythuat@flameguard.vn</span>
+                <a href={`mailto:${brandSettings?.email || 'kythuat@flameguard.vn'}`} className="hover:text-white transition-colors">
+                  {brandSettings?.email || 'kythuat@flameguard.vn'}
+                </a>
               </p>
             </div>
           </div>
@@ -112,7 +137,7 @@ export const Footer = ({ onOpenAdminLogin }) => {
 
         {/* Sub-footer */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-500 gap-3">
-          <p>© 2026 FLAMEGUARD PRO Vietnam. All rights reserved. Tiêu chuẩn TCVN 3890:2023.</p>
+          <p>© 2026 {brandSettings?.brandName || 'FLAMEGUARD PRO'} Vietnam. All rights reserved. Tiêu chuẩn TCVN 3890:2023.</p>
           
           <div className="flex items-center gap-4">
             <span className="text-slate-400">
