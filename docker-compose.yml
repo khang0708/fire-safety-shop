@@ -23,6 +23,8 @@ services:
     volumes:
       # Giữ nguyên dữ liệu sản phẩm, đơn hàng, cài đặt khi cập nhật container
       - ./server/data:/app/server/data
+    ports:
+      - "127.0.0.1:3001:3001"
     expose:
       - "3001"
     networks:

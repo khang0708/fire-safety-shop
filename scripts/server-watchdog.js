@@ -105,33 +105,44 @@ const getVnTime = () => {
 // ----------------------------------------------------
 
 export const performHealthCheck = async (options = {}) => {
-  const healthUrl = options.healthUrl || HEALTH_URL;
+  const customUrl = options.healthUrl || process.env.HEALTH_URL;
+  const candidateUrls = customUrl 
+    ? [customUrl] 
+    : [
+        `http://127.0.0.1:${process.env.PORT || 3001}/api/health`,
+        'http://127.0.0.1/api/health',
+        `https://127.0.0.1/api/health`,
+        `https://${process.env.DOMAIN || 'pcccphatantam.com'}/api/health`
+      ];
+
   const state = loadState();
   const nowStr = getVnTime();
   state.lastCheckTime = nowStr;
 
   let isHealthy = false;
   let errorDetails = '';
+  let successfulUrl = '';
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
+  for (const targetUrl of candidateUrls) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 6000);
 
-  try {
-    const res = await fetch(healthUrl, { signal: controller.signal });
-    if (res.ok) {
-      const data = await res.json().catch(() => ({}));
-      if (data.status === 'ONLINE' || res.status === 200) {
-        isHealthy = true;
-      } else {
-        errorDetails = `HTTP ${res.status}: Status=${data.status || 'UNKNOWN'}`;
+    try {
+      const res = await fetch(targetUrl, { signal: controller.signal });
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data.status === 'ONLINE' || res.status === 200) {
+          isHealthy = true;
+          successfulUrl = targetUrl;
+          break;
+        }
       }
-    } else {
       errorDetails = `HTTP ${res.status} ${res.statusText}`;
+    } catch (err) {
+      errorDetails = err.name === 'AbortError' ? 'Yêu cầu kiểm tra sức khỏe bị Timeout (>6s)' : err.message;
+    } finally {
+      clearTimeout(timer);
     }
-  } catch (err) {
-    errorDetails = err.name === 'AbortError' ? 'Yêu cầu kiểm tra sức khỏe bị Timeout (>8s)' : err.message;
-  } finally {
-    clearTimeout(timer);
   }
 
   if (isHealthy) {
