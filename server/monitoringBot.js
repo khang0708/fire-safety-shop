@@ -13,33 +13,149 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Tự động nạp file .env thuần Node.js không phụ thuộc vào node_modules
-const loadEnvSafely = () => {
+export const getEnvDiagnosticInfo = () => {
   const rootDir = path.resolve(__dirname, '..');
   const candidateFiles = [
     path.join(rootDir, '.env'),
+    path.join(rootDir, 'env'),
     path.join(rootDir, '.env.local'),
+    path.join(rootDir, '.env.production'),
     path.join(process.cwd(), '.env'),
-    path.join(process.cwd(), '.env.local')
+    path.join(process.cwd(), 'env'),
+    path.join(process.cwd(), '.env.local'),
+    path.join(rootDir, 'server', '.env'),
+    path.join(rootDir, 'server', 'env'),
+    path.join(process.cwd(), 'server', '.env'),
+    path.join(process.cwd(), 'server', 'env')
   ];
 
-  for (const envFile of candidateFiles) {
+  const uniqueCandidates = [...new Set(candidateFiles)];
+  const checked = [];
+  const found = [];
+
+  for (const envFile of uniqueCandidates) {
+    checked.push(envFile);
     try {
-      if (fs.existsSync(envFile)) {
-        const content = fs.readFileSync(envFile, 'utf8');
-        for (const line of content.split(/\r?\n/)) {
-          const trimmed = line.trim();
+      if (fs.existsSync(envFile) && fs.statSync(envFile).isFile()) {
+        const rawContent = fs.readFileSync(envFile, 'utf8').replace(/^\uFEFF/, '');
+        const keys = [];
+        for (const line of rawContent.split(/\r?\n/)) {
+          let trimmed = line.trim();
           if (!trimmed || trimmed.startsWith('#')) continue;
+          if (trimmed.startsWith('export ')) trimmed = trimmed.slice(7).trim();
+          let key = '';
           const eqIdx = trimmed.indexOf('=');
           if (eqIdx > 0) {
-            const key = trimmed.slice(0, eqIdx).trim();
-            let val = trimmed.slice(eqIdx + 1).trim();
-            if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
-              val = val.slice(1, -1);
-            }
-            if (process.env[key] === undefined) {
-              process.env[key] = val;
+            key = trimmed.slice(0, eqIdx).trim();
+          } else {
+            const colonMatch = trimmed.match(/^([A-Za-z0-9_]+)\s*:\s*(.+)$/);
+            if (colonMatch) key = colonMatch[1].trim();
+          }
+          if (key) keys.push(key);
+        }
+        found.push({
+          file: envFile,
+          isWithoutDot: path.basename(envFile) === 'env',
+          sizeBytes: rawContent.length,
+          keys
+        });
+      }
+    } catch {}
+  }
+
+  const devAlertsJsonPath = path.join(__dirname, 'data', 'dev-alerts.json');
+  const devAlertsJsonExists = fs.existsSync(devAlertsJsonPath);
+
+  return {
+    checkedFiles: checked,
+    foundFiles: found,
+    devAlertsJsonExists
+  };
+};
+
+export const loadEnvSafely = () => {
+  const rootDir = path.resolve(__dirname, '..');
+  const candidateFiles = [
+    path.join(rootDir, '.env'),
+    path.join(rootDir, 'env'),
+    path.join(rootDir, '.env.local'),
+    path.join(rootDir, '.env.production'),
+    path.join(process.cwd(), '.env'),
+    path.join(process.cwd(), 'env'),
+    path.join(process.cwd(), '.env.local'),
+    path.join(rootDir, 'server', '.env'),
+    path.join(rootDir, 'server', 'env'),
+    path.join(process.cwd(), 'server', '.env'),
+    path.join(process.cwd(), 'server', 'env')
+  ];
+
+  const uniqueCandidates = [...new Set(candidateFiles)];
+
+  for (const envFile of uniqueCandidates) {
+    try {
+      if (fs.existsSync(envFile) && fs.statSync(envFile).isFile()) {
+        let content = fs.readFileSync(envFile, 'utf8');
+        // Xóa ký tự BOM nếu file được lưu từ Windows UTF-8 with BOM
+        content = content.replace(/^\uFEFF/, '');
+
+        for (const line of content.split(/\r?\n/)) {
+          let trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith('#')) continue;
+
+          // Hỗ trợ cú pháp export KEY=VAL
+          if (trimmed.startsWith('export ')) {
+            trimmed = trimmed.slice(7).trim();
+          }
+
+          let key = '';
+          let val = '';
+
+          const eqIdx = trimmed.indexOf('=');
+          if (eqIdx > 0) {
+            key = trimmed.slice(0, eqIdx).trim();
+            val = trimmed.slice(eqIdx + 1).trim();
+          } else {
+            // Hỗ trợ định dạng YAML / key: val
+            const colonMatch = trimmed.match(/^([A-Za-z0-9_]+)\s*:\s*(.+)$/);
+            if (colonMatch) {
+              key = colonMatch[1].trim();
+              val = colonMatch[2].trim();
             }
           }
+
+          if (key) {
+            // Bỏ dấu nháy kép hoặc đơn
+            if ((val.startsWith('"') && val.includes('"', 1)) || (val.startsWith("'") && val.includes("'", 1))) {
+              const quoteChar = val[0];
+              const endQuoteIdx = val.indexOf(quoteChar, 1);
+              val = val.slice(1, endQuoteIdx);
+            } else {
+              // Cắt bỏ comment dạng # ở cuối dòng
+              const hashIdx = val.indexOf(' #');
+              if (hashIdx !== -1) {
+                val = val.slice(0, hashIdx).trim();
+              }
+            }
+
+            if (process.env[key] === undefined || process.env[key] === '') {
+              process.env[key] = val;
+            }
+            const upperKey = key.toUpperCase();
+            if (process.env[upperKey] === undefined || process.env[upperKey] === '') {
+              process.env[upperKey] = val;
+            }
+          }
+        }
+
+        // Tự động sao chép env -> .env nếu file tên là 'env' (không có dấu chấm)
+        // để tương thích hoàn hảo với Docker Compose và PM2
+        if (path.basename(envFile) === 'env') {
+          const dotEnvTarget = path.join(path.dirname(envFile), '.env');
+          try {
+            if (!fs.existsSync(dotEnvTarget)) {
+              fs.writeFileSync(dotEnvTarget, content, 'utf8');
+            }
+          } catch {}
         }
       }
     } catch {}
@@ -76,9 +192,25 @@ export const escapeTelegramHtml = (text) => {
 // ----------------------------------------------------
 
 export const getDeveloperTelegramConfig = () => {
-  // 1. Ưu tiên biến môi trường từ .env
-  let token = process.env.DEV_ALERT_TELEGRAM_TOKEN;
-  let chatId = process.env.DEV_ALERT_TELEGRAM_CHAT_ID;
+  loadEnvSafely();
+
+  // 1. Ưu tiên biến môi trường từ .env dành riêng cho Developer
+  const tokenCandidates = [
+    process.env.DEV_ALERT_TELEGRAM_TOKEN,
+    process.env.DEV_TELEGRAM_TOKEN,
+    process.env.DEV_TELEGRAM_BOT_TOKEN,
+    process.env.DEV_ALERT_BOT_TOKEN,
+    process.env.DEV_BOT_TOKEN
+  ];
+  let token = tokenCandidates.find(t => t && String(t).trim().length > 0) || '';
+
+  const chatIdCandidates = [
+    process.env.DEV_ALERT_TELEGRAM_CHAT_ID,
+    process.env.DEV_TELEGRAM_CHAT_ID,
+    process.env.DEV_ALERT_CHAT_ID,
+    process.env.DEV_CHAT_ID
+  ];
+  let chatId = chatIdCandidates.find(c => c !== undefined && c !== null && String(c).trim().length > 0) || '';
 
   // 2. Dự phòng: file riêng tư server/data/dev-alerts.json (đã được gitignore)
   if (!token || !chatId) {
@@ -87,7 +219,7 @@ export const getDeveloperTelegramConfig = () => {
       if (fs.existsSync(devAlertsPath)) {
         const fileContent = fs.readFileSync(devAlertsPath, 'utf8');
         const data = JSON.parse(fileContent);
-        token = token || data.telegramBotToken || data.botToken;
+        token = token || data.telegramBotToken || data.botToken || data.token;
         chatId = chatId || data.telegramChatId || data.chatId;
       }
     } catch {

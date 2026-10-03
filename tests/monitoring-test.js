@@ -15,6 +15,7 @@ import {
   notifyServerWarning,
   notifyServerStartup,
   testDeveloperServerAlert,
+  getEnvDiagnosticInfo,
   resetErrorHistoryForTest 
 } from '../server/monitoringBot.js';
 
@@ -208,6 +209,16 @@ assert(unconfiguredStartupRes.success === false, 'notifyServerStartup chạy an 
 
 const testAlertRes = await testDeveloperServerAlert('', '');
 assert(testAlertRes.success === false, 'testDeveloperServerAlert từ chối khi thiếu token/chatId');
+
+// ----------------------------------------------------
+// 6. KIỂM THỬ TÍNH NĂNG NẠP CẤU HÌNH & CHẨN ĐOÁN ENV
+// ----------------------------------------------------
+console.log('\n6️⃣ KIỂM TRA TỰ ĐỘNG NẠP VÀ CHẨN ĐOÁN ENV:');
+
+const diag = getEnvDiagnosticInfo();
+assert(Array.isArray(diag.checkedFiles), 'getEnvDiagnosticInfo trả về danh sách checkedFiles');
+assert(Array.isArray(diag.foundFiles), 'getEnvDiagnosticInfo trả về danh sách foundFiles');
+assert(typeof diag.devAlertsJsonExists === 'boolean', 'getEnvDiagnosticInfo trả về trạng thái devAlertsJsonExists');
 
 // ----------------------------------------------------
 // KẾT QUẢ KIỂM THỬ
