@@ -19,7 +19,8 @@ const ROOT_DIR = path.join(__dirname, '..');
 const STATE_FILE = path.join(ROOT_DIR, 'server', 'data', '.watchdog_state.json');
 
 // Cấu hình giám sát
-const HEALTH_URL = process.env.HEALTH_URL || `http://127.0.0.1:${process.env.PORT || 3001}/api/health`;
+const DEFAULT_DOMAIN = process.env.DOMAIN || 'pcccphatantam.com';
+const HEALTH_URL = process.env.HEALTH_URL || `https://${DEFAULT_DOMAIN}/api/health`;
 const CHECK_INTERVAL_SECONDS = parseInt(process.env.CHECK_INTERVAL_SECONDS || '60', 10);
 const MAX_CONSECUTIVE_FAILURES = parseInt(process.env.MAX_CONSECUTIVE_FAILURES || '2', 10);
 const RESTART_COMMAND = process.env.RESTART_CMD || 'docker restart flameguard-web || docker compose restart web || pm2 restart fire-safety-api || pm2 restart all';
@@ -109,10 +110,9 @@ export const performHealthCheck = async (options = {}) => {
   const candidateUrls = customUrl 
     ? [customUrl] 
     : [
-        `http://127.0.0.1:${process.env.PORT || 3001}/api/health`,
+        `https://${process.env.DOMAIN || 'pcccphatantam.com'}/api/health`,
         'http://127.0.0.1/api/health',
-        `https://127.0.0.1/api/health`,
-        `https://${process.env.DOMAIN || 'pcccphatantam.com'}/api/health`
+        `http://127.0.0.1:${process.env.PORT || 3001}/api/health`
       ];
 
   const state = loadState();
@@ -122,6 +122,7 @@ export const performHealthCheck = async (options = {}) => {
   let isHealthy = false;
   let errorDetails = '';
   let successfulUrl = '';
+  const primaryTargetUrl = candidateUrls[0];
 
   for (const targetUrl of candidateUrls) {
     const controller = new AbortController();
@@ -154,7 +155,7 @@ export const performHealthCheck = async (options = {}) => {
 
       const recoveryHtml = `✅ <b>[MÁY CHỦ ĐÃ PHỤC HỒI HOẠT ĐỘNG BÌNH THƯỜNG]</b>\n\n` +
         `🎉 <b>Dịch vụ:</b> FLAMEGUARD PRO PCCC Backend API\n` +
-        `🌐 <b>Health URL:</b> <code>${escapeTelegramHtml(healthUrl)}</code>\n` +
+        `🌐 <b>Health URL:</b> <code>${escapeTelegramHtml(successfulUrl || primaryTargetUrl)}</code>\n` +
         `⏰ <b>Thời điểm phục hồi:</b> ${escapeTelegramHtml(nowStr)}\n` +
         `📡 <b>Trạng thái:</b> <code>HTTP 200 OK (ONLINE)</code>\n\n` +
         `🟢 <i>Hệ thống Watchdog 24/7 tiếp tục theo dõi tiến trình máy chủ định kỳ.</i>`;
@@ -163,7 +164,7 @@ export const performHealthCheck = async (options = {}) => {
       await sendTelegramDeveloperAlert(recoveryHtml);
     } else {
       state.consecutiveFailures = 0;
-      console.log(`[Watchdog] [${nowStr}] ✅ Sức khỏe máy chủ bình thường (200 OK)`);
+      console.log(`[Watchdog] [${nowStr}] ✅ Sức khỏe máy chủ bình thường (200 OK) -> ${successfulUrl}`);
     }
   } else {
     state.consecutiveFailures++;
@@ -176,7 +177,7 @@ export const performHealthCheck = async (options = {}) => {
 
       const alertHtml = `🚨 <b>[BÁO ĐỘNG ĐỎ] - MÁY CHỦ BACKEND NGỪNG PHẢN HỒI (DOWNTIME DETECTED)</b>\n\n` +
         `💥 <b>Tình trạng:</b> Máy chủ không phản hồi sau <b>${state.consecutiveFailures} lần kiểm tra liên tiếp</b>.\n` +
-        `🌐 <b>Health URL:</b> <code>${escapeTelegramHtml(healthUrl)}</code>\n` +
+        `🌐 <b>Health URL:</b> <code>${escapeTelegramHtml(primaryTargetUrl)}</code>\n` +
         `💬 <b>Lỗi phát hiện:</b> <code>${escapeTelegramHtml(errorDetails)}</code>\n` +
         `⏰ <b>Thời điểm phát hiện:</b> ${escapeTelegramHtml(nowStr)}\n` +
         `🔄 <b>Lệnh tự khởi động lại:</b> <code>${escapeTelegramHtml(RESTART_COMMAND)}</code>\n\n` +
