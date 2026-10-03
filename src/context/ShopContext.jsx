@@ -782,8 +782,9 @@ export const ShopProvider = ({ children }) => {
           return merged;
         });
 
-        // Re-push ngoài render lifecycle của React
-        if (itemsToRehydrate.length > 0) {
+        // Re-push ngoài render lifecycle của React (chỉ thực hiện khi có Token Quản trị viên)
+        const adminToken = typeof localStorage !== 'undefined' ? localStorage.getItem('flameguard_admin_token') : null;
+        if (itemsToRehydrate.length > 0 && adminToken) {
           itemsToRehydrate.forEach(mp => {
             updateProductApi(mp.id, mp).catch(() => {});
           });
@@ -854,17 +855,20 @@ export const ShopProvider = ({ children }) => {
           }
           if (typeof localStorage !== 'undefined') localStorage.setItem('flameguard_settings_updated_at', apiSettings.updatedAt);
         } else if (localSettingsTime > serverSettingsTime) {
-          // Local mới hơn server -> GIỮ NGUYÊN LOCAL & Rehydrate container server ngầm!
-          const localSettingsPayload = {
-            shopZaloPhone: typeof localStorage !== 'undefined' ? localStorage.getItem('flameguard_shop_zalo_phone') : undefined,
-            telegramBotToken: typeof localStorage !== 'undefined' ? localStorage.getItem('flameguard_tg_token') : undefined,
-            telegramChatId: typeof localStorage !== 'undefined' ? localStorage.getItem('flameguard_tg_chat_id') : undefined,
-            shippingSettings: shippingSettings,
-            facebookSettings: facebookSettings,
-            displaySettings: displaySettings,
-            updatedAt: localSettingsTimestamp
-          };
-          saveSettingsApi(localSettingsPayload).catch(() => {});
+          // Local mới hơn server -> Chỉ Rehydrate server ngầm nếu là Quản trị viên có Token hợp lệ
+          const adminToken = typeof localStorage !== 'undefined' ? localStorage.getItem('flameguard_admin_token') : null;
+          if (adminToken) {
+            const localSettingsPayload = {
+              shopZaloPhone: typeof localStorage !== 'undefined' ? localStorage.getItem('flameguard_shop_zalo_phone') : undefined,
+              telegramBotToken: typeof localStorage !== 'undefined' ? localStorage.getItem('flameguard_tg_token') : undefined,
+              telegramChatId: typeof localStorage !== 'undefined' ? localStorage.getItem('flameguard_tg_chat_id') : undefined,
+              shippingSettings: shippingSettings,
+              facebookSettings: facebookSettings,
+              displaySettings: displaySettings,
+              updatedAt: localSettingsTimestamp
+            };
+            saveSettingsApi(localSettingsPayload).catch(() => {});
+          }
         }
       }
 

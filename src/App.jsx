@@ -63,8 +63,16 @@ function AppContent() {
   useEffect(() => {
     const handleUnauthorized = () => {
       setAdminUser(null);
-      setIsAdminView(false);
-      setIsAdminLoginOpen(true);
+      setIsAdminView(prevView => {
+        // Chỉ khi người dùng ĐANG ở giao diện Quản trị (Admin View) hoặc cố tình vào hash #admin
+        // thì mới hiển thị modal đăng nhập lại. Tuyệt đối không bật modal với khách hàng ở storefront!
+        if (prevView || window.location.hash === '#admin') {
+          setIsAdminLoginOpen(true);
+        } else {
+          setIsAdminLoginOpen(false);
+        }
+        return false;
+      });
     };
     window.addEventListener('flameguard:unauthorized', handleUnauthorized);
     return () => window.removeEventListener('flameguard:unauthorized', handleUnauthorized);
