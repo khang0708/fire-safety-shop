@@ -15,9 +15,34 @@ import {
   verifyAdminToken, 
   changeAdminPassword 
 } from './auth.js';
+import { 
+  notifyServerError, 
+  notifyServerStartup, 
+  testDeveloperServerAlert 
+} from './monitoringBot.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Bắt lỗi toàn cục tiến trình Node.js (Uncaught Exception & Unhandled Rejection)
+process.on('uncaughtException', async (err) => {
+  console.error('💥 [CRITICAL] Uncaught Exception:', err);
+  try {
+    await notifyServerError(err, { source: 'uncaughtException', fatal: true });
+  } catch (notifyErr) {
+    console.error('Lỗi khi gửi cảnh báo Telegram cho uncaughtException:', notifyErr.message);
+  }
+});
+
+process.on('unhandledRejection', async (reason) => {
+  console.error('⚠️ [WARNING] Unhandled Promise Rejection:', reason);
+  try {
+    const err = reason instanceof Error ? reason : new Error(String(reason));
+    await notifyServerError(err, { source: 'unhandledRejection', fatal: false });
+  } catch (notifyErr) {
+    console.error('Lỗi khi gửi cảnh báo Telegram cho unhandledRejection:', notifyErr.message);
+  }
+});
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -724,6 +749,29 @@ app.post('/api/notifications/telegram-test', requireAdminAuth, async (req, res) 
   }
 });
 
+// POST /api/notifications/telegram-server-alert-test
+// Endpoint kiểm tra Bot Giám Sát Developer (BOT 2)
+app.post('/api/notifications/telegram-server-alert-test', requireAdminAuth, async (req, res) => {
+  try {
+    const { botToken, chatId } = req.body || {};
+    const result = await testDeveloperServerAlert(botToken, chatId);
+    if (result.success) {
+      res.json({ 
+        success: true, 
+        message: '🎉 Thành công! Đã gửi tin nhắn kiểm tra tới Bot Giám Sát Developer.', 
+        data: result 
+      });
+    } else {
+      res.status(400).json({ 
+        success: false, 
+        message: result.error || 'Gửi tin nhắn kiểm tra Bot Developer thất bại' 
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // ----------------------------------------------------
 // 4. INVENTORY API
 // ----------------------------------------------------
@@ -1181,9 +1229,41 @@ if (fs.existsSync(distPath)) {
   });
 }
 
+// ----------------------------------------------------
+// 9. MIDDLEWARE XỬ LÝ LỖI 500 TẬP TRUNG & BÁO ĐỘNG TELEGRAM DEVELOPER
+// ----------------------------------------------------
+app.use(async (err, req, res, next) => {
+  console.error('❌ [EXPRESS ERROR 500]:', err);
+
+  try {
+    await notifyServerError(err, {
+      source: 'express_500_middleware',
+      endpoint: req.originalUrl || req.url,
+      method: req.method,
+      ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress,
+      userAgent: req.headers['user-agent']
+    });
+  } catch (notifyErr) {
+    console.error('Lỗi khi gửi cảnh báo Telegram cho Express Error:', notifyErr.message);
+  }
+
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  res.status(500).json({
+    success: false,
+    error: 'INTERNAL_SERVER_ERROR',
+    message: 'Đã có lỗi kỹ thuật xảy ra trên máy chủ. Đội ngũ kỹ thuật đã nhận được cảnh báo tự động.'
+  });
+});
+
 if (!process.env.VERCEL) {
   const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`🔥 FLAMEGUARD PRO API Server đang chạy tại: http://127.0.0.1:${PORT}`);
+    notifyServerStartup().catch(err => {
+      console.warn('[Startup Alert Note]:', err.message);
+    });
   });
 
   process.on('SIGTERM', () => server.close());

@@ -9,7 +9,9 @@
     "dev:all": "concurrently \"npm run server\" \"npm run dev\"",
     "build": "vite build",
     "start": "node server/server.js",
-    "test": "node tests/unit-test.js && node tests/security-test.js && node tests/conflict-resolution-test.js",
+    "test": "node tests/unit-test.js && node tests/security-test.js && node tests/conflict-resolution-test.js && node tests/monitoring-test.js",
+    "watchdog": "node scripts/server-watchdog.js",
+    "test:dev-alert": "node scripts/test-dev-alert.js",
     "lint": "oxlint",
     "preview": "vite preview"
   },

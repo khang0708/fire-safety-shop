@@ -34,3 +34,5 @@ mobile_audit_screenshots/
 # Authentication & Credentials
 server/data/.auth_secret
 server/data/admins.json
+server/data/dev-alerts.json
+server/data/.watchdog_state.json
