@@ -51,7 +51,7 @@ if [ ! -f .env ]; then
 fi
 
 # 5. Cấp quyền thực thi các script
-chmod +x deploy.sh init-ssl.sh 2>/dev/null || true
+chmod +x deploy.sh init-ssl.sh scripts/*.sh 2>/dev/null || true
 
 # 6. Build và cập nhật Container với Docker Compose (Zero-downtime rebuild)
 echo "🐳 2. Build và cập nhật các container Docker..."
