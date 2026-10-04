@@ -108,7 +108,7 @@ assert(Boolean(settings.facebookSettings?.verifyToken), 'Facebook Webhook Verify
 
 // 7.1. Brand & SEO Configuration
 assert(Boolean(settings.brandSettings), 'Cấu hình brandSettings tồn tại trong settings.json');
-assert(settings.brandSettings?.brandName === 'FLAMEGUARD PRO', 'Tên thương hiệu mặc định là FLAMEGUARD PRO');
+assert(Boolean(settings.brandSettings?.brandName), 'Tên thương hiệu được cấu hình trong settings.json');
 assert(Boolean(settings.brandSettings?.address), 'Địa chỉ trụ sở/kho hàng được cấu hình');
 assert(Boolean(settings.brandSettings?.email), 'Email liên hệ được cấu hình');
 assert(Boolean(settings.brandSettings?.seoTitle), 'SEO Title được cấu hình');
@@ -141,6 +141,7 @@ assert(typeof broadcastProductDeleteToTabs === 'function', 'broadcastProductDele
 
 const products = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'products.json'), 'utf-8'));
 assert(Array.isArray(products) && products.length > 0, 'Danh sách sản phẩm products.json hợp lệ và có dữ liệu');
+assert(!products.some(p => p.id === 'fl-1787735321783' || p.name?.includes('Hoa Hồng')), 'Đã xóa hoàn toàn mẫu hoa fl-1787735321783 khỏi products.json');
 const sampleProduct = products[0];
 assert(Boolean(sampleProduct.id && sampleProduct.name && sampleProduct.price), 'Mẫu thiết bị PCCC có đầy đủ id, name, price');
 

@@ -226,6 +226,26 @@ const writeJson = async (fileName, data) => {
   }
 };
 
+// Tự động dọn dẹp các sản phẩm không hợp lệ (mẫu hoa cũ fl-1787735321783) khỏi cơ sở dữ liệu VPS / Neon DB
+export const sanitizeProductsDb = async () => {
+  try {
+    const products = await readJson('products.json');
+    if (Array.isArray(products)) {
+      const hasLegacy = products.some(p => p.id === 'fl-1787735321783' || p.id?.startsWith('fl-') || p.name?.includes('Hoa Hồng'));
+      if (hasLegacy) {
+        const cleaned = products.filter(p => p.id !== 'fl-1787735321783' && !p.id?.startsWith('fl-') && !p.name?.includes('Hoa Hồng'));
+        await writeJson('products.json', cleaned);
+        console.log('[DB Sanitize] Đã tự động loại bỏ sản phẩm mẫu hoa cũ (fl-1787735321783) khỏi cơ sở dữ liệu VPS/Cloud.');
+        return cleaned;
+      }
+    }
+    return products;
+  } catch (err) {
+    console.warn('[DB Sanitize Note]:', err.message);
+    return [];
+  }
+};
+
 // ----------------------------------------------------
 // REAL-TIME SERVER-SENT EVENTS (SSE) FOR ADMINS
 // ----------------------------------------------------
@@ -330,7 +350,10 @@ app.post('/api/auth/logout', (req, res) => {
 app.get('/api/products', async (req, res) => {
   try {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    const products = await readJson('products.json');
+    let products = await readJson('products.json');
+    if (Array.isArray(products) && products.some(p => p.id === 'fl-1787735321783' || p.id?.startsWith('fl-') || p.name?.includes('Hoa Hồng'))) {
+      products = (await sanitizeProductsDb()) || products.filter(p => p.id !== 'fl-1787735321783' && !p.id?.startsWith('fl-') && !p.name?.includes('Hoa Hồng'));
+    }
     res.json({ success: true, data: products, total: products.length });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1301,8 +1324,9 @@ app.use(async (err, req, res, next) => {
 });
 
 if (!process.env.VERCEL) {
-  const server = app.listen(PORT, '0.0.0.0', () => {
+  const server = app.listen(PORT, '0.0.0.0', async () => {
     console.log(`🔥 FLAMEGUARD PRO API Server đang chạy tại: http://127.0.0.1:${PORT}`);
+    await sanitizeProductsDb();
     notifyServerStartup().catch(err => {
       console.warn('[Startup Alert Note]:', err.message);
     });

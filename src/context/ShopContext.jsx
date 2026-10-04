@@ -209,6 +209,8 @@ if (typeof localStorage !== 'undefined') {
         localStorage.removeItem(k);
       }
     });
+    // Đánh dấu xóa vĩnh viễn mẫu hoa cũ còn sót lại fl-1787735321783
+    markProductDeletedLocal('fl-1787735321783');
   } catch (e) {}
 }
 
@@ -219,7 +221,13 @@ export const ShopProvider = ({ children }) => {
       const cached = localStorage.getItem('flameguard_products');
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const cleaned = parsed.filter(p => p && p.id !== 'fl-1787735321783' && !p.id?.startsWith('fl-') && !p.name?.includes('Hoa Hồng'));
+          if (cleaned.length !== parsed.length) {
+            localStorage.setItem('flameguard_products', JSON.stringify(cleaned));
+          }
+          return cleaned;
+        }
       }
     } catch (e) {
       console.warn('Lỗi đọc cache flameguard_products:', e);

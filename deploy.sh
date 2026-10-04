@@ -37,11 +37,23 @@ if [ -d "$BACKUP_DIR/data" ]; then
 fi
 
 if [ -f "$BACKUP_DIR/app.conf" ]; then
-    echo "🔄 Khôi phục cấu hình HTTPS Nginx..."
+    echo "🔒 Khôi phục cấu hình HTTPS Nginx..."
     cp "$BACKUP_DIR/app.conf" nginx/conf.d/app.conf
 fi
 
 rm -rf "$BACKUP_DIR"
+
+# Đảm bảo loại bỏ triệt để sản phẩm hoa cũ fl-1787735321783 khỏi server/data/products.json
+if [ -f "server/data/products.json" ]; then
+    node -e "
+    const fs = require('fs');
+    try {
+        let p = JSON.parse(fs.readFileSync('server/data/products.json', 'utf8'));
+        p = p.filter(x => x.id !== 'fl-1787735321783' && !x.id.startsWith('fl-') && !x.name.includes('Hoa Hồng'));
+        fs.writeFileSync('server/data/products.json', JSON.stringify(p, null, 2));
+    } catch(e) {}
+    " 2>/dev/null || true
+fi
 
 # 4. Kiểm tra file .env
 if [ ! -f .env ]; then
