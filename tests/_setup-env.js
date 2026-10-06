@@ -21,7 +21,7 @@ if (!process.env.DATA_DIR) {
 
 process.env.NODE_ENV = 'test';
 process.env.ADMIN_USERNAME = 'admin';
-process.env.ADMIN_PASSWORD = 'FlameGuard@2026';
-process.env.ADMIN_PIN = '123456';
+process.env.ADMIN_PASSWORD = 'Test-Only#Pass-2026!';
+process.env.ADMIN_PIN = '482916';
 process.env.SESSION_SECRET = 'test-only-session-secret-0123456789abcdef';
 delete process.env.DATABASE_URL;

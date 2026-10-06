@@ -110,6 +110,13 @@ function fullstackApiPlugin() {
           return;
         }
 
+        // 2b. Vé SSE: chỉ dành cho dev server (server thật kiểm tra vé một lần và token admin)
+        if (url === '/api/auth/sse-ticket' && req.method === 'POST') {
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ success: true, ticket: 'dev-ticket' }));
+          return;
+        }
+
         // Helper to read JSON body safely
         const readBody = () => new Promise((resolve) => {
           if (req.body && typeof req.body === 'object') {

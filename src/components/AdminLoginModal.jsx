@@ -36,6 +36,7 @@ export const AdminLoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
         localStorage.setItem('flameguard_admin_token', res.token);
         localStorage.setItem('flameguard_admin_user', JSON.stringify(res.user));
         setIsLoading(false);
+        window.dispatchEvent(new Event('flameguard:admin-login'));
         onLoginSuccess(res.user);
       } else {
         throw new Error(res.message || 'Đăng nhập không thành công');
@@ -58,6 +59,7 @@ export const AdminLoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
         localStorage.setItem('flameguard_admin_token', res.token);
         localStorage.setItem('flameguard_admin_user', JSON.stringify(res.user));
         setIsLoading(false);
+        window.dispatchEvent(new Event('flameguard:admin-login'));
         onLoginSuccess(res.user);
       } else {
         throw new Error(res.message || 'Mã PIN không hợp lệ');
@@ -204,7 +206,7 @@ export const AdminLoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
                   <KeyRound className="w-3.5 h-3.5 text-red-600" />
-                  Nhập mã PIN truy cập nhanh (4 - 6 số):
+                  Nhập mã PIN truy cập nhanh (6 - 10 số):
                 </label>
                 <input
                   type="password"

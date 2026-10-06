@@ -224,6 +224,10 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
         newPin: securityForm.newPin
       });
       if (res.success) {
+        // Server thu hồi mọi phiên cũ khi đổi mật khẩu/PIN và cấp token mới cho phiên hiện tại
+        if (res.token && typeof localStorage !== 'undefined') {
+          localStorage.setItem('flameguard_admin_token', res.token);
+        }
         setSecurityStatus({ type: 'success', message: res.message || 'Đổi mật khẩu thành công!' });
         setSecurityForm({ currentPassword: '', newPassword: '', confirmPassword: '', newPin: '' });
       } else {
@@ -3907,7 +3911,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                       {/* Mật khẩu mới */}
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                          Mật khẩu mới (Tối thiểu 6 ký tự):
+                          Mật khẩu mới (Tối thiểu 10 ký tự):
                         </label>
                         <input
                           type="password"
@@ -3937,7 +3941,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                     <div className="pt-2">
                       <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
                         <KeyRound className="w-3.5 h-3.5 text-slate-500" />
-                        Mã PIN truy cập nhanh mới (4 - 6 chữ số):
+                        Mã PIN truy cập nhanh mới (6 - 10 chữ số, không dùng dãy dễ đoán):
                       </label>
                       <input
                         type="password"

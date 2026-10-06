@@ -7,6 +7,8 @@ import {
   deleteProductApi, 
   toggleProductApi,
   fetchOrdersApi,
+  trackOrderApi,
+  getSseTicketApi,
   createOrderApi,
   updateOrderStatusApi,
   fetchInventoryApi,
@@ -219,6 +221,8 @@ if (typeof localStorage !== 'undefined') {
     markProductDeletedLocal('fl-1787735321783');
   } catch (e) {}
 }
+
+const hasAdminSession = () => typeof localStorage !== 'undefined' && Boolean(localStorage.getItem('flameguard_admin_token'));
 
 export const ShopProvider = ({ children }) => {
   // 1. Quản lý danh mục thiết bị PCCC (Ưu tiên cache LocalStorage để storefront cập nhật ngay, fallback FLOWERS_DATA)
@@ -646,6 +650,11 @@ export const ShopProvider = ({ children }) => {
   // 6. Danh sách đơn hàng (Lưu LocalStorage + REST API đồng bộ)
   const [orders, setOrdersState] = useState(() => {
     try {
+      if (!hasAdminSession() && localStorage.getItem('flameguard_orders_privacy_v1') !== '1') {
+        localStorage.removeItem('flameguard_orders');
+        localStorage.setItem('flameguard_orders_privacy_v1', '1');
+        return INITIAL_ORDERS;
+      }
       const cached = localStorage.getItem('flameguard_orders');
       if (cached) return JSON.parse(cached);
     } catch (e) {}
@@ -663,6 +672,10 @@ export const ShopProvider = ({ children }) => {
   };
 
   const [activeOrder, setActiveOrder] = useState(orders[0]);
+  const activeOrderRef = useRef(activeOrder);
+  useEffect(() => {
+    activeOrderRef.current = activeOrder;
+  }, [activeOrder]);
 
   // 7. Kho thiết bị & vật tư PCCC
   const [inventory, setInventory] = useState([
@@ -1077,7 +1090,7 @@ export const ShopProvider = ({ children }) => {
     try {
       const [apiProducts, apiOrders, apiInventory, apiDiscounts, apiReviews, apiSettings, apiArticles] = await Promise.all([
         fetchProductsApi().catch(() => null),
-        fetchOrdersApi().catch(() => null),
+        hasAdminSession() ? fetchOrdersApi().catch(() => null) : Promise.resolve(null),
         fetchInventoryApi().catch(() => null),
         fetchDiscountsApi().catch(() => null),
         fetchReviewsApi().catch(() => null),
@@ -1135,6 +1148,20 @@ export const ShopProvider = ({ children }) => {
           return Array.from(orderMap.values());
         });
         setActiveOrder(prev => (prev ? apiOrders.find(o => o.id === prev.id) || prev : apiOrders[0]));
+      }
+
+      // Khách vãng lai không tải danh sách đơn của mọi người; chỉ làm mới đơn của chính mình (khớp mã đơn + SĐT)
+      if (!hasAdminSession()) {
+        const mine = activeOrderRef.current;
+        if (mine?.orderCode && mine?.customerPhone && !INITIAL_ORDERS.some(o => o.id === mine.id)) {
+          trackOrderApi(mine.orderCode, mine.customerPhone)
+            .then((fresh) => {
+              if (!fresh) return;
+              setActiveOrder(prev => (prev && prev.id === fresh.id ? { ...prev, ...fresh } : prev));
+              setOrders(cur => cur.map(o => (o.id === fresh.id ? { ...o, ...fresh } : o)));
+            })
+            .catch(() => {});
+        }
       }
 
       if (apiInventory?.length > 0) setInventory(apiInventory);
@@ -1264,19 +1291,17 @@ export const ShopProvider = ({ children }) => {
       }
     }, 30000);
 
-    // Kết nối Server-Sent Events (SSE) để nhận sự kiện real-time từ các thiết bị khác
+    // Server-Sent Events (SSE) chỉ dành cho admin: luồng mang cả dữ liệu đơn hàng nên cần vé một lần do server
+    // cấp sau khi đăng nhập. Khách vãng lai không mở luồng này và chỉ dùng polling 30 giây ở trên.
     let eventSource = null;
+    let sseStopped = false;
+    let sseRetryTimer = null;
+    let onAdminLogin = null;
+    let onAdminLogout = null;
     try {
-      eventSource = new EventSource('/api/admin/events');
-      eventSource.onmessage = (e) => {
+      const handleSseMessage = (e) => {
         try {
           const payload = JSON.parse(e.data);
-          // Server (khi chạy trên Vercel serverless) báo không hỗ trợ SSE dài hạn
-          // => đóng kết nối ngay để tránh EventSource tự retry vô hạn, chỉ dựa vào polling.
-          if (payload.type === 'SSE_UNSUPPORTED') {
-            if (eventSource) eventSource.close();
-            return;
-          }
           if (payload.type === 'NEW_ORDER' && payload.order) {
             setOrders(prev => {
               const exists = prev.some(o => o.id === payload.order.id);
@@ -1319,6 +1344,36 @@ export const ShopProvider = ({ children }) => {
           }
         } catch (err) {}
       };
+
+      const connectSse = async () => {
+        if (sseStopped || eventSource || !hasAdminSession()) return;
+        try {
+          const ticket = await getSseTicketApi();
+          if (sseStopped || !ticket) return;
+          const es = new EventSource(`/api/admin/events?ticket=${encodeURIComponent(ticket)}`);
+          eventSource = es;
+          es.onmessage = handleSseMessage;
+          es.onerror = () => {
+            // Vé đã dùng nên EventSource không tự nối lại được: đóng rồi xin vé mới
+            es.close();
+            if (eventSource === es) eventSource = null;
+            if (!sseStopped) sseRetryTimer = setTimeout(connectSse, 5000);
+          };
+        } catch (err) {
+          if (!sseStopped) sseRetryTimer = setTimeout(connectSse, 15000);
+        }
+      };
+
+      onAdminLogin = () => { connectSse(); };
+      onAdminLogout = () => {
+        if (eventSource) eventSource.close();
+        eventSource = null;
+      };
+      if (typeof window !== 'undefined') {
+        window.addEventListener('flameguard:admin-login', onAdminLogin);
+        window.addEventListener('flameguard:unauthorized', onAdminLogout);
+      }
+      connectSse();
     } catch (err) {}
 
     // Lắng nghe sự kiện đa tab qua BroadcastChannel (Đơn mới, Cập nhật ảnh thật, Đồng bộ mẫu hoa)
@@ -1360,7 +1415,13 @@ export const ShopProvider = ({ children }) => {
 
     return () => {
       clearTimeout(timer);
+      sseStopped = true;
+      clearTimeout(sseRetryTimer);
       if (eventSource) eventSource.close();
+      if (typeof window !== 'undefined') {
+        if (onAdminLogin) window.removeEventListener('flameguard:admin-login', onAdminLogin);
+        if (onAdminLogout) window.removeEventListener('flameguard:unauthorized', onAdminLogout);
+      }
       cleanupTabListener();
       if (typeof document !== 'undefined') {
         document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
