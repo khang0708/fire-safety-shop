@@ -15,11 +15,12 @@ import {
   verifyAdminToken, 
   changeAdminPassword 
 } from './auth.js';
-import { 
-  notifyServerError, 
-  notifyServerStartup, 
-  testDeveloperServerAlert 
+import {
+  notifyServerError,
+  notifyServerStartup,
+  testDeveloperServerAlert
 } from './monitoringBot.js';
+import { DATA_DIR, ensureDir, readJsonFileSync, writeJsonFileSync } from './storage.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -103,11 +104,12 @@ export const requireAdminAuth = (req, res, next) => {
   });
 };
 
-const DATA_DIR = path.join(__dirname, 'data');
-if (!fs.existsSync(DATA_DIR)) {
-  try {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  } catch (e) {}
+// DATA_DIR lấy từ storage.js (dữ liệu chạy thật nằm ngoài repo khi đặt biến môi trường DATA_DIR).
+try {
+  ensureDir(DATA_DIR);
+} catch (err) {
+  console.error('[storage] Không tạo được thư mục dữ liệu', DATA_DIR, err.message);
+  throw err;
 }
 
 // ----------------------------------------------------
@@ -167,35 +169,15 @@ const readJson = async (fileName) => {
     return memoryDb.get(fileName);
   }
 
-  // 3. Fallback /tmp container local
-  const tmpPath = path.join('/tmp', fileName);
-  if (fs.existsSync(tmpPath)) {
-    try {
-      const data = JSON.parse(fs.readFileSync(tmpPath, 'utf-8'));
-      memoryDb.set(fileName, data);
-      return data;
-    } catch (err) {}
-  }
-
-  // 4. Fallback DATA_DIR (tệp bundle gốc)
-  const filePath = path.join(DATA_DIR, fileName);
-  if (!fs.existsSync(filePath)) {
-    return fileName.includes('settings') ? {} : [];
-  }
-  try {
-    const raw = fs.readFileSync(filePath, 'utf-8');
-    const data = JSON.parse(raw);
-    memoryDb.set(fileName, data);
-    return data;
-  } catch (err) {
-    console.error(`Lỗi đọc file ${fileName}:`, err);
-    return fileName.includes('settings') ? {} : [];
-  }
+  // 3. File trong DATA_DIR (ghi atomic, có .bak). File hỏng KHÔNG còn bị coi là dữ liệu rỗng:
+  //    readJsonFileSync ném lỗi để lần ghi sau không ghi đè mất dữ liệu thật.
+  const data = readJsonFileSync(fileName, fileName.includes('settings') ? {} : []);
+  memoryDb.set(fileName, data);
+  return data;
 };
 
 const writeJson = async (fileName, data) => {
   const key = fileName.replace('.json', '');
-  memoryDb.set(fileName, data);
 
   // 1. Lưu vào Neon Database (Đồng bộ tức thì lên đám mây cho mọi container)
   if (sql) {
@@ -212,37 +194,15 @@ const writeJson = async (fileName, data) => {
     }
   }
 
-  // 2. Ghi fallback vào filesystem cục bộ
+  // 2. Ghi file atomic vào DATA_DIR. Thất bại => ném lỗi để API trả 500 thay vì báo thành công giả.
   try {
-    const filePath = path.join(DATA_DIR, fileName);
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+    writeJsonFileSync(fileName, data);
+    memoryDb.set(fileName, data);
   } catch (err) {
-    try {
-      const tmpPath = path.join('/tmp', fileName);
-      fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
-    } catch (tmpErr) {
-      console.warn(`Không thể ghi file ${fileName}:`, tmpErr.message);
-    }
-  }
-};
-
-// Tự động dọn dẹp các sản phẩm không hợp lệ (mẫu hoa cũ fl-1787735321783) khỏi cơ sở dữ liệu VPS / Neon DB
-export const sanitizeProductsDb = async () => {
-  try {
-    const products = await readJson('products.json');
-    if (Array.isArray(products)) {
-      const hasLegacy = products.some(p => p.id === 'fl-1787735321783' || p.id?.startsWith('fl-') || p.name?.includes('Hoa Hồng'));
-      if (hasLegacy) {
-        const cleaned = products.filter(p => p.id !== 'fl-1787735321783' && !p.id?.startsWith('fl-') && !p.name?.includes('Hoa Hồng'));
-        await writeJson('products.json', cleaned);
-        console.log('[DB Sanitize] Đã tự động loại bỏ sản phẩm mẫu hoa cũ (fl-1787735321783) khỏi cơ sở dữ liệu VPS/Cloud.');
-        return cleaned;
-      }
-    }
-    return products;
-  } catch (err) {
-    console.warn('[DB Sanitize Note]:', err.message);
-    return [];
+    // Không để cache giữ dữ liệu chưa được lưu
+    memoryDb.delete(fileName);
+    if (!sql) throw err;
+    console.warn(`[storage] Không ghi được file ${fileName}:`, err.message);
   }
 };
 
@@ -350,10 +310,7 @@ app.post('/api/auth/logout', (req, res) => {
 app.get('/api/products', async (req, res) => {
   try {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    let products = await readJson('products.json');
-    if (Array.isArray(products) && products.some(p => p.id === 'fl-1787735321783' || p.id?.startsWith('fl-') || p.name?.includes('Hoa Hồng'))) {
-      products = (await sanitizeProductsDb()) || products.filter(p => p.id !== 'fl-1787735321783' && !p.id?.startsWith('fl-') && !p.name?.includes('Hoa Hồng'));
-    }
+    const products = await readJson('products.json');
     res.json({ success: true, data: products, total: products.length });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1729,8 +1686,7 @@ app.use(async (err, req, res, next) => {
 
 if (!process.env.VERCEL && process.env.NODE_ENV !== 'test') {
   const server = app.listen(PORT, '0.0.0.0', async () => {
-    console.log(`🔥 FLAMEGUARD PRO API Server đang chạy tại: http://127.0.0.1:${PORT}`);
-    await sanitizeProductsDb();
+    console.log(`🔥 FLAMEGUARD PRO API Server đang chạy tại: http://127.0.0.1:${PORT} (dữ liệu: ${DATA_DIR})`);
     notifyServerStartup().catch(err => {
       console.warn('[Startup Alert Note]:', err.message);
     });

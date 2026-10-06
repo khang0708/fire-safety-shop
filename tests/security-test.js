@@ -1,3 +1,4 @@
+import './_setup-env.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -14,7 +15,6 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.join(__dirname, '..');
-const DATA_DIR = path.join(ROOT_DIR, 'server', 'data');
 
 console.log('====================================================');
 console.log('🛡️ BẮT ĐẦU BỘ KIỂM THỬ BẢO MẬT (SECURITY AUDIT & TESTS)');

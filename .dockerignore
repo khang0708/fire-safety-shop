@@ -10,3 +10,9 @@ tests
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Không đưa dữ liệu/bí mật chạy thật vào image
+server/data
+certbot
+backups
+*.bak

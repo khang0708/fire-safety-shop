@@ -228,7 +228,7 @@ export const ShopProvider = ({ children }) => {
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const cleaned = parsed.filter(p => p && p.id !== 'fl-1787735321783' && !p.id?.startsWith('fl-') && !p.name?.includes('Hoa Hồng'));
+          const cleaned = parsed.filter(p => p && p.id);
           if (cleaned.length !== parsed.length) {
             localStorage.setItem('flameguard_products', JSON.stringify(cleaned));
           }
@@ -1376,7 +1376,7 @@ export const ShopProvider = ({ children }) => {
   // CRUD SẢN PHẨM MẪU HOA
   const addProduct = async (newProduct) => {
     const now = new Date().toISOString();
-    const id = newProduct.id || `fl-${Date.now()}`;
+    const id = newProduct.id || `fire-${Date.now()}`;
     const productWithTimestamp = {
       ...newProduct,
       id,

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.join(__dirname, '..');
-const DATA_DIR = path.join(ROOT_DIR, 'server', 'data');
+const DATA_DIR = path.join(ROOT_DIR, 'server', 'seed');
 
 console.log('====================================================');
 console.log('🧪 BẮT ĐẦU CHUỖI KIỂM THỬ ĐƠN VỊ & NGHIỆP VỤ SHOP');

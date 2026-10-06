@@ -5,16 +5,13 @@
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { DATA_DIR, ensureDir, atomicWriteFileSync } from './storage.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DATA_DIR = path.join(__dirname, 'data');
-
-if (!fs.existsSync(DATA_DIR)) {
-  try {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  } catch (e) {}
+try {
+  ensureDir(DATA_DIR);
+} catch (e) {
+  console.error('[auth] Không tạo được thư mục dữ liệu', DATA_DIR, e.message);
+  throw e;
 }
 
 const ADMINS_FILE = path.join(DATA_DIR, 'admins.json');
@@ -38,8 +35,10 @@ export function getSessionSecret() {
   // Tự động sinh khóa ngẫu nhiên 256-bit an toàn cao nếu chưa có
   const generatedSecret = crypto.randomBytes(32).toString('hex');
   try {
-    fs.writeFileSync(SECRET_FILE, generatedSecret, { mode: 0o600 });
-  } catch (e) {}
+    atomicWriteFileSync(SECRET_FILE, generatedSecret, { mode: 0o600 });
+  } catch (e) {
+    console.error('[auth] Không lưu được khóa phiên .auth_secret (phiên đăng nhập sẽ mất khi khởi động lại):', e.message);
+  }
   return generatedSecret;
 }
 
@@ -241,14 +240,14 @@ export function loadAdmins() {
 
   const admins = [initialAdmin];
   try {
-    fs.writeFileSync(ADMINS_FILE, JSON.stringify(admins, null, 2), 'utf-8');
+    atomicWriteFileSync(ADMINS_FILE, JSON.stringify(admins, null, 2), { mode: 0o600, keepBackup: true });
   } catch (e) {}
   return admins;
 }
 
 export function saveAdmins(admins) {
   try {
-    fs.writeFileSync(ADMINS_FILE, JSON.stringify(admins, null, 2), 'utf-8');
+    atomicWriteFileSync(ADMINS_FILE, JSON.stringify(admins, null, 2), { mode: 0o600, keepBackup: true });
     return true;
   } catch (e) {
     return false;

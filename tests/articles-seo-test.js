@@ -1,4 +1,4 @@
-process.env.NODE_ENV = 'test';
+import './_setup-env.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -8,7 +8,7 @@ import { SEED_ARTICLES, ARTICLE_CATEGORIES } from '../src/data/articles.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.join(__dirname, '..');
-const ARTICLES_FILE = path.join(ROOT_DIR, 'server', 'data', 'articles.json');
+const ARTICLES_FILE = path.join(ROOT_DIR, 'server', 'seed', 'articles.json');
 const DIST_INDEX_FILE = path.join(ROOT_DIR, 'dist', 'index.html');
 const TEMPLATE_INDEX_FILE = path.join(ROOT_DIR, 'index.html');
 
@@ -33,7 +33,7 @@ function assert(condition, message) {
 // 1. KIỂM TRA CƠ SỞ DỮ LIỆU BÀI VIẾT ARTICLES.JSON
 // ----------------------------------------------------
 console.log('1️⃣ KIỂM TRA DỮ LIỆU BÀI VIẾT & SEED CONTENT:');
-assert(fs.existsSync(ARTICLES_FILE), 'Tệp server/data/articles.json tồn tại');
+assert(fs.existsSync(ARTICLES_FILE), 'Tệp dữ liệu mẫu server/seed/articles.json tồn tại');
 
 const articlesData = JSON.parse(fs.readFileSync(ARTICLES_FILE, 'utf-8'));
 assert(Array.isArray(articlesData), 'articles.json là một mảng bài viết');
