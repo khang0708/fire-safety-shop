@@ -7,16 +7,13 @@
 import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
-import { fileURLToPath } from 'url';
 import { 
   getDeveloperTelegramConfig, 
   escapeTelegramHtml 
 } from '../server/monitoringBot.js';
+import { DATA_DIR } from '../server/storage.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const ROOT_DIR = path.join(__dirname, '..');
-const STATE_FILE = path.join(ROOT_DIR, 'server', 'data', '.watchdog_state.json');
+const STATE_FILE = path.join(DATA_DIR, '.watchdog_state.json');
 
 // Cấu hình giám sát
 const RAW_DOMAIN = process.env.DOMAIN || 'pcccphatantam.com';
@@ -25,7 +22,7 @@ const DEFAULT_DOMAIN = CLEAN_DOMAIN;
 const HEALTH_URL = process.env.HEALTH_URL || `https://${DEFAULT_DOMAIN}/api/health`;
 const CHECK_INTERVAL_SECONDS = parseInt(process.env.CHECK_INTERVAL_SECONDS || '60', 10);
 const MAX_CONSECUTIVE_FAILURES = parseInt(process.env.MAX_CONSECUTIVE_FAILURES || '2', 10);
-const RESTART_COMMAND = process.env.RESTART_CMD || 'docker restart flameguard-web || docker compose restart web || pm2 restart fire-safety-api || pm2 restart all';
+const RESTART_COMMAND = process.env.RESTART_CMD || 'docker restart flameguard-web || docker compose restart web';
 
 // ----------------------------------------------------
 // 1. QUẢN LÝ TRẠNG THÁI (PERSISTENT STATE)

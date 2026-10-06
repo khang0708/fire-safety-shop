@@ -1,3 +1,4 @@
+import './_setup-env.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -8,13 +9,18 @@ import {
   verifyAdminToken, 
   authenticateAdmin, 
   recordFailedAttempt, 
-  resetRateLimit 
+  resetRateLimit,
+  loadAdmins,
+  changeAdminPassword,
+  validateNewPassword,
+  validateNewPin,
+  DEFAULT_ADMIN_PASSWORD,
+  DEFAULT_ADMIN_PIN
 } from '../server/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.join(__dirname, '..');
-const DATA_DIR = path.join(ROOT_DIR, 'server', 'data');
 
 console.log('====================================================');
 console.log('🛡️ BẮT ĐẦU BỘ KIỂM THỬ BẢO MẬT (SECURITY AUDIT & TESTS)');
@@ -203,7 +209,7 @@ assert(!hasHardcodedFbToken, 'Mã nguồn Client không chứa hardcode Meta Pag
 console.log('\n7️⃣ KIỂM TRA MÃ HÓA MẬT KHẨU & JWT SESSION TOKEN:');
 
 // Test 1: Băm mật khẩu có muối salt
-const testPass = 'FlameGuard@2026';
+const testPass = process.env.ADMIN_PASSWORD;
 const hashed = hashPassword(testPass);
 assert(typeof hashed === 'string' && hashed.includes(':'), 'Mật khẩu được băm an toàn theo chuẩn Salt:Hash (Scrypt)');
 
@@ -214,7 +220,7 @@ assert(!verifyPassword('', hashed), 'Từ chối mật khẩu rỗng');
 assert(!verifyPassword(testPass, 'invalid_hash_format'), 'Xử lý an toàn khi hash bị hỏng format');
 
 // Test 3: Tạo và xác thực Session Token JWT (HMAC-SHA256)
-const sampleUser = { id: 'admin_test', username: 'admin', name: 'Chỉ Huy Trưởng', role: 'SUPER_ADMIN' };
+const sampleUser = loadAdmins()[0]; // token chỉ hợp lệ khi gắn với tài khoản admin có thật
 const token = createAdminToken(sampleUser, 3600);
 assert(typeof token === 'string' && token.split('.').length === 3, 'Tạo JWT Session Token đúng chuẩn 3 phần (header.payload.signature)');
 
@@ -240,11 +246,49 @@ assert(fifthAttempt.isLocked === true, 'Hệ thống tự động kích hoạt k
 resetRateLimit(testIpKey);
 
 // Test 7: Xác thực đăng nhập qua authenticateAdmin
-const authSuccess = authenticateAdmin({ username: 'admin', password: 'FlameGuard@2026', clientIp: 'test_auth_ip' });
+const authSuccess = authenticateAdmin({ username: 'admin', password: process.env.ADMIN_PASSWORD, clientIp: 'test_auth_ip' });
 assert(authSuccess.success && Boolean(authSuccess.token), 'Đăng nhập thành công với tài khoản và mật khẩu khởi tạo');
 
 const authFail = authenticateAdmin({ username: 'admin', password: 'SaiMatKhau@123', clientIp: 'test_auth_fail_ip' });
 assert(!authFail.success && authFail.error === 'INVALID_CREDENTIALS', 'Trả về lỗi INVALID_CREDENTIALS khi sai mật khẩu');
+
+// ----------------------------------------------------
+// 8. CHẶN THÔNG TIN MẶC ĐỊNH CÔNG KHAI, THU HỒI PHIÊN, ĐỘ MẠNH MẬT KHẨU/PIN
+// ----------------------------------------------------
+console.log('\n8️⃣ KIỂM TRA CHẶN MẬT KHẨU MẶC ĐỊNH, THU HỒI PHIÊN & ĐỘ MẠNH:');
+
+const defaultPassLogin = authenticateAdmin({ username: 'admin', password: DEFAULT_ADMIN_PASSWORD, clientIp: 'test_default_pass_ip' });
+assert(!defaultPassLogin.success && defaultPassLogin.error === 'DEFAULT_CREDENTIALS_DISABLED', 'Mật khẩu mặc định đã công khai bị chặn đăng nhập');
+const defaultPinLogin = authenticateAdmin({ pin: DEFAULT_ADMIN_PIN, clientIp: 'test_default_pin_ip' });
+assert(!defaultPinLogin.success && defaultPinLogin.error === 'DEFAULT_CREDENTIALS_DISABLED', 'PIN mặc định 1234 bị chặn đăng nhập');
+
+assert(validateNewPassword('ngan') !== null, 'Từ chối mật khẩu mới ngắn hơn 10 ký tự');
+assert(validateNewPassword(DEFAULT_ADMIN_PASSWORD) !== null, 'Từ chối đặt lại đúng mật khẩu mặc định');
+assert(validateNewPassword('MatKhau-Du-Dai-2026') === null, 'Chấp nhận mật khẩu mới đủ dài');
+assert(validateNewPin('1234') !== null && validateNewPin('123456') !== null && validateNewPin('000000') !== null, 'Từ chối PIN ngắn hoặc dễ đoán (1234, 123456, 000000)');
+assert(validateNewPin('4829') !== null, 'Từ chối PIN dưới 6 chữ số');
+assert(validateNewPin('739204') === null, 'Chấp nhận PIN 6 chữ số khó đoán');
+
+const pinOk = authenticateAdmin({ pin: process.env.ADMIN_PIN, clientIp: 'test_pin_ok_ip' });
+assert(pinOk.success && pinOk.user.provider === 'pin', 'Đăng nhập bằng PIN khởi tạo hợp lệ thành công');
+
+const sessionBefore = authenticateAdmin({ username: 'admin', password: process.env.ADMIN_PASSWORD, clientIp: 'test_revoke_ip' });
+assert(Boolean(verifyAdminToken(sessionBefore.token)), 'Token phiên hợp lệ trước khi đổi mật khẩu');
+const weakChange = changeAdminPassword(sessionBefore.user.id, { currentPassword: process.env.ADMIN_PASSWORD, newPassword: 'ngan' });
+assert(!weakChange.success && weakChange.error === 'WEAK_CREDENTIALS', 'Đổi sang mật khẩu yếu bị từ chối');
+assert(Boolean(verifyAdminToken(sessionBefore.token)), 'Đổi mật khẩu thất bại không làm mất phiên hiện tại');
+const goodChange = changeAdminPassword(sessionBefore.user.id, { currentPassword: process.env.ADMIN_PASSWORD, newPassword: 'MatKhau-Moi-Rat-Dai-2026' });
+assert(goodChange.success && Boolean(goodChange.token), 'Đổi mật khẩu hợp lệ thành công và trả token mới');
+assert(!verifyAdminToken(sessionBefore.token), 'Token cũ bị vô hiệu hóa sau khi đổi mật khẩu (thu hồi phiên)');
+assert(Boolean(verifyAdminToken(goodChange.token)), 'Token mới sau khi đổi mật khẩu vẫn hợp lệ');
+
+// admins.json hỏng không được tự tạo lại tài khoản mặc định
+const adminsPath = path.join(process.env.DATA_DIR, 'admins.json');
+fs.writeFileSync(adminsPath + '.bak', '[]');
+fs.writeFileSync(adminsPath, '[{"id":"x","username"');
+let adminsError = null;
+try { loadAdmins(); } catch (err) { adminsError = err; }
+assert(adminsError !== null && /bị hỏng/.test(adminsError.message), 'admins.json hỏng và không có bản sao hợp lệ => báo lỗi, không tự tạo lại admin mặc định');
 
 // ----------------------------------------------------
 // TỔNG KẾT

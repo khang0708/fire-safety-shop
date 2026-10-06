@@ -1,0 +1,3 @@
+# Script shell và cấu hình CI luôn dùng LF (CRLF làm hỏng bash trên Linux/VPS)
+*.sh text eol=lf
+*.yml text eol=lf

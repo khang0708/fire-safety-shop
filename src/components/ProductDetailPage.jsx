@@ -166,6 +166,21 @@ export const ProductDetailPage = ({ productId }) => {
     }
   }, [product, brandSettings]);
 
+  // Sản phẩm liên quan (hook phải đặt trước mọi return sớm)
+  const relatedProducts = useMemo(() => {
+    if (!product) return [];
+    return products
+      .filter(p => p.id !== product.id && (p.category === product.category || p.occasion === product.occasion))
+      .slice(0, 4);
+  }, [products, product]);
+
+  // Lấy link chia sẻ / chạy Ads ưu tiên slug SEO theo tên sản phẩm
+  const productShareUrl = useMemo(() => {
+    if (!product) return '';
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://pcccphatantam.com';
+    return getProductUrl(product, origin);
+  }, [product]);
+
   if (!product) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center space-y-4">
@@ -198,20 +213,6 @@ export const ProductDetailPage = ({ productId }) => {
   const accessoryPrice = selectedAccessory ? selectedAccessory.price : 0;
   const unitPrice = product.price + accessoryPrice;
   const totalPrice = unitPrice * quantity;
-
-  // Sản phẩm liên quan
-  const relatedProducts = useMemo(() => {
-    return products
-      .filter(p => p.id !== product.id && (p.category === product.category || p.occasion === product.occasion))
-      .slice(0, 4);
-  }, [products, product]);
-
-  // Lấy link chia sẻ / chạy Ads ưu tiên slug SEO theo tên sản phẩm
-  const productShareUrl = useMemo(() => {
-    if (!product) return '';
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://pcccphatantam.com';
-    return getProductUrl(product, origin);
-  }, [product]);
 
   const handleCopyLink = () => {
     if (navigator?.clipboard?.writeText) {

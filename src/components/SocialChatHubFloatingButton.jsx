@@ -7,7 +7,8 @@ import { ZaloIcon } from './ZaloIcon';
 import { PhoneCallFloatingButton } from './PhoneCallFloatingButton';
 
 export const SocialChatHubFloatingButton = () => {
-  const { shopZaloPhone, brandSettings, facebookSettings } = useShop();
+  const { shopZaloPhone, brandSettings, facebookSettings, currentPath = '/' } = useShop();
+  const hasStickyBuyBar = currentPath.startsWith('/san-pham/');
   const currentHotline = shopZaloPhone || brandSettings?.hotline || '0843066604';
   const cleanPhone = getCleanPhoneNumber(currentHotline);
   const formattedPhone = formatPhoneNumber(currentHotline);
@@ -27,7 +28,7 @@ export const SocialChatHubFloatingButton = () => {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col items-end gap-3 print:hidden">
+    <div className={`fixed right-4 sm:right-6 z-40 flex flex-col items-end gap-3 print:hidden ${hasStickyBuyBar ? 'bottom-24 lg:bottom-6' : 'bottom-4 sm:bottom-6'}`}>
       
       {/* KHUNG MINI POPUP CHAT ĐA KÊNH THÔNG MINH */}
       {isOpen && (

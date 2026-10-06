@@ -1,36 +1,15 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { 
   authenticateAdmin, 
   verifyAdminToken, 
   changeAdminPassword 
 } from './server/auth.js';
+import { readJsonFileSync, writeJsonFileSync } from './server/storage.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DATA_DIR = path.join(__dirname, 'server', 'data');
-
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-
-const readJson = (fileName) => {
-  const filePath = path.join(DATA_DIR, fileName);
-  if (!fs.existsSync(filePath)) return null;
-  try {
-    return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-  } catch (err) {
-    return null;
-  }
-};
-
-const writeJson = (fileName, data) => {
-  const filePath = path.join(DATA_DIR, fileName);
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
-};
+// API dev server dùng chung lớp lưu trữ với server/server.js (DATA_DIR + dữ liệu mẫu server/seed).
+const readJson = (fileName) => readJsonFileSync(fileName, null);
+const writeJson = (fileName, data) => writeJsonFileSync(fileName, data);
 
 const sseClients = new Set();
 const broadcastAdminEvent = (payload) => {
@@ -128,6 +107,13 @@ function fullstackApiPlugin() {
           res.write(`data: ${JSON.stringify({ type: 'CONNECTED' })}\n\n`);
           sseClients.add(res);
           req.on('close', () => sseClients.delete(res));
+          return;
+        }
+
+        // 2b. Vé SSE: chỉ dành cho dev server (server thật kiểm tra vé một lần và token admin)
+        if (url === '/api/auth/sse-ticket' && req.method === 'POST') {
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ success: true, ticket: 'dev-ticket' }));
           return;
         }
 

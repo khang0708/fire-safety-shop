@@ -3,6 +3,7 @@
 // BỘ KIỂM THỬ ĐƠN VỊ: MODULE GIÁM SÁT SỰ CỐ MÁY CHỦ TELEGRAM 24/7
 // ====================================================
 
+import './_setup-env.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -22,7 +23,7 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.join(__dirname, '..');
-const DEV_ALERTS_PATH = path.join(ROOT_DIR, 'server', 'data', 'dev-alerts.json');
+const DEV_ALERTS_PATH = path.join(process.env.DATA_DIR, 'dev-alerts.json');
 
 console.log('====================================================');
 console.log('🤖 BẮT ĐẦU CHUỖI KIỂM THỬ BOT GIÁM SÁT DEVELOPER 24/7');
@@ -105,8 +106,8 @@ try {
   }));
 
   const fileConfig = getDeveloperTelegramConfig();
-  assert(fileConfig.token === '888999:FILE-DEV-TOKEN', 'Đọc fallback cấu hình từ server/data/dev-alerts.json thành công');
-  assert(fileConfig.chatId === '777666', 'Đọc chat ID từ server/data/dev-alerts.json thành công');
+  assert(fileConfig.token === '888999:FILE-DEV-TOKEN', 'Đọc fallback cấu hình từ DATA_DIR/dev-alerts.json thành công');
+  assert(fileConfig.chatId === '777666', 'Đọc chat ID từ DATA_DIR/dev-alerts.json thành công');
 
 } finally {
   // Dọn dẹp file dev-alerts.json tạm

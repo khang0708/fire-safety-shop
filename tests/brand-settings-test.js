@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.join(__dirname, '..');
-const SETTINGS_FILE = path.join(ROOT_DIR, 'server', 'data', 'settings.json');
+const SETTINGS_FILE = path.join(ROOT_DIR, 'server', 'seed', 'settings.json');
 
 console.log('====================================================');
 console.log('🏷️ BẮT ĐẦU KIỂM THỬ TÍNH NĂNG THƯƠNG HIỆU & SEO');

@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 
 import dotenv from 'dotenv';
@@ -13,13 +14,17 @@ import { neon } from '@neondatabase/serverless';
 import { 
   authenticateAdmin, 
   verifyAdminToken, 
-  changeAdminPassword 
+  changeAdminPassword, 
+  findDefaultCredentialAdmins 
 } from './auth.js';
-import { 
-  notifyServerError, 
+import {
+  notifyServerError,
   notifyServerStartup, 
-  testDeveloperServerAlert 
+  notifyServerWarning, 
+  testDeveloperServerAlert
 } from './monitoringBot.js';
+import { DATA_DIR, ensureDir, readJsonFileSync, writeJsonFileSync } from './storage.js';
+import { createRateLimiter } from './rateLimit.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,11 +32,15 @@ const __dirname = path.dirname(__filename);
 // Bắt lỗi toàn cục tiến trình Node.js (Uncaught Exception & Unhandled Rejection)
 process.on('uncaughtException', async (err) => {
   console.error('💥 [CRITICAL] Uncaught Exception:', err);
+  const forceExit = setTimeout(() => process.exit(1), 5000);
   try {
     await notifyServerError(err, { source: 'uncaughtException', fatal: true });
   } catch (notifyErr) {
     console.error('Lỗi khi gửi cảnh báo Telegram cho uncaughtException:', notifyErr.message);
   }
+  clearTimeout(forceExit);
+  // Trạng thái tiến trình không còn đáng tin: thoát để Docker (restart: always) / PM2 khởi động lại.
+  process.exit(1);
 });
 
 process.on('unhandledRejection', async (reason) => {
@@ -46,6 +55,11 @@ process.on('unhandledRejection', async (reason) => {
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Chạy sau Nginx: tin địa chỉ do Nginx ghi vào X-Forwarded-For (phần tử cuối), KHÔNG tin giá trị client tự đặt.
+// Đặt TRUST_PROXY_HOPS=0 nếu chạy trực tiếp không qua proxy.
+const TRUST_PROXY_HOPS = Number.parseInt(process.env.TRUST_PROXY_HOPS ?? '1', 10);
+app.set('trust proxy', Number.isNaN(TRUST_PROXY_HOPS) ? 1 : TRUST_PROXY_HOPS);
 
 // ----------------------------------------------------
 // TIMEOUT HELPERS
@@ -70,29 +84,35 @@ const fetchWithTimeout = (url, options = {}, ms = DEFAULT_TIMEOUT_MS) => {
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '25mb' }));
-app.use(express.urlencoded({ extended: true, limit: '25mb' }));
+
+// Giữ nguyên body gốc cho webhook Facebook để kiểm tra chữ ký HMAC
+const captureRawBody = (req, res, buf) => {
+  if (req.originalUrl && req.originalUrl.startsWith('/api/facebook/webhook')) {
+    req.rawBody = buf;
+  }
+};
+const jsonParserAdmin = express.json({ limit: '25mb', verify: captureRawBody });
+const jsonParserPublic = express.json({ limit: '2mb', verify: captureRawBody });
+app.use((req, res, next) => (getRequestAdmin(req) ? jsonParserAdmin : jsonParserPublic)(req, res, next));
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 
 // ----------------------------------------------------
 // AUTHENTICATION MIDDLEWARE
 // ----------------------------------------------------
-export const requireAdminAuth = (req, res, next) => {
+// Lấy admin từ header (Authorization: Bearer ... hoặc x-admin-token). Không nhận token qua query string
+// vì URL bị ghi vào log truy cập.
+export function getRequestAdmin(req) {
   const authHeader = req.headers['authorization'];
-  const token = (authHeader && authHeader.startsWith('Bearer ')) 
-    ? authHeader.slice(7).trim() 
-    : (req.headers['x-admin-token'] || req.query.admin_token);
+  const token = (authHeader && authHeader.startsWith('Bearer '))
+    ? authHeader.slice(7).trim()
+    : req.headers['x-admin-token'];
+  return token ? verifyAdminToken(token) : null;
+}
 
-  if (token) {
-    const user = verifyAdminToken(token);
-    if (user) {
-      req.adminUser = user;
-      return next();
-    }
-  }
-
-  // Hỗ trợ backwards-compatibility cho môi trường test
-  if (process.env.NODE_ENV === 'test' && req.headers['x-admin-auth'] === 'true') {
-    req.adminUser = { id: 'admin_test', username: 'test', role: 'SUPER_ADMIN' };
+export const requireAdminAuth = (req, res, next) => {
+  const user = getRequestAdmin(req);
+  if (user) {
+    req.adminUser = user;
     return next();
   }
 
@@ -103,11 +123,48 @@ export const requireAdminAuth = (req, res, next) => {
   });
 };
 
-const DATA_DIR = path.join(__dirname, 'data');
-if (!fs.existsSync(DATA_DIR)) {
-  try {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  } catch (e) {}
+// Giới hạn tần suất cho các route công khai có ghi dữ liệu / dễ bị dò quét
+const orderCreateLimiter = createRateLimiter({
+  windowMs: 10 * 60 * 1000,
+  max: 15,
+  message: 'Bạn đã gửi quá nhiều đơn hàng trong thời gian ngắn. Vui lòng thử lại sau hoặc gọi hotline.'
+});
+const reviewCreateLimiter = createRateLimiter({
+  windowMs: 60 * 60 * 1000,
+  max: 8,
+  message: 'Bạn đã gửi quá nhiều đánh giá. Vui lòng thử lại sau.'
+});
+const orderTrackLimiter = createRateLimiter({
+  windowMs: 10 * 60 * 1000,
+  max: 30,
+  message: 'Bạn tra cứu quá nhiều lần. Vui lòng thử lại sau ít phút.'
+});
+
+// Vé dùng một lần, sống 30 giây, để mở luồng SSE (EventSource không gửi được header Authorization).
+const sseTickets = new Map(); // ticket -> { sub, expiresAt }
+const issueSseTicket = (adminUser) => {
+  const ticket = crypto.randomBytes(24).toString('hex');
+  sseTickets.set(ticket, { sub: adminUser.sub, expiresAt: Date.now() + 30 * 1000 });
+  return ticket;
+};
+const consumeSseTicket = (ticket) => {
+  const entry = sseTickets.get(ticket);
+  sseTickets.delete(ticket);
+  return entry && entry.expiresAt > Date.now() ? entry : null;
+};
+setInterval(() => {
+  const now = Date.now();
+  for (const [ticket, entry] of sseTickets) {
+    if (entry.expiresAt <= now) sseTickets.delete(ticket);
+  }
+}, 60 * 1000).unref?.();
+
+// DATA_DIR lấy từ storage.js (dữ liệu chạy thật nằm ngoài repo khi đặt biến môi trường DATA_DIR).
+try {
+  ensureDir(DATA_DIR);
+} catch (err) {
+  console.error('[storage] Không tạo được thư mục dữ liệu', DATA_DIR, err.message);
+  throw err;
 }
 
 // ----------------------------------------------------
@@ -167,35 +224,15 @@ const readJson = async (fileName) => {
     return memoryDb.get(fileName);
   }
 
-  // 3. Fallback /tmp container local
-  const tmpPath = path.join('/tmp', fileName);
-  if (fs.existsSync(tmpPath)) {
-    try {
-      const data = JSON.parse(fs.readFileSync(tmpPath, 'utf-8'));
-      memoryDb.set(fileName, data);
-      return data;
-    } catch (err) {}
-  }
-
-  // 4. Fallback DATA_DIR (tệp bundle gốc)
-  const filePath = path.join(DATA_DIR, fileName);
-  if (!fs.existsSync(filePath)) {
-    return fileName.includes('settings') ? {} : [];
-  }
-  try {
-    const raw = fs.readFileSync(filePath, 'utf-8');
-    const data = JSON.parse(raw);
-    memoryDb.set(fileName, data);
-    return data;
-  } catch (err) {
-    console.error(`Lỗi đọc file ${fileName}:`, err);
-    return fileName.includes('settings') ? {} : [];
-  }
+  // 3. File trong DATA_DIR (ghi atomic, có .bak). File hỏng KHÔNG còn bị coi là dữ liệu rỗng:
+  //    readJsonFileSync ném lỗi để lần ghi sau không ghi đè mất dữ liệu thật.
+  const data = readJsonFileSync(fileName, fileName.includes('settings') ? {} : []);
+  memoryDb.set(fileName, data);
+  return data;
 };
 
 const writeJson = async (fileName, data) => {
   const key = fileName.replace('.json', '');
-  memoryDb.set(fileName, data);
 
   // 1. Lưu vào Neon Database (Đồng bộ tức thì lên đám mây cho mọi container)
   if (sql) {
@@ -212,37 +249,15 @@ const writeJson = async (fileName, data) => {
     }
   }
 
-  // 2. Ghi fallback vào filesystem cục bộ
+  // 2. Ghi file atomic vào DATA_DIR. Thất bại => ném lỗi để API trả 500 thay vì báo thành công giả.
   try {
-    const filePath = path.join(DATA_DIR, fileName);
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+    writeJsonFileSync(fileName, data);
+    memoryDb.set(fileName, data);
   } catch (err) {
-    try {
-      const tmpPath = path.join('/tmp', fileName);
-      fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
-    } catch (tmpErr) {
-      console.warn(`Không thể ghi file ${fileName}:`, tmpErr.message);
-    }
-  }
-};
-
-// Tự động dọn dẹp các sản phẩm không hợp lệ (mẫu hoa cũ fl-1787735321783) khỏi cơ sở dữ liệu VPS / Neon DB
-export const sanitizeProductsDb = async () => {
-  try {
-    const products = await readJson('products.json');
-    if (Array.isArray(products)) {
-      const hasLegacy = products.some(p => p.id === 'fl-1787735321783' || p.id?.startsWith('fl-') || p.name?.includes('Hoa Hồng'));
-      if (hasLegacy) {
-        const cleaned = products.filter(p => p.id !== 'fl-1787735321783' && !p.id?.startsWith('fl-') && !p.name?.includes('Hoa Hồng'));
-        await writeJson('products.json', cleaned);
-        console.log('[DB Sanitize] Đã tự động loại bỏ sản phẩm mẫu hoa cũ (fl-1787735321783) khỏi cơ sở dữ liệu VPS/Cloud.');
-        return cleaned;
-      }
-    }
-    return products;
-  } catch (err) {
-    console.warn('[DB Sanitize Note]:', err.message);
-    return [];
+    // Không để cache giữ dữ liệu chưa được lưu
+    memoryDb.delete(fileName);
+    if (!sql) throw err;
+    console.warn(`[storage] Không ghi được file ${fileName}:`, err.message);
   }
 };
 
@@ -262,34 +277,41 @@ export const broadcastAdminEvent = (eventPayload) => {
   });
 };
 
-// GET /api/admin/events (SSE Stream)
-// LƯU Ý QUAN TRỌNG: Vercel Serverless Functions không hỗ trợ giữ kết nối mở
-// vô thời hạn — mỗi function instance chỉ chạy tối đa tới giới hạn thời gian
-// cấu hình (mặc định 300s) rồi bị hạ, và các instance cũng không dùng chung
-// bộ nhớ nên broadcastAdminEvent() không thể đảm bảo tới các client trên
-// instance khác. Giữ handler này mở trên Vercel gây ra lỗi
-// "Task timed out after 300 seconds" lặp lại liên tục, vì trình duyệt
-// (EventSource) tự động kết nối lại ngay khi bị đóng, tạo vòng lặp vô hạn.
-// => Trên Vercel, đóng kết nối ngay lập tức để tránh treo function;
-//    client sẽ tự chuyển sang cơ chế polling (đã có sẵn) làm phương án dự phòng.
+// GET /api/admin/events?ticket=... (SSE Stream, chỉ admin).
+// Luồng này phát cả đơn hàng mới (có SĐT/địa chỉ khách) nên bắt buộc phải có vé do admin đã đăng nhập cấp.
 app.get('/api/admin/events', (req, res) => {
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders?.();
-
-  if (process.env.VERCEL) {
-    res.write(`data: ${JSON.stringify({ type: 'SSE_UNSUPPORTED', message: 'Realtime SSE not supported on serverless; use polling' })}\n\n`);
-    res.end();
-    return;
+  const ticket = consumeSseTicket(String(req.query.ticket || ''));
+  if (!ticket) {
+    return res.status(401).json({
+      success: false,
+      error: 'UNAUTHORIZED',
+      message: 'Cần vé kết nối hợp lệ (lấy bằng POST /api/auth/sse-ticket sau khi đăng nhập admin).'
+    });
   }
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no'); // Nginx không được gom đệm luồng sự kiện
+  res.flushHeaders?.();
 
   res.write(`data: ${JSON.stringify({ type: 'CONNECTED', message: 'SSE Admin Stream Active' })}\n\n`);
   sseClients.add(res);
 
-  req.on('close', () => {
+  // Giữ kết nối sống qua proxy_read_timeout và phát hiện client đã ngắt
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(': ping\n\n');
+    } catch {
+      cleanup();
+    }
+  }, 25 * 1000);
+
+  function cleanup() {
+    clearInterval(heartbeat);
     sseClients.delete(res);
-  });
+  }
+  req.on('close', cleanup);
 });
 
 // ----------------------------------------------------
@@ -298,7 +320,7 @@ app.get('/api/admin/events', (req, res) => {
 
 // POST /api/auth/login
 app.post('/api/auth/login', (req, res) => {
-  const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || req.socket?.remoteAddress || '127.0.0.1';
+  const clientIp = req.ip || req.socket?.remoteAddress || '127.0.0.1';
   const { username, password, pin } = req.body || {};
   const result = authenticateAdmin({ username, password, pin, clientIp });
 
@@ -312,15 +334,12 @@ app.post('/api/auth/login', (req, res) => {
 // GET /api/auth/me (Kiểm tra token còn hợp lệ không)
 app.get('/api/auth/me', (req, res) => {
   const authHeader = req.headers['authorization'];
-  const token = (authHeader && authHeader.startsWith('Bearer ')) 
-    ? authHeader.slice(7).trim() 
-    : req.headers['x-admin-token'];
-
-  if (!token) {
+  const hasToken = Boolean((authHeader && authHeader.startsWith('Bearer ')) || req.headers['x-admin-token']);
+  if (!hasToken) {
     return res.status(401).json({ success: false, error: 'NO_TOKEN', message: 'Chưa cung cấp token xác thực' });
   }
 
-  const user = verifyAdminToken(token);
+  const user = getRequestAdmin(req);
   if (!user) {
     return res.status(401).json({ success: false, error: 'INVALID_TOKEN', message: 'Phiên làm việc đã hết hạn hoặc không hợp lệ' });
   }
@@ -337,6 +356,11 @@ app.post('/api/auth/change-password', requireAdminAuth, (req, res) => {
   return res.status(400).json(result);
 });
 
+// POST /api/auth/sse-ticket (admin xin vé mở luồng sự kiện thời gian thực)
+app.post('/api/auth/sse-ticket', requireAdminAuth, (req, res) => {
+  res.json({ success: true, ticket: issueSseTicket(req.adminUser) });
+});
+
 // POST /api/auth/logout
 app.post('/api/auth/logout', (req, res) => {
   res.json({ success: true, message: 'Đã đăng xuất phiên làm việc' });
@@ -350,10 +374,7 @@ app.post('/api/auth/logout', (req, res) => {
 app.get('/api/products', async (req, res) => {
   try {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    let products = await readJson('products.json');
-    if (Array.isArray(products) && products.some(p => p.id === 'fl-1787735321783' || p.id?.startsWith('fl-') || p.name?.includes('Hoa Hồng'))) {
-      products = (await sanitizeProductsDb()) || products.filter(p => p.id !== 'fl-1787735321783' && !p.id?.startsWith('fl-') && !p.name?.includes('Hoa Hồng'));
-    }
+    const products = await readJson('products.json');
     res.json({ success: true, data: products, total: products.length });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -498,8 +519,38 @@ app.delete('/api/products/:id', requireAdminAuth, async (req, res) => {
 // 2. ORDERS REST API (Quản Lý Đơn Hàng & Vận Hành Florist)
 // ----------------------------------------------------
 
-// GET /api/orders
-app.get('/api/orders', async (req, res) => {
+const normalizePhone = (value) => String(value || '').replace(/\D/g, '');
+
+const safeEqual = (a, b) => {
+  const x = Buffer.from(String(a));
+  const y = Buffer.from(String(b));
+  return x.length === y.length && crypto.timingSafeEqual(x, y);
+};
+
+// GET /api/orders/track?code=...&phone=... (khách tự tra cứu đơn của mình: phải khớp cả mã đơn lẫn SĐT)
+app.get('/api/orders/track', orderTrackLimiter, async (req, res) => {
+  try {
+    res.setHeader('Cache-Control', 'no-store');
+    const code = String(req.query.code || '').trim().toUpperCase();
+    const phone = normalizePhone(req.query.phone);
+    if (!code || phone.length < 8) {
+      return res.status(400).json({ success: false, message: 'Vui lòng cung cấp mã đơn hàng và số điện thoại đặt hàng.' });
+    }
+
+    const orders = (await readJson('orders.json')) || [];
+    const order = orders.find(o => String(o.orderCode || o.id || '').toUpperCase() === code);
+    const knownPhones = order ? [normalizePhone(order.customerPhone), normalizePhone(order.receiverPhone)] : [];
+    if (!order || !knownPhones.includes(phone)) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy đơn hàng khớp mã và số điện thoại.' });
+    }
+    return res.json({ success: true, data: order });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// GET /api/orders (danh sách đầy đủ kèm SĐT/địa chỉ khách: chỉ admin)
+app.get('/api/orders', requireAdminAuth, async (req, res) => {
   try {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     const orders = await readJson('orders.json');
@@ -579,36 +630,49 @@ const sendTelegramNotificationForOrder = async (order, customToken = null, custo
 };
 
 // POST /api/orders
-app.post('/api/orders', async (req, res) => {
+const clampText = (value, max) => (typeof value === 'string' ? value.trim().slice(0, max) : '');
+const ORDER_CODE_PATTERN = /^[A-Z]{2,4}-\d{4,10}$/;
+const generateOrderCode = (orders) => {
+  const used = new Set(orders.map(o => String(o.orderCode || o.id || '').toUpperCase()));
+  for (let i = 0; i < 20; i++) {
+    const code = 'FB-' + Math.floor(10000 + Math.random() * 90000);
+    if (!used.has(code)) return code;
+  }
+  return 'FB-' + Date.now().toString().slice(-8);
+};
+
+app.post('/api/orders', orderCreateLimiter, async (req, res) => {
   try {
     const now = new Date();
     const timeStr = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
     const dateStr = now.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
     const currentTime = `${timeStr} (${dateStr})`;
-    const newOrderCode = req.body.orderCode || req.body.id || ('FB-' + Math.floor(10000 + Math.random() * 90000));
-
     const orders = (await readJson('orders.json')) || [];
+    // Mã đơn do client gửi chỉ được dùng nếu đúng định dạng và chưa tồn tại (tránh ghi trùng/giả mạo đơn khác)
+    const requestedCode = String(req.body.orderCode || req.body.id || '').trim().toUpperCase();
+    const codeIsUsable = ORDER_CODE_PATTERN.test(requestedCode) && !orders.some(o => String(o.orderCode || o.id || '').toUpperCase() === requestedCode);
+    const newOrderCode = codeIsUsable ? requestedCode : generateOrderCode(orders);
     const newOrder = {
       id: newOrderCode,
       orderCode: newOrderCode,
-      customerName: req.body.customerName || req.body.senderName || 'Khách hàng',
-      customerPhone: req.body.customerPhone || req.body.senderPhone || '0901 234 567',
-      receiverName: req.body.receiverName || 'Người nhận hoa',
-      receiverPhone: req.body.receiverPhone || '0988 765 432',
-      receiverAddress: req.body.receiverAddress || 'Quận 1, TP.HCM',
+      customerName: clampText(req.body.customerName || req.body.senderName, 120) || 'Khách hàng',
+      customerPhone: clampText(req.body.customerPhone || req.body.senderPhone, 30) || '0901 234 567',
+      receiverName: clampText(req.body.receiverName, 120) || 'Người nhận hoa',
+      receiverPhone: clampText(req.body.receiverPhone, 30) || '0988 765 432',
+      receiverAddress: clampText(req.body.receiverAddress, 300) || 'Quận 1, TP.HCM',
       isAnonymous: Boolean(req.body.isAnonymous),
-      productName: req.body.productName || 'Bó hoa tươi nghệ thuật',
-      cardMessage: req.body.cardMessage || 'Gửi gắm yêu thương!',
-      senderSign: req.body.senderSign || req.body.senderName || 'Người gửi',
-      deliverySlot: req.body.deliverySlot || 'Hỏa tốc 90 phút',
+      productName: clampText(req.body.productName, 200) || 'Bó hoa tươi nghệ thuật',
+      cardMessage: clampText(req.body.cardMessage, 500) || 'Gửi gắm yêu thương!',
+      senderSign: clampText(req.body.senderSign || req.body.senderName, 120) || 'Người gửi',
+      deliverySlot: clampText(req.body.deliverySlot, 120) || 'Hỏa tốc 90 phút',
       totalAmount: Number(req.body.totalAmount) || 850000,
       status: 'ARRANGING',
       florist: 'Thợ cắm hoa Minh Thư (Studio A)',
       floristAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-      proofPhotoUrl: req.body.proofPhotoUrl || null,
+      proofPhotoUrl: null, // chỉ admin được gắn ảnh nghiệm thu qua PATCH
       isApproved: false,
       createdAt: currentTime,
-      items: req.body.items || []
+      items: Array.isArray(req.body.items) ? req.body.items.slice(0, 50) : []
     };
 
     orders.unshift(newOrder);
@@ -621,11 +685,8 @@ app.post('/api/orders', async (req, res) => {
     });
 
     // Gửi thông báo Telegram tự động từ Server
-    const telegramSent = await sendTelegramNotificationForOrder(
-      newOrder,
-      req.body.telegramBotToken,
-      req.body.telegramChatId
-    );
+    // Token/Chat ID chỉ lấy từ cài đặt của shop hoặc biến môi trường, KHÔNG nhận từ client
+    const telegramSent = await sendTelegramNotificationForOrder(newOrder);
 
     res.status(201).json({ success: true, data: newOrder, telegramSent });
   } catch (error) {
@@ -667,7 +728,7 @@ app.patch('/api/orders/:id/status', requireAdminAuth, async (req, res) => {
 // ----------------------------------------------------
 
 // Endpoint tự động tìm Chat ID từ Bot Token 1-Chạm!
-app.post('/api/notifications/telegram-get-chat-id', async (req, res) => {
+app.post('/api/notifications/telegram-get-chat-id', requireAdminAuth, async (req, res) => {
   try {
     const rawToken = req.body.botToken;
     if (!rawToken) {
@@ -849,14 +910,35 @@ app.get('/api/reviews', async (req, res) => {
   }
 });
 
-app.post('/api/reviews', async (req, res) => {
+const isSafeImageRef = (value) =>
+  typeof value === 'string' && value.length <= 1500000 &&
+  (/^https?:\/\//i.test(value) || value.startsWith('/images/') || /^data:image\/(png|jpe?g|webp|gif);base64,/i.test(value));
+
+app.post('/api/reviews', reviewCreateLimiter, async (req, res) => {
   try {
     const reviews = (await readJson('reviews.json')) || [];
+    const body = req.body || {};
+    const comment = clampText(body.comment, 1500);
+    if (!comment) {
+      return res.status(400).json({ success: false, message: 'Vui lòng nhập nội dung đánh giá.' });
+    }
+
+    const requestedId = typeof body.id === 'string' ? body.id.trim() : '';
+    const idIsUsable = /^REV-[A-Za-z0-9-]{3,40}$/.test(requestedId) && !reviews.some(r => r.id === requestedId);
+    const rating = Math.min(5, Math.max(1, Math.round(Number(body.rating)) || 5));
+
     const newReview = {
-      id: req.body.id || `REV-${Date.now()}`,
-      ...req.body,
-      createdAt: req.body.createdAt || new Date().toISOString().split('T')[0],
-      likes: req.body.likes || 0,
+      id: idIsUsable ? requestedId : `REV-${Date.now()}`,
+      customerName: clampText(body.customerName, 80) || 'Khách hàng PCCC',
+      customerAvatar: /^https?:\/\//i.test(body.customerAvatar || '') ? String(body.customerAvatar).slice(0, 500) : '',
+      productName: clampText(body.productName, 160),
+      rating,
+      occasion: clampText(body.occasion, 80),
+      comment,
+      proofImage: isSafeImageRef(body.proofImage) ? body.proofImage : null,
+      verified: false, // chỉ hệ thống/admin mới đánh dấu xác thực
+      createdAt: new Date().toISOString().split('T')[0],
+      likes: 0,
       isVisible: true
     };
     reviews.unshift(newReview);
@@ -901,7 +983,7 @@ app.post('/api/ai/analyze-flower', async (req, res) => {
 // ----------------------------------------------------
 // 7. ZALO ZNS & NOTIFICATION API
 // ----------------------------------------------------
-app.post('/api/zalo/send-zns', async (req, res) => {
+app.post('/api/zalo/send-zns', requireAdminAuth, async (req, res) => {
   try {
     const { phone, customerName, orderCode, photoUrl, accessToken } = req.body;
 
@@ -955,22 +1037,39 @@ const maskSecret = (val) => {
   return `${val.slice(0, 6)}...${val.slice(-4)}`;
 };
 
+// Khóa nào trông giống bí mật thì KHÔNG bao giờ trả cho người chưa đăng nhập (kể cả trường thêm vào sau này).
+const SECRET_KEY_PATTERN = /(token|secret|password|apikey|api_key|chatid|recipientid)/i;
+const redactSecrets = (value) => {
+  if (Array.isArray(value)) return value.map(redactSecrets);
+  if (value && typeof value === 'object') {
+    const out = {};
+    for (const [key, val] of Object.entries(value)) {
+      if (/^has[A-Z]/.test(key)) {
+        out[key] = val;
+      } else if (!SECRET_KEY_PATTERN.test(key)) {
+        out[key] = redactSecrets(val);
+      }
+    }
+    return out;
+  }
+  return value;
+};
+
 app.get('/api/settings', async (req, res) => {
   try {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     const settings = (await readJson('settings.json')) || {};
+    const isAdmin = Boolean(getRequestAdmin(req));
 
-    const authHeader = req.headers['authorization'];
-    const token = (authHeader && authHeader.startsWith('Bearer ')) ? authHeader.slice(7).trim() : req.headers['x-admin-token'];
-    const adminUser = token ? verifyAdminToken(token) : null;
-    const isAdmin = Boolean(adminUser) || (process.env.NODE_ENV === 'test' && req.headers['x-admin-auth'] === 'true');
-
-    const safeSettings = {
-      ...settings,
-      telegramBotToken: isAdmin ? settings.telegramBotToken : maskSecret(settings.telegramBotToken),
+    const flags = {
       hasTelegramToken: Boolean(settings.telegramBotToken && settings.telegramBotToken.length > 5),
-      hasTelegramChatId: Boolean(settings.telegramChatId)
+      hasTelegramChatId: Boolean(settings.telegramChatId),
+      hasFacebookPageToken: Boolean(settings.facebookSettings?.pageAccessToken)
     };
+
+    const safeSettings = isAdmin
+      ? { ...settings, ...flags }
+      : { ...redactSecrets(settings), ...flags };
 
     res.json({ success: true, data: safeSettings });
   } catch (error) {
@@ -1067,10 +1166,13 @@ app.get('/api/facebook/webhook', async (req, res) => {
     const challenge = req.query['hub.challenge'];
 
     const settings = (await readJson('settings.json')) || {};
-    const expectedToken = settings.facebookSettings?.verifyToken || 'flameguard_webhook_secret_2026';
+    const expectedToken = settings.facebookSettings?.verifyToken;
+    if (!expectedToken) {
+      return res.status(403).send('Forbidden: Webhook verify token chưa được cấu hình');
+    }
 
     if (mode && token) {
-      if (mode === 'subscribe' && token === expectedToken) {
+      if (mode === 'subscribe' && safeEqual(token, expectedToken)) {
         console.log('✅ [Facebook Webhook] Đã xác thực thành công Webhook với Meta for Developers!');
         return res.status(200).send(challenge);
       } else {
@@ -1087,6 +1189,18 @@ app.get('/api/facebook/webhook', async (req, res) => {
 // 8.2. Nhận tin nhắn sự kiện từ Webhook Facebook Messenger & Tự động phản hồi thông minh (Chatbot)
 app.post('/api/facebook/webhook', async (req, res) => {
   try {
+    // Chỉ chấp nhận sự kiện có chữ ký HMAC hợp lệ từ Meta (cần biến môi trường FACEBOOK_APP_SECRET)
+    const appSecret = process.env.FACEBOOK_APP_SECRET;
+    if (!appSecret) {
+      console.warn('[Facebook Webhook] Bỏ qua sự kiện: chưa đặt FACEBOOK_APP_SECRET nên không thể xác minh chữ ký X-Hub-Signature-256.');
+      return res.sendStatus(403);
+    }
+    const signature = String(req.headers['x-hub-signature-256'] || '');
+    const expectedSignature = 'sha256=' + crypto.createHmac('sha256', appSecret).update(req.rawBody || Buffer.alloc(0)).digest('hex');
+    if (!safeEqual(signature, expectedSignature)) {
+      return res.sendStatus(403);
+    }
+
     const body = req.body;
 
     if (body.object === 'page') {
@@ -1172,7 +1286,7 @@ app.post('/api/facebook/webhook', async (req, res) => {
 });
 
 // 8.3. API gửi tin nhắn chủ động qua Facebook Messenger (Send Message / Push Notification)
-app.post('/api/facebook/send-message', async (req, res) => {
+app.post('/api/facebook/send-message', requireAdminAuth, async (req, res) => {
   try {
     const { recipientId, message, pageAccessToken, quickReplies } = req.body;
     const settings = (await readJson('settings.json')) || {};
@@ -1204,7 +1318,7 @@ app.post('/api/facebook/send-message', async (req, res) => {
 });
 
 // 8.4. API thử nghiệm kết nối Facebook Messenger (Test Connection)
-app.post('/api/facebook/test-connection', async (req, res) => {
+app.post('/api/facebook/test-connection', requireAdminAuth, async (req, res) => {
   try {
     const { pageId, pageAccessToken, recipientId, testOrder } = req.body;
     const cleanId = (pageId || 'tiemhoaflorabloom').trim();
@@ -1275,10 +1389,7 @@ app.get('/api/articles', async (req, res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     const articles = (await readJson('articles.json')) || [];
 
-    const authHeader = req.headers['authorization'];
-    const token = (authHeader && authHeader.startsWith('Bearer ')) ? authHeader.slice(7).trim() : req.headers['x-admin-token'];
-    const adminUser = token ? verifyAdminToken(token) : null;
-    const isAdmin = Boolean(adminUser) || (process.env.NODE_ENV === 'test' && req.headers['x-admin-auth'] === 'true');
+    const isAdmin = Boolean(getRequestAdmin(req));
 
     const { status, category, search, limit } = req.query;
 
@@ -1325,6 +1436,10 @@ app.get('/api/articles/:slugOrId', async (req, res) => {
     const articleIndex = articles.findIndex(a => a.slug === slugOrId || a.id === slugOrId);
 
     if (articleIndex === -1) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy bài viết' });
+    }
+
+    if (articles[articleIndex].status === 'draft' && !getRequestAdmin(req)) {
       return res.status(404).json({ success: false, message: 'Không tìm thấy bài viết' });
     }
 
@@ -1702,6 +1817,18 @@ if (fs.existsSync(distPath)) {
 // 9. MIDDLEWARE XỬ LÝ LỖI 500 TẬP TRUNG & BÁO ĐỘNG TELEGRAM DEVELOPER
 // ----------------------------------------------------
 app.use(async (err, req, res, next) => {
+  // Lỗi do client (JSON hỏng, body quá lớn...) không phải sự cố máy chủ: trả 4xx, không báo động Telegram.
+  const clientStatus = err.status || err.statusCode;
+  if (clientStatus >= 400 && clientStatus < 500) {
+    if (res.headersSent) return next(err);
+    const tooLarge = err.type === 'entity.too.large';
+    return res.status(clientStatus).json({
+      success: false,
+      error: tooLarge ? 'PAYLOAD_TOO_LARGE' : 'BAD_REQUEST',
+      message: tooLarge ? 'Dữ liệu gửi lên quá lớn.' : 'Yêu cầu không hợp lệ.'
+    });
+  }
+
   console.error('❌ [EXPRESS ERROR 500]:', err);
 
   try {
@@ -1709,7 +1836,7 @@ app.use(async (err, req, res, next) => {
       source: 'express_500_middleware',
       endpoint: req.originalUrl || req.url,
       method: req.method,
-      ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress,
+      ip: req.ip || req.socket?.remoteAddress,
       userAgent: req.headers['user-agent']
     });
   } catch (notifyErr) {
@@ -1728,9 +1855,20 @@ app.use(async (err, req, res, next) => {
 });
 
 if (!process.env.VERCEL && process.env.NODE_ENV !== 'test') {
+  try {
+    const weakAdmins = findDefaultCredentialAdmins();
+    if (weakAdmins.length > 0) {
+      const warning = `Tài khoản admin [${weakAdmins.join(', ')}] vẫn dùng mật khẩu/PIN mặc định đã công khai. Đăng nhập bằng thông tin mặc định đã bị chặn. Hãy đặt lại: docker exec -it flameguard-web node scripts/reset-admin.js`;
+      console.error('🚨 [SECURITY] ' + warning);
+      notifyServerWarning('Admin còn mật khẩu mặc định', warning).catch(() => {});
+    }
+  } catch (err) {
+    console.error('🚨 [SECURITY] Cấu hình xác thực không hợp lệ, máy chủ không khởi động:', err.message);
+    process.exit(1);
+  }
+
   const server = app.listen(PORT, '0.0.0.0', async () => {
-    console.log(`🔥 FLAMEGUARD PRO API Server đang chạy tại: http://127.0.0.1:${PORT}`);
-    await sanitizeProductsDb();
+    console.log(`🔥 FLAMEGUARD PRO API Server đang chạy tại: http://127.0.0.1:${PORT} (dữ liệu: ${DATA_DIR})`);
     notifyServerStartup().catch(err => {
       console.warn('[Startup Alert Note]:', err.message);
     });

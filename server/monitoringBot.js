@@ -8,6 +8,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
+import { DATA_DIR } from './storage.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -63,7 +64,7 @@ export const getEnvDiagnosticInfo = () => {
     } catch {}
   }
 
-  const devAlertsJsonPath = path.join(__dirname, 'data', 'dev-alerts.json');
+  const devAlertsJsonPath = path.join(DATA_DIR, 'dev-alerts.json');
   const devAlertsJsonExists = fs.existsSync(devAlertsJsonPath);
 
   return {
@@ -212,10 +213,10 @@ export const getDeveloperTelegramConfig = () => {
   ];
   let chatId = chatIdCandidates.find(c => c !== undefined && c !== null && String(c).trim().length > 0) || '';
 
-  // 2. Dự phòng: file riêng tư server/data/dev-alerts.json (đã được gitignore)
+  // 2. Dự phòng: file riêng tư dev-alerts.json trong DATA_DIR (đã được gitignore)
   if (!token || !chatId) {
     try {
-      const devAlertsPath = path.join(__dirname, 'data', 'dev-alerts.json');
+      const devAlertsPath = path.join(DATA_DIR, 'dev-alerts.json');
       if (fs.existsSync(devAlertsPath)) {
         const fileContent = fs.readFileSync(devAlertsPath, 'utf8');
         const data = JSON.parse(fileContent);
@@ -417,7 +418,7 @@ export const notifyServerError = async (error, context = {}) => {
     (context.extraInfo ? `ℹ️ <b>Thông tin phụ:</b> ${escapeTelegramHtml(JSON.stringify(context.extraInfo))}\n` : '') +
     `\n📑 <b>Stack Trace (5 dòng đầu):</b>\n` +
     `<pre><code>${escapeTelegramHtml(stackLines || 'Không có stack trace')}</code></pre>\n\n` +
-    `⚠️ <i>Kiểm tra log trên VPS bằng lệnh: <code>pm2 logs fire-safety-api</code></i>`;
+    `⚠️ <i>Kiểm tra log trên VPS bằng lệnh: <code>docker logs --tail 100 flameguard-web</code></i>`;
 
   const result = await sendTelegramRaw(config.token, config.chatId, htmlMessage);
   return {

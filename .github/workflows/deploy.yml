@@ -74,42 +74,28 @@ jobs:
             echo "📂 Thư mục triển khai: $TARGET_DIR"
             cd "$TARGET_DIR"
 
-            # 1. Sao lưu tạm thời dữ liệu thực tế tại server/data và cấu hình SSL
-            BACKUP_DIR="/tmp/flameguard_deploy_backup_$(date +%s)"
-            mkdir -p "$BACKUP_DIR"
-            if [ -d "server/data" ]; then
-              cp -r server/data "$BACKUP_DIR/"
-            fi
-            if [ -f "nginx/conf.d/app.conf" ]; then
-              cp nginx/conf.d/app.conf "$BACKUP_DIR/app.conf"
-            fi
-
-            # 2. Đồng bộ mã nguồn mới nhất từ nhánh main (giải quyết triệt để lỗi xung đột git pull)
-            echo "📥 Đồng bộ mã nguồn mới nhất từ GitHub..."
+            # 1. Lấy mã mới nhưng CHƯA áp dụng; ghi nhớ commit đang chạy để có thể quay lại
             git fetch origin main
+            export PREV_COMMIT="$(git rev-parse HEAD)"
+            echo "📌 Commit đang chạy: $PREV_COMMIT"
+
+            # 2. Chuyển/sao lưu dữ liệu ra DATA_DIR ngoài repo bằng script bản MỚI (từ origin/main), TRƯỚC khi git reset.
+            #    Dữ liệu từng nằm trong git (server/data/*.json) sẽ bị reset xóa khỏi thư mục làm việc; script này giữ bản sao an toàn.
+            git show origin/main:scripts/prepare-data.sh > /tmp/prepare-data.sh
+            bash /tmp/prepare-data.sh prepare "$PWD"
+            rm -f /tmp/prepare-data.sh
+
+            # 3. Đồng bộ mã nguồn; giữ nguyên cấu hình nginx/SSL của VPS (file này bị ghi lại khi cấp chứng chỉ)
+            echo "📥 Đồng bộ mã nguồn mới nhất từ GitHub..."
+            NGINX_BACKUP="$(mktemp)"
+            if [ -f nginx/conf.d/app.conf ]; then cp nginx/conf.d/app.conf "$NGINX_BACKUP"; fi
+            # Gỡ file dữ liệu cũ (từng nằm trong git) khỏi CHỈ MỤC git của VPS để git reset không xóa chúng khỏi thư mục
+            # làm việc: container cũ vẫn đang đọc/ghi các file này cho tới khi được thay thế. Dữ liệu đã có bản sao ở DATA_DIR.
+            git ls-files -z server/data | xargs -0 -r git update-index --force-remove --
             git reset --hard origin/main
+            if [ -s "$NGINX_BACKUP" ]; then cp "$NGINX_BACKUP" nginx/conf.d/app.conf; fi
+            rm -f "$NGINX_BACKUP"
 
-            # 3. Khôi phục lại dữ liệu và cấu hình SSL
-            if [ -d "$BACKUP_DIR/data" ]; then
-              cp -r "$BACKUP_DIR/data"/* server/data/ 2>/dev/null || true
-            fi
-            if [ -f "$BACKUP_DIR/app.conf" ]; then
-              cp "$BACKUP_DIR/app.conf" nginx/conf.d/app.conf
-            fi
-            rm -rf "$BACKUP_DIR"
-
-            # Đảm bảo loại bỏ triệt để sản phẩm hoa cũ fl-1787735321783 khỏi server/data/products.json
-            if [ -f "server/data/products.json" ]; then
-              node -e "
-                const fs = require('fs');
-                try {
-                  let p = JSON.parse(fs.readFileSync('server/data/products.json', 'utf8'));
-                  p = p.filter(x => x.id !== 'fl-1787735321783' && !x.id.startsWith('fl-') && !x.name.includes('Hoa Hồng'));
-                  fs.writeFileSync('server/data/products.json', JSON.stringify(p, null, 2));
-                } catch(e) {}
-              " 2>/dev/null || true
-            fi
-
-            # 4. Đảm bảo quyền thực thi và chạy deploy
-            chmod +x deploy.sh init-ssl.sh 2>/dev/null || true
-            ./deploy.sh
+            # 4. Build, thử khởi động bản mới, thay container và kiểm tra sức khỏe (xem deploy.sh)
+            chmod +x deploy.sh init-ssl.sh scripts/*.sh 2>/dev/null || true
+            ./deploy.sh --no-sync

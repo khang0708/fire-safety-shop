@@ -3,6 +3,10 @@
 # Thay thế "YOUR_DOMAIN" bằng domain thật của bạn (ví dụ: cuahangpccc.vn)
 # ====================================================
 
+# Giới hạn tần suất đăng nhập admin theo IP (khai báo ở ngữ cảnh http; file conf.d được include trong http)
+limit_req_zone $binary_remote_addr zone=fs_login:10m rate=10r/m;
+server_tokens off;
+
 server {
     listen 80;
     listen [::]:80;
@@ -38,6 +42,38 @@ server {
     ssl_session_timeout 1d;
     ssl_session_cache shared:SSL:10m;
     ssl_session_tickets off;
+
+    # Header bảo mật cơ bản
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    # Luồng sự kiện thời gian thực (SSE) của admin: không đệm, không bị ngắt sau 90 giây
+    location = /api/admin/events {
+        proxy_pass http://web:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Connection '';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 3600s;
+    }
+
+    # Đăng nhập admin: giới hạn tần suất thêm một lớp ở Nginx (~10 lần/phút/IP, cho dồn 5)
+    location = /api/auth/login {
+        limit_req zone=fs_login burst=5 nodelay;
+        limit_req_status 429;
+        proxy_pass http://web:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_read_timeout 90;
+    }
 
     # Proxy sang Backend Node.js
     location / {

@@ -6,11 +6,9 @@ const API_BASE = '/api';
 async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('flameguard_admin_token') : null;
-  const isAdminLoggedIn = typeof localStorage !== 'undefined' && Boolean(localStorage.getItem('flameguard_admin_user'));
   const headers = {
     'Content-Type': 'application/json',
     ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-    ...(isAdminLoggedIn ? { 'x-admin-auth': 'true' } : {}),
     ...(options.headers || {})
   };
 
@@ -121,6 +119,18 @@ export const deleteProductApi = async (productId) => {
 export const fetchOrdersApi = async () => {
   const res = await request('/orders');
   return res.data;
+};
+
+// Khách tra cứu đơn của chính mình: phải khớp cả mã đơn lẫn số điện thoại đặt hàng.
+export const trackOrderApi = async (code, phone) => {
+  const res = await request(`/orders/track?code=${encodeURIComponent(code)}&phone=${encodeURIComponent(phone)}`);
+  return res.data;
+};
+
+// Vé dùng một lần (30 giây) để admin mở luồng sự kiện thời gian thực /api/admin/events
+export const getSseTicketApi = async () => {
+  const res = await request('/auth/sse-ticket', { method: 'POST' });
+  return res.ticket;
 };
 
 export const createOrderApi = async (orderData) => {
