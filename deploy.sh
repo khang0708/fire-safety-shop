@@ -64,6 +64,9 @@ if [ "$SYNC" = 1 ]; then
   git fetch origin main
   NGINX_BACKUP="$(mktemp)"
   [ -f nginx/conf.d/app.conf ] && cp nginx/conf.d/app.conf "$NGINX_BACKUP" || true
+  # Gỡ file dữ liệu cũ (từng nằm trong git) khỏi chỉ mục để git reset không xóa chúng khỏi thư mục làm việc
+  # trong lúc container cũ còn đang dùng. Dữ liệu đã có bản sao ở DATA_DIR (bước 1).
+  git ls-files -z server/data | xargs -0 -r git update-index --force-remove --
   git reset --hard origin/main
   if [ -s "$NGINX_BACKUP" ]; then cp "$NGINX_BACKUP" nginx/conf.d/app.conf; fi
   rm -f "$NGINX_BACKUP"
