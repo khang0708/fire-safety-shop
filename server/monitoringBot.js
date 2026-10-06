@@ -418,7 +418,7 @@ export const notifyServerError = async (error, context = {}) => {
     (context.extraInfo ? `ℹ️ <b>Thông tin phụ:</b> ${escapeTelegramHtml(JSON.stringify(context.extraInfo))}\n` : '') +
     `\n📑 <b>Stack Trace (5 dòng đầu):</b>\n` +
     `<pre><code>${escapeTelegramHtml(stackLines || 'Không có stack trace')}</code></pre>\n\n` +
-    `⚠️ <i>Kiểm tra log trên VPS bằng lệnh: <code>pm2 logs fire-safety-api</code></i>`;
+    `⚠️ <i>Kiểm tra log trên VPS bằng lệnh: <code>docker logs --tail 100 flameguard-web</code></i>`;
 
   const result = await sendTelegramRaw(config.token, config.chatId, htmlMessage);
   return {

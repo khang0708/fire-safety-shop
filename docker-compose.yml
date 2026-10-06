@@ -1,15 +1,18 @@
-version: '3.8'
-
 services:
   web:
     build:
       context: .
       dockerfile: Dockerfile
+    image: fire-safety-shop-web:latest
     container_name: flameguard-web
     restart: always
     environment:
       - PORT=3001
       - NODE_ENV=production
+      # Dữ liệu chạy thật nằm ở /data trong container = ${DATA_DIR} trên VPS (ngoài thư mục repo)
+      - DATA_DIR=/data
+      # Chạy sau Nginx (1 lớp proxy) để lấy đúng IP khách cho giới hạn đăng nhập
+      - TRUST_PROXY_HOPS=1
       - DATABASE_URL=${DATABASE_URL:-}
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
@@ -17,12 +20,15 @@ services:
       - DEV_ALERT_TELEGRAM_CHAT_ID=${DEV_ALERT_TELEGRAM_CHAT_ID:-}
       - DOMAIN=${DOMAIN:-pcccphatantam.com}
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-FlameGuard@2026}
-      - ADMIN_PIN=${ADMIN_PIN:-1234}
+      # Chỉ dùng để tạo tài khoản admin lần đầu (khi chưa có admins.json). KHÔNG có giá trị mặc định.
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+      - ADMIN_PIN=${ADMIN_PIN:-}
       - SESSION_SECRET=${SESSION_SECRET:-}
+      - FACEBOOK_APP_SECRET=${FACEBOOK_APP_SECRET:-}
     volumes:
-      # Giữ nguyên dữ liệu sản phẩm, đơn hàng, cài đặt khi cập nhật container
-      - ./server/data:/app/server/data
+      # Giữ nguyên dữ liệu sản phẩm, đơn hàng, cài đặt, tài khoản admin khi cập nhật container.
+      # Thư mục này nằm NGOÀI repo nên git reset --hard khi deploy không bao giờ chạm tới.
+      - ${DATA_DIR:-/var/lib/fire-safety-data}:/data
     ports:
       - "127.0.0.1:3001:3001"
     expose:

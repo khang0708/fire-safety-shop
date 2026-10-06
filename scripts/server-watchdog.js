@@ -22,7 +22,7 @@ const DEFAULT_DOMAIN = CLEAN_DOMAIN;
 const HEALTH_URL = process.env.HEALTH_URL || `https://${DEFAULT_DOMAIN}/api/health`;
 const CHECK_INTERVAL_SECONDS = parseInt(process.env.CHECK_INTERVAL_SECONDS || '60', 10);
 const MAX_CONSECUTIVE_FAILURES = parseInt(process.env.MAX_CONSECUTIVE_FAILURES || '2', 10);
-const RESTART_COMMAND = process.env.RESTART_CMD || 'docker restart flameguard-web || docker compose restart web || pm2 restart fire-safety-api || pm2 restart all';
+const RESTART_COMMAND = process.env.RESTART_CMD || 'docker restart flameguard-web || docker compose restart web';
 
 // ----------------------------------------------------
 // 1. QUẢN LÝ TRẠNG THÁI (PERSISTENT STATE)
