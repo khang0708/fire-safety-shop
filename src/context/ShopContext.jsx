@@ -23,8 +23,14 @@ import {
   fetchReviewsApi,
   createReviewApi,
   toggleReviewApi,
-  deleteReviewApi
+  deleteReviewApi,
+  fetchArticlesApi,
+  createArticleApi,
+  updateArticleApi,
+  deleteArticleApi,
+  toggleArticleApi
 } from '../api';
+import { SEED_ARTICLES } from '../data/articles';
 import { playNewOrderChime } from '../services/soundService';
 import { 
   showBrowserOrderNotification, 
@@ -274,6 +280,67 @@ export const ShopProvider = ({ children }) => {
     return localStorage.getItem('flameguard_tg_chat_id') || '';
   });
 
+  // 2.0. Cấu hình Thương Hiệu & SEO (Đặt trước setShopZaloPhone & openZaloInquiry để truy cập an toàn)
+  const [brandSettings, setBrandSettingsState] = useState(() => {
+    const cachedPhone = typeof localStorage !== 'undefined' ? localStorage.getItem('flameguard_shop_zalo_phone') : null;
+    try {
+      const cached = localStorage.getItem('flameguard_brand_settings');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        const addresses = getShopAddresses(parsed);
+        const activeHotline = cachedPhone || parsed.hotline || DEFAULT_BRAND_SETTINGS.hotline;
+        return { ...DEFAULT_BRAND_SETTINGS, ...parsed, addresses, hotline: activeHotline };
+      }
+    } catch (e) {}
+    return { ...DEFAULT_BRAND_SETTINGS, hotline: cachedPhone || DEFAULT_BRAND_SETTINGS.hotline };
+  });
+
+  // Tự động giữ hotline trong brandSettings đồng bộ 100% với shopZaloPhone
+  useEffect(() => {
+    if (shopZaloPhone) {
+      setBrandSettingsState(prev => {
+        if (prev?.hotline === shopZaloPhone) return prev;
+        const next = { ...prev, hotline: shopZaloPhone };
+        try {
+          localStorage.setItem('flameguard_brand_settings', JSON.stringify(next));
+        } catch (e) {}
+        return next;
+      });
+    }
+  }, [shopZaloPhone]);
+
+  const updateBrandSettings = (newSettings) => {
+    const now = updateSettingsTimestamp();
+    setBrandSettingsState(prev => {
+      const merged = { ...prev, ...newSettings };
+      if (Array.isArray(merged.addresses) && merged.addresses.length > 0) {
+        merged.address = merged.addresses[0] || '';
+        merged.secondaryAddress = merged.addresses[1] || '';
+      } else if (merged.address) {
+        merged.addresses = [merged.address, ...(merged.secondaryAddress ? [merged.secondaryAddress] : [])];
+      }
+      try {
+        localStorage.setItem('flameguard_brand_settings', JSON.stringify(merged));
+      } catch (e) {}
+
+      // Đồng bộ sang shopZaloPhone nếu có hotline
+      if (newSettings.hotline) {
+        const cleanHotline = String(newSettings.hotline).trim();
+        setShopZaloPhoneState(cleanHotline);
+        try {
+          localStorage.setItem('flameguard_shop_zalo_phone', cleanHotline);
+        } catch (e) {}
+      }
+
+      saveSettingsApi({ 
+        brandSettings: merged, 
+        ...(newSettings.hotline ? { shopZaloPhone: String(newSettings.hotline).trim() } : {}),
+        updatedAt: now 
+      }).catch(() => {});
+      return merged;
+    });
+  };
+
   const setShopZaloPhone = (val) => {
     const clean = (val || '').trim();
     const now = updateSettingsTimestamp();
@@ -341,7 +408,7 @@ export const ShopProvider = ({ children }) => {
     
     msg += `• Tiêu chuẩn: 100% Tem kiểm định Bộ Công An • Chuẩn TCVN 3890:2023\n`;
     msg += `• Link xem sản phẩm: ${currentUrl}/#catalog\n\n`;
-    msg += `Chào kỹ sư FLAMEGUARD PRO, vui lòng tư vấn chi tiết và thời gian giao thiết bị này giúp tôi!`;
+    msg += `Chào kỹ sư ${brandSettings?.brandName || 'FLAMEGUARD PRO'}, vui lòng tư vấn chi tiết và thời gian giao thiết bị này giúp tôi!`;
 
     // Tự động sao chép vào bộ nhớ tạm
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
@@ -357,7 +424,7 @@ export const ShopProvider = ({ children }) => {
       message: msg,
       cleanPhone
     });
-  }, [shopZaloPhone]);
+  }, [shopZaloPhone, brandSettings?.brandName]);
 
   const closeZaloInquiry = useCallback(() => {
     setZaloInquiryData(null);
@@ -454,67 +521,6 @@ export const ShopProvider = ({ children }) => {
         localStorage.setItem('flameguard_display_settings', JSON.stringify(merged));
       } catch (e) {}
       saveSettingsApi({ displaySettings: merged, updatedAt: now }).catch(() => {});
-      return merged;
-    });
-  };
-
-  // 3.4. Cấu hình Thương Hiệu & SEO
-  const [brandSettings, setBrandSettingsState] = useState(() => {
-    const cachedPhone = typeof localStorage !== 'undefined' ? localStorage.getItem('flameguard_shop_zalo_phone') : null;
-    try {
-      const cached = localStorage.getItem('flameguard_brand_settings');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        const addresses = getShopAddresses(parsed);
-        const activeHotline = cachedPhone || parsed.hotline || DEFAULT_BRAND_SETTINGS.hotline;
-        return { ...DEFAULT_BRAND_SETTINGS, ...parsed, addresses, hotline: activeHotline };
-      }
-    } catch (e) {}
-    return { ...DEFAULT_BRAND_SETTINGS, hotline: cachedPhone || DEFAULT_BRAND_SETTINGS.hotline };
-  });
-
-  // Tự động giữ hotline trong brandSettings đồng bộ 100% với shopZaloPhone
-  useEffect(() => {
-    if (shopZaloPhone) {
-      setBrandSettingsState(prev => {
-        if (prev?.hotline === shopZaloPhone) return prev;
-        const next = { ...prev, hotline: shopZaloPhone };
-        try {
-          localStorage.setItem('flameguard_brand_settings', JSON.stringify(next));
-        } catch (e) {}
-        return next;
-      });
-    }
-  }, [shopZaloPhone]);
-
-  const updateBrandSettings = (newSettings) => {
-    const now = updateSettingsTimestamp();
-    setBrandSettingsState(prev => {
-      const merged = { ...prev, ...newSettings };
-      if (Array.isArray(merged.addresses) && merged.addresses.length > 0) {
-        merged.address = merged.addresses[0] || '';
-        merged.secondaryAddress = merged.addresses[1] || '';
-      } else if (merged.address) {
-        merged.addresses = [merged.address, ...(merged.secondaryAddress ? [merged.secondaryAddress] : [])];
-      }
-      try {
-        localStorage.setItem('flameguard_brand_settings', JSON.stringify(merged));
-      } catch (e) {}
-
-      // Đồng bộ sang shopZaloPhone nếu có hotline
-      if (newSettings.hotline) {
-        const cleanHotline = String(newSettings.hotline).trim();
-        setShopZaloPhoneState(cleanHotline);
-        try {
-          localStorage.setItem('flameguard_shop_zalo_phone', cleanHotline);
-        } catch (e) {}
-      }
-
-      saveSettingsApi({ 
-        brandSettings: merged, 
-        ...(newSettings.hotline ? { shopZaloPhone: String(newSettings.hotline).trim() } : {}),
-        updatedAt: now 
-      }).catch(() => {});
       return merged;
     });
   };
@@ -914,16 +920,169 @@ export const ShopProvider = ({ children }) => {
     }
   ]);
 
+  // 10. Quản lý Bài Viết Tin Tức & SEO (Articles & Blog)
+  const [articles, setArticlesState] = useState(() => {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const cached = localStorage.getItem('flameguard_articles');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      }
+    } catch (_e) {}
+    return SEED_ARTICLES;
+  });
+
+  const [currentPath, setCurrentPath] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.location.pathname || '/';
+    }
+    return '/';
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname || '/');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const navigateTo = useCallback((targetPath) => {
+    if (typeof window === 'undefined') return;
+    const parts = targetPath.split('#');
+    const pathOnly = parts[0] || '/';
+    const hashOnly = parts[1];
+
+    if (window.location.pathname !== pathOnly) {
+      window.history.pushState({}, '', targetPath);
+      setCurrentPath(pathOnly);
+    } else if (hashOnly) {
+      window.history.pushState({}, '', targetPath);
+    }
+
+    if (hashOnly) {
+      setTimeout(() => {
+        const el = document.getElementById(hashOnly);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }, 60);
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, []);
+
+  const addArticle = useCallback(async (articleData) => {
+    try {
+      const created = await createArticleApi(articleData);
+      setArticlesState(prev => {
+        const next = [created, ...prev.filter(a => a.id !== created.id)];
+        try {
+          localStorage.setItem('flameguard_articles', JSON.stringify(next));
+        } catch (_e) {}
+        return next;
+      });
+      return created;
+    } catch (err) {
+      // Fallback local
+      const fallback = {
+        id: `art-${Date.now()}`,
+        slug: articleData.slug || `bai-viet-${Date.now()}`,
+        viewsCount: 0,
+        publishedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        ...articleData
+      };
+      setArticlesState(prev => {
+        const next = [fallback, ...prev];
+        try {
+          localStorage.setItem('flameguard_articles', JSON.stringify(next));
+        } catch (_e) {}
+        return next;
+      });
+      return fallback;
+    }
+  }, []);
+
+  const editArticle = useCallback(async (id, articleData) => {
+    try {
+      const updated = await updateArticleApi(id, articleData);
+      setArticlesState(prev => {
+        const next = prev.map(a => a.id === id ? updated : a);
+        try {
+          localStorage.setItem('flameguard_articles', JSON.stringify(next));
+        } catch (_e) {}
+        return next;
+      });
+      return updated;
+    } catch (err) {
+      setArticlesState(prev => {
+        const next = prev.map(a => a.id === id ? { ...a, ...articleData, updatedAt: new Date().toISOString() } : a);
+        try {
+          localStorage.setItem('flameguard_articles', JSON.stringify(next));
+        } catch (_e) {}
+        return next;
+      });
+    }
+  }, []);
+
+  const removeArticle = useCallback(async (id) => {
+    try {
+      await deleteArticleApi(id);
+    } catch (_e) {}
+    setArticlesState(prev => {
+      const next = prev.filter(a => a.id !== id);
+      try {
+        localStorage.setItem('flameguard_articles', JSON.stringify(next));
+      } catch (_e) {}
+      return next;
+    });
+  }, []);
+
+  const toggleArticleStatus = useCallback(async (id) => {
+    try {
+      const updated = await toggleArticleApi(id);
+      setArticlesState(prev => {
+        const next = prev.map(a => a.id === id ? updated : a);
+        try {
+          localStorage.setItem('flameguard_articles', JSON.stringify(next));
+        } catch (_e) {}
+        return next;
+      });
+      return updated;
+    } catch (_e) {
+      setArticlesState(prev => {
+        const next = prev.map(a => {
+          if (a.id === id) {
+            const nextStatus = a.status === 'published' ? 'draft' : 'published';
+            return { ...a, status: nextStatus, updatedAt: new Date().toISOString() };
+          }
+          return a;
+        });
+        try {
+          localStorage.setItem('flameguard_articles', JSON.stringify(next));
+        } catch (_err) {}
+        return next;
+      });
+    }
+  }, []);
+
   // Đồng bộ lại toàn bộ dữ liệu từ API Server (Dùng cho Focus, Polling & thủ công)
   const refreshShopData = useCallback(async (isSilent = true) => {
     try {
-      const [apiProducts, apiOrders, apiInventory, apiDiscounts, apiReviews, apiSettings] = await Promise.all([
+      const [apiProducts, apiOrders, apiInventory, apiDiscounts, apiReviews, apiSettings, apiArticles] = await Promise.all([
         fetchProductsApi().catch(() => null),
         fetchOrdersApi().catch(() => null),
         fetchInventoryApi().catch(() => null),
         fetchDiscountsApi().catch(() => null),
         fetchReviewsApi().catch(() => null),
-        fetchSettingsApi().catch(() => null)
+        fetchSettingsApi().catch(() => null),
+        fetchArticlesApi({ status: 'all' }).catch(() => null)
       ]);
 
       // 1. Đồng bộ Mẫu Hoa với Conflict Resolution & Auto-Rehydration
@@ -981,6 +1140,14 @@ export const ShopProvider = ({ children }) => {
       if (apiInventory?.length > 0) setInventory(apiInventory);
       if (apiDiscounts?.length > 0) setDiscounts(apiDiscounts);
       if (apiReviews?.length > 0) setReviews(apiReviews);
+      if (Array.isArray(apiArticles) && apiArticles.length > 0) {
+        setArticlesState(apiArticles);
+        if (typeof localStorage !== 'undefined') {
+          try {
+            localStorage.setItem('flameguard_articles', JSON.stringify(apiArticles));
+          } catch (_e) {}
+        }
+      }
 
       // 3. Đồng bộ Cài Đặt (Zalo, Telegram, Shipping, Facebook) với so sánh Timestamp
       if (apiSettings) {
@@ -1140,6 +1307,15 @@ export const ShopProvider = ({ children }) => {
           }
           if (payload.type === 'PRODUCT_DELETED' && payload.productId) {
             updateProductsLocalAndBroadcast(prev => prev.filter(p => p.id !== payload.productId));
+          }
+          if (payload.type === 'ARTICLE_ADDED' && payload.article) {
+            setArticlesState(prev => [payload.article, ...prev.filter(a => a.id !== payload.article.id)]);
+          }
+          if (payload.type === 'ARTICLE_UPDATED' && payload.article) {
+            setArticlesState(prev => prev.map(a => a.id === payload.article.id ? payload.article : a));
+          }
+          if (payload.type === 'ARTICLE_DELETED' && payload.id) {
+            setArticlesState(prev => prev.filter(a => a.id !== payload.id));
           }
         } catch (err) {}
       };
@@ -1745,7 +1921,14 @@ export const ShopProvider = ({ children }) => {
         hideToast,
         zaloInquiryData,
         openZaloInquiry,
-        closeZaloInquiry
+        closeZaloInquiry,
+        articles,
+        addArticle,
+        editArticle,
+        removeArticle,
+        toggleArticleStatus,
+        currentPath,
+        navigateTo
       }}
     >
       {children}

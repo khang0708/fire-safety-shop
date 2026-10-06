@@ -25,7 +25,8 @@ export const FlowerGrid = () => {
     searchQuery, 
     sortBy, 
     setSortBy, 
-    shopZaloPhone
+    shopZaloPhone,
+    brandSettings
   } = useShop();
 
   const SORT_OPTIONS = [
@@ -169,7 +170,7 @@ export const FlowerGrid = () => {
         <div className="space-y-2 text-center md:text-left">
           <span className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center justify-center md:justify-start gap-1.5">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            FLAMEGUARD PRO • DỰ ÁN & DOANH NGHIỆP
+            {brandSettings?.brandName || 'FLAMEGUARD PRO'} • DỰ ÁN & DOANH NGHIỆP
           </span>
           <h3 className="font-heading text-2xl font-bold text-white">
             Cần Khảo Sát & Lập Phương Án PCCC Trọn Gói?
@@ -182,7 +183,7 @@ export const FlowerGrid = () => {
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            onClick={() => openPersonalZaloChat(shopZaloPhone, 'Chào kỹ sư FLAMEGUARD PRO, tôi cần tư vấn thiết bị PCCC và hồ sơ kiểm định cho công trình!')}
+            onClick={() => openPersonalZaloChat(shopZaloPhone, `Chào kỹ sư ${brandSettings?.brandName || 'FLAMEGUARD PRO'}, tôi cần tư vấn thiết bị PCCC và hồ sơ kiểm định cho công trình!`)}
             className="bg-[#0068FF] text-white text-xs font-bold px-5 py-3 rounded-xl hover:bg-blue-600 transition-all shadow-md active:scale-95 flex items-center gap-2"
           >
             <ZaloIcon className="w-4 h-4 shrink-0" />

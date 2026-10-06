@@ -462,4 +462,53 @@ export const sendFacebookMessageApi = async (payload) => {
   return res;
 };
 
+// ----------------------------------------------------
+// 11. ARTICLES & SEO BLOG API (Tin Tức & Bài Viết SEO)
+// ----------------------------------------------------
+export const fetchArticlesApi = async (params = {}) => {
+  const query = new URLSearchParams();
+  if (params.status) query.set('status', params.status);
+  if (params.category) query.set('category', params.category);
+  if (params.search) query.set('search', params.search);
+  if (params.limit) query.set('limit', params.limit);
+  const qs = query.toString() ? `?${query.toString()}` : '';
+  const res = await request(`/articles${qs}`);
+  return res.data || [];
+};
+
+export const fetchArticleBySlugApi = async (slugOrId, incrementView = true) => {
+  const res = await request(`/articles/${slugOrId}${incrementView ? '' : '?view=false'}`);
+  return res.data;
+};
+
+export const createArticleApi = async (articleData) => {
+  const res = await request('/articles', {
+    method: 'POST',
+    body: JSON.stringify(articleData)
+  });
+  return res.data;
+};
+
+export const updateArticleApi = async (id, articleData) => {
+  const res = await request(`/articles/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(articleData)
+  });
+  return res.data;
+};
+
+export const deleteArticleApi = async (id) => {
+  const res = await request(`/articles/${id}`, {
+    method: 'DELETE'
+  });
+  return res;
+};
+
+export const toggleArticleApi = async (id) => {
+  const res = await request(`/articles/${id}/toggle`, {
+    method: 'PATCH'
+  });
+  return res.data;
+};
+
 

@@ -43,7 +43,8 @@ export const HeroSection = () => {
     activeCategory, 
     setActiveCategory,
     isBannerEffectivelyHidden, 
-    displaySettings
+    displaySettings,
+    brandSettings
   } = useShop();
 
   const currentCategory = SHOP_CATEGORIES.find(c => c.id === activeCategory) || SHOP_CATEGORIES[0];
@@ -77,7 +78,7 @@ export const HeroSection = () => {
             </h1>
 
             <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto lg:mx-0 leading-relaxed font-sans font-normal">
-              <strong>FLAMEGUARD PRO</strong> là hệ thống phân phối phương tiện chữa cháy, cứu nạn cứu hộ và thiết bị an toàn cơ sở đạt chuẩn quốc gia. <strong>100% sản phẩm có tem kiểm định Bộ Công An</strong>, kim áp suất vạch xanh xuất xưởng, bàn giao kèm biên bản nghiệm thu và hồ sơ CO/CQ đầy đủ.
+              <strong>{brandSettings?.brandName || 'FLAMEGUARD PRO'}</strong> là hệ thống phân phối phương tiện chữa cháy, cứu nạn cứu hộ và thiết bị an toàn cơ sở đạt chuẩn quốc gia. <strong>100% sản phẩm có tem kiểm định Bộ Công An</strong>, kim áp suất vạch xanh xuất xưởng, bàn giao kèm biên bản nghiệm thu và hồ sơ CO/CQ đầy đủ.
             </p>
 
             {/* 3 Trụ Cột Danh Mục Tương Tác Nhanh Trên Banner (Interactive 3-Pillar Selector) */}

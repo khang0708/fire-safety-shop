@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AI_GREETING_TEMPLATES } from '../data/aiTemplates';
+import { useShop } from '../context/ShopContext';
 import { Sparkles, ShieldCheck, FileText, QrCode } from 'lucide-react';
 
 export const CardPreviewer = ({ 
@@ -9,6 +10,7 @@ export const CardPreviewer = ({
   setSenderSign, 
   currentOccasion = 'household' 
 }) => {
+  const { brandSettings } = useShop();
   const [activeCategory, setActiveCategory] = useState(
     currentOccasion in AI_GREETING_TEMPLATES ? currentOccasion : 'household'
   );
@@ -124,8 +126,8 @@ export const CardPreviewer = ({
         
         <div className="p-5 bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl border-2 border-dashed border-red-400 shadow-sm relative overflow-hidden">
           {/* Watermark Logo */}
-          <div className="absolute -right-4 -bottom-4 text-red-500/10 font-mono font-black text-6xl select-none pointer-events-none">
-            FLAMEGUARD
+          <div className="absolute -right-4 -bottom-4 text-red-500/10 font-mono font-black text-6xl select-none pointer-events-none uppercase">
+            {brandSettings?.brandName || 'FLAMEGUARD'}
           </div>
 
           <div className="flex items-center justify-between border-b border-red-200 pb-2 mb-3">

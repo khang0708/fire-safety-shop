@@ -76,7 +76,8 @@ export const CheckoutModal = () => {
     shippingSettings,
     getShippingFee,
     submitOrder,
-    shopZaloPhone
+    shopZaloPhone,
+    brandSettings
   } = useShop();
 
   // Coupon state in Checkout
@@ -537,7 +538,7 @@ export const CheckoutModal = () => {
                   <div className="text-[11px] text-slate-600 space-y-1">
                     <span className="font-bold text-slate-900 block text-xs">Mã VietQR Tự Động</span>
                     <p>Ngân hàng: <strong>Techcombank (1903 888 666)</strong></p>
-                    <p>Chủ TK: <strong>FLAMEGUARD PRO VIETNAM</strong></p>
+                    <p>Chủ TK: <strong>{brandSettings?.brandName ? `${brandSettings.brandName.toUpperCase()} VIETNAM` : 'FLAMEGUARD PRO VIETNAM'}</strong></p>
                     <p className="text-emerald-700 font-bold">Kích hoạt bảo hành & tem kiểm định ngay khi nhận tiền</p>
                   </div>
                 </div>
@@ -676,7 +677,7 @@ export const CheckoutModal = () => {
               <div className="pt-1 text-center">
                 <button
                   type="button"
-                  onClick={() => openPersonalZaloChat(shopZaloPhone, 'Chào kỹ sư FLAMEGUARD PRO, tôi đang ở bước thanh toán đơn thiết bị PCCC và cần hỗ trợ tư vấn gấp!')}
+                  onClick={() => openPersonalZaloChat(shopZaloPhone, `Chào kỹ sư ${brandSettings?.brandName || 'FLAMEGUARD PRO'}, tôi đang ở bước thanh toán đơn thiết bị PCCC và cần hỗ trợ tư vấn gấp!`)}
                   className="text-xs text-[#0068FF] hover:underline font-bold inline-flex items-center gap-1"
                 >
                   <span>💬 Cần hỗ trợ xuất hóa đơn VAT? Chat Zalo ({shopZaloPhone})</span>

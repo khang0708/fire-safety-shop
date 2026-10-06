@@ -25,7 +25,9 @@ export const Header = () => {
     shopZaloPhone,
     activeCategory,
     setActiveCategory,
-    brandSettings
+    brandSettings,
+    currentPath = '/',
+    navigateTo
   } = useShop();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -69,19 +71,31 @@ export const Header = () => {
           <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
             <button
               onClick={() => setIsTrackingOpen(true)}
-              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-blue-600/30 hover:bg-blue-600/50 text-blue-200 border border-blue-500/40 transition-all"
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-blue-600/30 hover:bg-blue-600/50 text-blue-200 border border-blue-500/40 transition-all cursor-pointer"
               title="Tra cứu hồ sơ và tem kiểm định Cục PCCC"
             >
               <span>🛡️ Tra Cứu Tem Kiểm Định</span>
             </button>
 
-            <a
-              href="#catalog"
-              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 transition-all"
+            <button
+              onClick={() => navigateTo('/#catalog')}
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 transition-all cursor-pointer"
               title="Tra cứu danh mục thiết bị theo tiêu chuẩn TCVN 3890"
             >
               <span>📐 Danh Mục TCVN 3890</span>
-            </a>
+            </button>
+
+            <button
+              onClick={() => navigateTo('/tin-tuc')}
+              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                currentPath.startsWith('/tin-tuc')
+                  ? 'bg-red-600 text-white border border-red-500 shadow-xs'
+                  : 'bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 border border-emerald-500/40'
+              }`}
+              title="Cẩm nang an toàn & Tin tức PCCC chuẩn TCVN 3890"
+            >
+              <span>📰 Cẩm Nang & Tin Tức</span>
+            </button>
           </div>
 
         </div>
@@ -100,7 +114,15 @@ export const Header = () => {
             {mobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
           </button>
           
-          <a href="#" className="flex items-center gap-2 sm:gap-2.5 group min-w-0" aria-label={`Trang chủ ${brandSettings?.brandName || 'FLAMEGUARD PRO'}`}>
+          <a 
+            href="/" 
+            onClick={(e) => {
+              e.preventDefault();
+              navigateTo('/');
+            }}
+            className="flex items-center gap-2 sm:gap-2.5 group min-w-0 cursor-pointer" 
+            aria-label={`Trang chủ ${brandSettings?.brandName || 'FLAMEGUARD PRO'}`}
+          >
             {brandSettings?.logoUrl ? (
               <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white flex items-center justify-center p-0.5 shadow-md shadow-red-600/10 border border-slate-200 group-hover:scale-105 transition-transform flex-shrink-0 overflow-hidden">
                 <img 
@@ -219,14 +241,18 @@ export const Header = () => {
             Danh mục:
           </span>
           {SHOP_CATEGORIES.map((cat) => {
-            const isActive = activeCategory === cat.id;
+            const isActive = activeCategory === cat.id && currentPath === '/';
             return (
               <a
                 key={cat.id}
                 href="#catalog"
                 data-active={isActive ? 'true' : 'false'}
-                onClick={() => setActiveCategory(cat.id)}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full font-bold transition-all whitespace-nowrap shrink-0 ${
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveCategory(cat.id);
+                  navigateTo('/#catalog');
+                }}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full font-bold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
                   isActive
                     ? 'bg-red-600 text-white shadow-xs'
                     : 'text-slate-700 hover:text-red-600 hover:bg-slate-100 bg-slate-50 border border-slate-200/80'
@@ -242,6 +268,19 @@ export const Header = () => {
               </a>
             );
           })}
+
+          {/* Tab Cẩm Nang & Tin Tức PCCC */}
+          <button
+            onClick={() => navigateTo('/tin-tuc')}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-bold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+              currentPath.startsWith('/tin-tuc')
+                ? 'bg-red-600 text-white shadow-xs'
+                : 'text-slate-700 hover:text-red-600 hover:bg-slate-100 bg-slate-50 border border-slate-200/80'
+            }`}
+          >
+            <span>📰</span>
+            <span>Tin Tức & Cẩm Nang PCCC</span>
+          </button>
         </div>
       </div>
 
@@ -291,13 +330,15 @@ export const Header = () => {
           <div className="flex flex-col gap-1 text-xs font-medium text-slate-800 pt-2 border-t border-gray-100">
             <span className="text-[10px] uppercase font-bold text-slate-400 px-2 pt-1">Danh mục sản phẩm:</span>
             {SHOP_CATEGORIES.map((cat) => {
-              const isActive = activeCategory === cat.id;
+              const isActive = activeCategory === cat.id && currentPath === '/';
               return (
                 <a
                   key={cat.id}
                   href="#catalog"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
                     setActiveCategory(cat.id);
+                    navigateTo('/#catalog');
                     setMobileMenuOpen(false);
                   }}
                   className={`py-2 px-2.5 rounded-xl flex items-center justify-between transition-colors ${
@@ -314,7 +355,34 @@ export const Header = () => {
                 </a>
               );
             })}
-            <a href="#reviews-section" onClick={() => setMobileMenuOpen(false)} className="py-2.5 px-2 rounded-lg hover:bg-gray-50 flex items-center justify-between mt-1 pt-2 border-t border-gray-100">
+
+            <button
+              onClick={() => {
+                navigateTo('/tin-tuc');
+                setMobileMenuOpen(false);
+              }}
+              className={`py-2 px-2.5 rounded-xl flex items-center justify-between transition-colors text-left ${
+                currentPath.startsWith('/tin-tuc') ? 'bg-red-600 text-white font-bold' : 'hover:bg-slate-50 text-slate-700'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <span>📰</span>
+                <span>Cẩm Nang & Tin Tức PCCC</span>
+              </span>
+              <span className={`text-[11px] ${currentPath.startsWith('/tin-tuc') ? 'text-red-100' : 'text-slate-400'}`}>
+                Hỗ trợ SEO
+              </span>
+            </button>
+
+            <a 
+              href="#reviews-section" 
+              onClick={(e) => {
+                e.preventDefault();
+                navigateTo('/#reviews-section');
+                setMobileMenuOpen(false);
+              }} 
+              className="py-2.5 px-2 rounded-lg hover:bg-gray-50 flex items-center justify-between mt-1 pt-2 border-t border-gray-100"
+            >
               <span>⭐ Cảm nhận khách hàng thực tế</span>
               <span className="text-gray-400">→</span>
             </a>

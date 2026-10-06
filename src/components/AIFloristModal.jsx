@@ -52,7 +52,7 @@ const PRESET_SAMPLES = [
 ];
 
 export const AIFloristModal = () => {
-  const { isAIFloristOpen, setIsAIFloristOpen, addToCart, shopZaloPhone, facebookSettings } = useShop();
+  const { isAIFloristOpen, setIsAIFloristOpen, addToCart, shopZaloPhone, facebookSettings, brandSettings } = useShop();
 
   const [selectedImage, setSelectedImage] = useState(PRESET_SAMPLES[0].image);
   const [selectedSample, setSelectedSample] = useState(PRESET_SAMPLES[0]);
@@ -310,7 +310,7 @@ export const AIFloristModal = () => {
                         const rec = analysisResult?.recommendedDevices?.join(', ') || 'Bộ thiết bị PCCC';
                         openPersonalZaloChat(
                           shopZaloPhone,
-                          `Chào kỹ sư FLAMEGUARD PRO, tôi đã dùng AI thẩm định mặt bằng và nhận đề xuất: "${rec}". Nhờ kỹ sư tư vấn lắp đặt và gửi báo giá chi tiết!`
+                          `Chào kỹ sư ${brandSettings?.brandName || 'FLAMEGUARD PRO'}, tôi đã dùng AI thẩm định mặt bằng và nhận đề xuất: "${rec}". Nhờ kỹ sư tư vấn lắp đặt và gửi báo giá chi tiết!`
                         );
                       }}
                       className="flex-1 bg-[#0068FF] text-white text-xs font-bold px-4 py-3.5 rounded-xl hover:bg-blue-600 transition-all text-center flex items-center justify-center gap-1.5 shadow-sm active:scale-95"

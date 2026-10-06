@@ -4,9 +4,9 @@ import { openPersonalZaloChat } from '../services/zaloService';
 import { MessageCircle, X, Sparkles, Send, PhoneCall } from 'lucide-react';
 
 export const ZaloChatFloatingButton = () => {
-  const { shopZaloPhone } = useShop();
+  const { shopZaloPhone, brandSettings } = useShop();
   const [isOpen, setIsOpen] = useState(false);
-  const [quickMessage, setQuickMessage] = useState('Chào FLAMEGUARD, tôi muốn tư vấn thiết bị PCCC...');
+  const [quickMessage, setQuickMessage] = useState(() => `Chào ${brandSettings?.brandName || 'FLAMEGUARD PRO'}, tôi muốn tư vấn thiết bị PCCC...`);
 
   const handleOpenZalo = () => {
     openPersonalZaloChat(shopZaloPhone);

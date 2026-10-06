@@ -23,7 +23,8 @@
     "reviewsCount": 342,
     "freshDays": 365,
     "isAvailable": true,
-    "category": "extinguishers"
+    "category": "extinguishers",
+    "slug": "binh-chua-chay-bot-abc-4kg-mfzl4"
   },
   {
     "id": "fire-02",
@@ -49,7 +50,8 @@
     "reviewsCount": 198,
     "freshDays": 730,
     "isAvailable": true,
-    "category": "extinguishers"
+    "category": "extinguishers",
+    "slug": "binh-cuu-hoa-khi-co2-3kg-mt3"
   },
   {
     "id": "fire-03",
@@ -75,7 +77,8 @@
     "reviewsCount": 512,
     "freshDays": 1095,
     "isAvailable": true,
-    "category": "rescue"
+    "category": "rescue",
+    "slug": "mat-na-chong-khoi-doc-thoat-hiem-tzl30"
   },
   {
     "id": "fire-04",
@@ -101,7 +104,8 @@
     "reviewsCount": 87,
     "freshDays": 1825,
     "isAvailable": true,
-    "category": "rescue"
+    "category": "rescue",
+    "slug": "bo-day-thoat-hiem-tu-cuu-nha-cao-tang-15m"
   },
   {
     "id": "fire-05",
@@ -126,7 +130,8 @@
     "reviewsCount": 230,
     "freshDays": 1825,
     "isAvailable": true,
-    "category": "alarms"
+    "category": "alarms",
+    "slug": "chan-dap-lua-soi-thuy-tinh-chong-chay-18m"
   },
   {
     "id": "fire-06",
@@ -152,7 +157,8 @@
     "reviewsCount": 165,
     "freshDays": 1825,
     "isAvailable": true,
-    "category": "alarms"
+    "category": "alarms",
+    "slug": "dau-bao-khoi-doc-lap-khong-day-chuong-85db"
   },
   {
     "id": "fire-07",
@@ -177,7 +183,8 @@
     "reviewsCount": 79,
     "freshDays": 1095,
     "isAvailable": true,
-    "category": "extinguishers"
+    "category": "extinguishers",
+    "slug": "binh-cuu-hoa-bot-foam-goc-nuoc-sinh-hoc-6l"
   },
   {
     "id": "fire-08",
@@ -202,6 +209,7 @@
     "reviewsCount": 310,
     "freshDays": 730,
     "isAvailable": true,
-    "category": "extinguishers"
+    "category": "extinguishers",
+    "slug": "binh-cuu-hoa-mini-cho-o-to-foam-1000ml"
   }
 ]

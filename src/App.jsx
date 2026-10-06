@@ -5,6 +5,7 @@ import { Header } from './components/Header';
 import { HeroSection } from './components/HeroSection';
 import { OccasionFilter } from './components/OccasionFilter';
 import { FlowerGrid } from './components/FlowerGrid';
+import { HomeNewsSection } from './components/HomeNewsSection';
 import { SocialChatHubFloatingButton } from './components/SocialChatHubFloatingButton';
 import { Footer } from './components/Footer';
 
@@ -17,12 +18,15 @@ const AIFloristModal = lazy(() => import('./components/AIFloristModal').then(m =
 const OrderTrackingModal = lazy(() => import('./components/OrderTrackingModal').then(m => ({ default: m.OrderTrackingModal })));
 const ZaloInquiryModal = lazy(() => import('./components/ZaloInquiryModal').then(m => ({ default: m.ZaloInquiryModal })));
 const AdminLoginModal = lazy(() => import('./components/AdminLoginModal').then(m => ({ default: m.AdminLoginModal })));
+const NewsListPage = lazy(() => import('./components/NewsListPage').then(m => ({ default: m.NewsListPage })));
+const NewsDetailPage = lazy(() => import('./components/NewsDetailPage').then(m => ({ default: m.NewsDetailPage })));
+const ProductDetailPage = lazy(() => import('./components/ProductDetailPage').then(m => ({ default: m.ProductDetailPage })));
 import { authMeApi, authLogoutApi } from './api';
 
 const AdminDashboard = lazy(() => import('./components/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 
 function AppContent() {
-  const { toastNotification, hideToast } = useShop();
+  const { toastNotification, hideToast, currentPath = '/' } = useShop();
   const [isAdminView, setIsAdminView] = useState(false);
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
   
@@ -156,14 +160,60 @@ function AppContent() {
       {/* Header Khách Hàng */}
       <Header />
 
-      {/* Nội dung chính Storefront */}
+      {/* Nội dung chính Storefront & Routing Tin Tức */}
       <main className="flex-grow">
-        <HeroSection />
-        <OccasionFilter />
-        <FlowerGrid />
-        <Suspense fallback={<div className="py-12 text-center text-xs text-gray-400">Đang tải đánh giá khách hàng...</div>}>
-          <ReviewsSection />
-        </Suspense>
+        {(() => {
+          // 1. Kiểm tra Trang Chi Tiết Sản Phẩm (Dành cho SEO & Chạy Ads - Hỗ trợ cả Slug & ID)
+          const isProductDetail = currentPath.startsWith('/san-pham/') && currentPath.replace(/^\/san-pham\/?/, '').trim().length > 0;
+          let prodId = isProductDetail ? decodeURIComponent(currentPath.replace(/^\/san-pham\/?/, '').split('/')[0].split('?')[0]) : '';
+          
+          if (!prodId && typeof window !== 'undefined') {
+            const urlParams = new URLSearchParams(window.location.search);
+            const queryParam = urlParams.get('product') || urlParams.get('san-pham') || urlParams.get('p') || '';
+            if (queryParam) prodId = decodeURIComponent(queryParam);
+          }
+
+          if (isProductDetail || prodId) {
+            return (
+              <Suspense fallback={<div className="py-24 text-center text-xs text-slate-400">Đang tải chi tiết thiết bị PCCC...</div>}>
+                <ProductDetailPage productId={prodId} />
+              </Suspense>
+            );
+          }
+
+          // 2. Kiểm tra Trang Chi Tiết Tin Tức
+          const isNewsDetail = currentPath.startsWith('/tin-tuc/') && currentPath.length > 9;
+          const newsSlug = isNewsDetail ? currentPath.replace(/^\/tin-tuc\/?/, '').split('/')[0] : '';
+          const isNewsList = currentPath === '/tin-tuc' || currentPath === '/tin-tuc/';
+
+          if (isNewsDetail) {
+            return (
+              <Suspense fallback={<div className="py-24 text-center text-xs text-slate-400">Đang tải nội dung bài viết PCCC...</div>}>
+                <NewsDetailPage slug={newsSlug} />
+              </Suspense>
+            );
+          }
+
+          if (isNewsList) {
+            return (
+              <Suspense fallback={<div className="py-24 text-center text-xs text-slate-400">Đang tải danh sách bài viết PCCC...</div>}>
+                <NewsListPage />
+              </Suspense>
+            );
+          }
+
+          return (
+            <>
+              <HeroSection />
+              <OccasionFilter />
+              <FlowerGrid />
+              <HomeNewsSection />
+              <Suspense fallback={<div className="py-12 text-center text-xs text-gray-400">Đang tải đánh giá khách hàng...</div>}>
+                <ReviewsSection />
+              </Suspense>
+            </>
+          );
+        })()}
       </main>
 
       {/* Floating Multi-Channel Social Chat Hub (Messenger + Zalo) */}

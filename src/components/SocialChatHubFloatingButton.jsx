@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
-import { useShop } from '../context/ShopContext';
+import { useShop, formatPhoneNumber, getCleanPhoneNumber } from '../context/ShopContext';
 import { openPersonalZaloChat } from '../services/zaloService';
 import { openFacebookMessenger } from '../services/facebookService';
 import { MessageCircle, X, Send, Sparkles, Clock, CheckCircle2, ChevronRight, PhoneCall } from 'lucide-react';
 import { ZaloIcon } from './ZaloIcon';
+import { PhoneCallFloatingButton } from './PhoneCallFloatingButton';
 
 export const SocialChatHubFloatingButton = () => {
-  const { shopZaloPhone, facebookSettings } = useShop();
+  const { shopZaloPhone, brandSettings, facebookSettings } = useShop();
+  const currentHotline = shopZaloPhone || brandSettings?.hotline || '0843066604';
+  const cleanPhone = getCleanPhoneNumber(currentHotline);
+  const formattedPhone = formatPhoneNumber(currentHotline);
   const [isOpen, setIsOpen] = useState(false);
   const [activeChannel, setActiveChannel] = useState('messenger'); // 'messenger' | 'zalo'
 
   const fbPageId = facebookSettings?.pageId || 'flameguardpccc';
-  const fbPageName = facebookSettings?.pageName || 'FLAMEGUARD PRO - Thiết Bị PCCC TCVN 3890';
+  const fbPageName = facebookSettings?.pageName || (brandSettings?.brandName ? `${brandSettings.brandName} - Thiết Bị PCCC TCVN 3890` : 'FLAMEGUARD PRO - Thiết Bị PCCC TCVN 3890');
   const isFbEnabled = facebookSettings?.isEnabled !== false;
 
   const handleOpenMessenger = (prefillText = '') => {
@@ -19,15 +23,15 @@ export const SocialChatHubFloatingButton = () => {
   };
 
   const handleOpenZalo = (message = '') => {
-    openPersonalZaloChat(shopZaloPhone, message);
+    openPersonalZaloChat(cleanPhone, message);
   };
 
   return (
-    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col items-end print:hidden">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col items-end gap-3 print:hidden">
       
       {/* KHUNG MINI POPUP CHAT ĐA KÊNH THÔNG MINH */}
       {isOpen && (
-        <div className="mb-3 w-80 sm:w-88 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden animate-fade-in text-[#222523] divide-y divide-gray-100">
+        <div className="w-80 sm:w-88 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden animate-fade-in text-[#222523] divide-y divide-gray-100 mb-1">
           
           {/* HEADER CHỌN KÊNH: MESSENGER & ZALO */}
           <div className="p-3 bg-slate-50 flex items-center justify-between gap-2 border-b border-slate-200">
@@ -108,7 +112,7 @@ export const SocialChatHubFloatingButton = () => {
 
                 <button
                   type="button"
-                  onClick={() => handleOpenMessenger('Chào FLAMEGUARD, tôi muốn tư vấn gói bình PCCC gia đình & căn hộ chung cư!')}
+                  onClick={() => handleOpenMessenger(`Chào ${brandSettings?.brandName || 'FLAMEGUARD PRO'}, tôi muốn tư vấn gói bình PCCC gia đình & căn hộ chung cư!`)}
                   className="w-full text-left p-2.5 rounded-xl bg-gray-50 hover:bg-red-50/60 hover:text-red-900 text-[11px] text-gray-700 transition-all flex items-center justify-between border border-transparent hover:border-red-200"
                 >
                   <span className="truncate">🏠 "Tư vấn gói PCCC hộ gia đình & chung cư"</span>
@@ -137,7 +141,7 @@ export const SocialChatHubFloatingButton = () => {
               {/* Nút Mở Messenger Chính */}
               <button
                 type="button"
-                onClick={() => handleOpenMessenger('Chào FLAMEGUARD, tôi muốn được tư vấn thiết bị PCCC chuẩn kiểm định!')}
+                onClick={() => handleOpenMessenger(`Chào ${brandSettings?.brandName || 'FLAMEGUARD PRO'}, tôi muốn được tư vấn thiết bị PCCC chuẩn kiểm định!`)}
                 className="w-full bg-gradient-to-r from-[#0084FF] via-[#7B3FE4] to-[#A824FF] hover:opacity-95 text-white font-bold py-3 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg active:scale-95 text-xs"
               >
                 <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
@@ -170,7 +174,7 @@ export const SocialChatHubFloatingButton = () => {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => handleOpenZalo('Chào FLAMEGUARD, tôi muốn được tư vấn thiết bị PCCC chuẩn kiểm định!')}
+                  onClick={() => handleOpenZalo(`Chào ${brandSettings?.brandName || 'FLAMEGUARD PRO'}, tôi muốn được tư vấn thiết bị PCCC chuẩn kiểm định!`)}
                   className="bg-[#0068FF] hover:bg-blue-600 text-white font-bold py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 text-xs"
                 >
                   <Send className="w-3.5 h-3.5" />
@@ -193,11 +197,14 @@ export const SocialChatHubFloatingButton = () => {
             <span className="flex items-center gap-1">
               <Clock className="w-3 h-3 text-red-500" /> Trực Kỹ Thuật 24/7
             </span>
-            <span className="font-bold text-red-400">FLAMEGUARD PRO</span>
+            <span className="font-bold text-red-400">{brandSettings?.brandName || 'FLAMEGUARD PRO'}</span>
           </div>
 
         </div>
       )}
+
+      {/* NÚT GỌI HOTLINE TÁCH RIÊNG (PHONE CALL CTA) */}
+      <PhoneCallFloatingButton />
 
       {/* NÚT CHÍNH FLOATING BẬT TẮT HUB */}
       <button

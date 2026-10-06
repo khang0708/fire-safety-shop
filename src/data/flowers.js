@@ -80,6 +80,7 @@ export const ADDONS = [
 export const FLOWERS_DATA = [
   {
     id: 'fire-01',
+    slug: 'binh-chua-chay-bot-abc-4kg-mfzl4',
     name: 'Bình Chữa Cháy Bột ABC 4kg MFZL4',
     subtitle: 'Đạt chuẩn kiểm định Cục PCCC & CNCH - Bộ Công An, áp dụng dập cháy chất rắn, lỏng, khí',
     price: 295000,
@@ -97,6 +98,7 @@ export const FLOWERS_DATA = [
   },
   {
     id: 'fire-02',
+    slug: 'binh-cuu-hoa-khi-co2-3kg-mt3',
     name: 'Bình Cứu Hỏa Khí CO2 3kg MT3',
     subtitle: 'Chuyên dụng dập lửa thiết bị điện, phòng Server, tủ điện tử, không để lại cặn bẩn hư hại máy móc',
     price: 480000,
@@ -114,6 +116,7 @@ export const FLOWERS_DATA = [
   },
   {
     id: 'fire-03',
+    slug: 'mat-na-chong-khoi-doc-thoat-hiem-tzl30',
     name: 'Mặt Nạ Chống Khói Độc Thoát Hiểm TZL30',
     subtitle: 'Phin lọc than hoạt tính lọc khí độc CO, HCN, khói cay và bảo vệ mắt thoát hiểm trong 40 phút',
     price: 165000,
@@ -131,6 +134,7 @@ export const FLOWERS_DATA = [
   },
   {
     id: 'fire-04',
+    slug: 'bo-day-thoat-hiem-tu-cuu-nha-cao-tang-15m',
     name: 'Bộ Dây Thoát Hiểm Tự Cứu Nhà Cao Tầng 15M',
     subtitle: 'Dây cáp thép bọc sợi chống cháy kèm đai ôm ngực tự hãm tốc độ, tải trọng an toàn 150kg',
     price: 1250000,
@@ -148,6 +152,7 @@ export const FLOWERS_DATA = [
   },
   {
     id: 'fire-05',
+    slug: 'chan-dap-lua-soi-thuy-tinh-chong-chay-18m',
     name: 'Chăn Dập Lửa Sợi Thủy Tinh Chống Cháy 1.8M',
     subtitle: 'Vải sợi thủy tinh chịu nhiệt độ cao 550°C, trùm dập ngọn lửa chảo dầu, bếp gas, tẩm người thoát hiểm',
     price: 190000,
@@ -165,6 +170,7 @@ export const FLOWERS_DATA = [
   },
   {
     id: 'fire-06',
+    slug: 'dau-bao-khoi-doc-lap-khong-day-chuong-85db',
     name: 'Đầu Báo Khói Độc Lập Không Dây Chuông 85dB',
     subtitle: 'Cảm biến quang điện siêu nhạy phát hiện khói âm ỉ từ ổ cắm chập điện, pin hoạt động liên tục 5 năm',
     price: 350000,
@@ -182,6 +188,7 @@ export const FLOWERS_DATA = [
   },
   {
     id: 'fire-07',
+    slug: 'binh-cuu-hoa-bot-foam-goc-nuoc-sinh-hoc-6l',
     name: 'Bình Cứu Hỏa Bọt Foam Gốc Nước Sinh Học 6L',
     subtitle: 'Công nghệ dập cháy sinh học tiên tiến nhất, xịt trực tiếp lên người để chạy qua đám lửa an toàn',
     price: 650000,
@@ -199,6 +206,7 @@ export const FLOWERS_DATA = [
   },
   {
     id: 'fire-08',
+    slug: 'binh-cuu-hoa-mini-cho-o-to-foam-1000ml',
     name: 'Bình Cứu Hỏa Mini Cho Ô Tô Foam 1000ml',
     subtitle: 'Thiết kế nhỏ gọn gắn taplo hoặc cốp xe, chịu nhiệt độ khoang lái mùa hè lên tới 80°C không nổ',
     price: 145000,

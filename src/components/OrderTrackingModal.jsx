@@ -23,7 +23,7 @@ import { generateMessengerOrderInquiry } from '../services/facebookService';
 import { ZaloIcon } from './ZaloIcon';
 
 export const OrderTrackingModal = () => {
-  const { isTrackingOpen, setIsTrackingOpen, activeOrder, approvePhotoProof, shopZaloPhone, facebookSettings } = useShop();
+  const { isTrackingOpen, setIsTrackingOpen, activeOrder, approvePhotoProof, shopZaloPhone, facebookSettings, brandSettings } = useShop();
   const [showCatalogRef, setShowCatalogRef] = useState(false);
 
   if (!isTrackingOpen || !activeOrder) return null;
@@ -31,7 +31,7 @@ export const OrderTrackingModal = () => {
   const handleChatZaloFlorist = () => {
     openPersonalZaloChat(
       shopZaloPhone,
-      `Chào kỹ sư FLAMEGUARD PRO, tôi muốn hỏi tiến độ kiểm định & xuất kho đơn hàng #${activeOrder.orderCode || activeOrder.id} (${activeOrder.productName || 'Thiết Bị PCCC'})`
+      `Chào kỹ sư ${brandSettings?.brandName || 'FLAMEGUARD PRO'}, tôi muốn hỏi tiến độ kiểm định & xuất kho đơn hàng #${activeOrder.orderCode || activeOrder.id} (${activeOrder.productName || 'Thiết Bị PCCC'})`
     );
   };
 
@@ -195,7 +195,7 @@ export const OrderTrackingModal = () => {
                   />
                   <div className="absolute bottom-3 left-3 bg-slate-950/80 backdrop-blur-sm text-white text-[10px] px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm border border-slate-700">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Đo áp suất thực tế lúc {activeOrder.proofPhotoTime || activeOrder.createdAt} • Trạm kiểm định FLAMEGUARD</span>
+                    <span>Đo áp suất thực tế lúc {activeOrder.proofPhotoTime || activeOrder.createdAt} • Trạm kiểm định {brandSettings?.brandName || 'FLAMEGUARD PRO'}</span>
                   </div>
                 </div>
 
@@ -237,7 +237,7 @@ export const OrderTrackingModal = () => {
                 ) : (
                   <div className="p-3 bg-emerald-50 text-emerald-800 rounded-xl text-xs flex items-center gap-2 font-bold border border-emerald-200">
                     <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                    <span>Quý khách đã duyệt ảnh kiểm định! Đội vận chuyển chuyên dụng FLAMEGUARD đang di chuyển đến địa chỉ nhận.</span>
+                    <span>Quý khách đã duyệt ảnh kiểm định! Đội vận chuyển chuyên dụng {brandSettings?.brandName || 'FLAMEGUARD PRO'} đang di chuyển đến địa chỉ nhận.</span>
                   </div>
                 )}
               </div>

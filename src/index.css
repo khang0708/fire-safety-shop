@@ -71,6 +71,44 @@
   animation: safetyPulse 2s infinite;
 }
 
+/* Phone call ringing and radar wave animations */
+@keyframes phoneWiggle {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  15%, 45% {
+    transform: rotate(-18deg);
+  }
+  30%, 60% {
+    transform: rotate(18deg);
+  }
+  75% {
+    transform: rotate(0deg);
+  }
+}
+
+.animate-phone-ring {
+  animation: phoneWiggle 1.5s ease-in-out infinite;
+}
+
+@keyframes radarWave {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+
+.animate-radar-wave {
+  animation: radarWave 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
 /* Chuẩn hóa in ấn khổ A4 & xuất file PDF */
 @media print {
   @page {

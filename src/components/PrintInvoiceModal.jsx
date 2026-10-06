@@ -398,7 +398,7 @@ export const PrintInvoiceModal = ({ isOpen, onClose, order }) => {
                 </div>
                 <div>
                   <span className="font-bold block text-slate-900">Đội Vận Chuyển PCCC</span>
-                  <span className="text-[10px] italic">FLAMEGUARD Logistics (Ký nhận)</span>
+                  <span className="text-[10px] italic">{brandSettings?.brandName ? `${brandSettings.brandName} Logistics` : 'FLAMEGUARD Logistics'} (Ký nhận)</span>
                 </div>
                 <div>
                   <span className="font-bold block text-slate-900">Đại Diện Tiếp Nhận & Nghiệm Thu</span>
@@ -450,7 +450,7 @@ export const PrintInvoiceModal = ({ isOpen, onClose, order }) => {
               </div>
 
               <div className="text-center border-t border-red-200 pt-2 text-[10px] text-slate-500 font-mono">
-                🧯 Đường dây nóng Cảnh sát PCCC: 114 • Hỗ trợ kỹ thuật nạp sạc FLAMEGUARD: {shopZaloPhone}
+                🧯 Đường dây nóng Cảnh sát PCCC: 114 • Hỗ trợ kỹ thuật nạp sạc {brandSettings?.brandName || 'FLAMEGUARD'}: {shopZaloPhone}
               </div>
 
             </div>

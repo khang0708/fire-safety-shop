@@ -3,6 +3,7 @@ import { useShop } from '../context/ShopContext';
 import { Heart, Star, Plus, Eye, ShieldCheck, Gauge, CheckCircle2, Zap, Flame } from 'lucide-react';
 import { openPersonalZaloChat, formatProductZaloMessage } from '../services/zaloService';
 import { ZaloIcon } from './ZaloIcon';
+import { getProductUrl } from '../utils/slugify';
 
 const getSpecsForFlower = (flower) => {
   if (flower.id === 'fire-01') {
@@ -86,7 +87,16 @@ const getSpecsForFlower = (flower) => {
 };
 
 export const FlowerCard = ({ flower }) => {
-  const { wishlist, toggleWishlist, addToCart, setQuickViewProduct, shopZaloPhone, openZaloInquiry } = useShop();
+  const { 
+    wishlist, 
+    toggleWishlist, 
+    addToCart, 
+    setQuickViewProduct, 
+    shopZaloPhone, 
+    openZaloInquiry, 
+    brandSettings,
+    navigateTo 
+  } = useShop();
   const isLiked = wishlist.includes(flower.id);
   const specs = getSpecsForFlower(flower);
 
@@ -100,7 +110,7 @@ export const FlowerCard = ({ flower }) => {
       >
         <img
           src={flower.image}
-          alt={`Thiết bị PCCC ${flower.name} - FLAMEGUARD PRO`}
+          alt={`Thiết bị PCCC ${flower.name} - ${brandSettings?.brandName || 'FLAMEGUARD PRO'}`}
           width="320"
           height="400"
           className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
@@ -151,14 +161,28 @@ export const FlowerCard = ({ flower }) => {
           </span>
         </div>
 
-        {/* Hover Quick View Button */}
+        {/* Hover Quick View & Detail Buttons */}
         <div className="absolute bottom-3 inset-x-3 opacity-0 group-hover:opacity-100 transition-all duration-300 flex gap-2">
           <button
+            type="button"
             onClick={() => setQuickViewProduct(flower)}
-            className="flex-1 bg-white hover:bg-slate-100 text-slate-900 text-xs font-bold py-2.5 rounded-xl shadow-lg backdrop-blur-sm transition-all flex items-center justify-center gap-1.5 border border-slate-200"
+            className="flex-1 bg-white hover:bg-slate-100 text-slate-800 text-xs font-bold py-2.5 rounded-xl shadow-lg backdrop-blur-sm transition-all flex items-center justify-center gap-1 border border-slate-200"
+            title="Xem nhanh thông số"
           >
-            <Eye className="w-3.5 h-3.5 text-red-600" />
-            <span>Xem Thông Số & CO/CQ</span>
+            <Eye className="w-3.5 h-3.5 text-slate-600" />
+            <span>Xem Nhanh</span>
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigateTo(getProductUrl(flower));
+            }}
+            className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-1 cursor-pointer"
+            title="Xem trang chi tiết & Chạy Ads"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-white" />
+            <span>Chi Tiết & Mua</span>
           </button>
         </div>
 
@@ -182,12 +206,17 @@ export const FlowerCard = ({ flower }) => {
           </div>
 
           {/* Title */}
-          <h3 
-            onClick={() => setQuickViewProduct(flower)}
-            className="font-heading text-base sm:text-lg text-slate-900 font-bold group-hover:text-red-600 transition-colors cursor-pointer line-clamp-1"
+          <a 
+            href={getProductUrl(flower)}
+            onClick={(e) => {
+              e.preventDefault();
+              navigateTo(getProductUrl(flower));
+            }}
+            className="font-heading text-base sm:text-lg text-slate-900 font-bold hover:text-red-600 transition-colors cursor-pointer line-clamp-1 block"
+            title={`Xem chi tiết ${flower.name}`}
           >
             {flower.name}
-          </h3>
+          </a>
 
           <p className="text-xs text-slate-500 mt-1 line-clamp-1 leading-relaxed">
             {flower.subtitle}

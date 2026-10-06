@@ -13,7 +13,7 @@ import {
 import { useShop } from '../context/ShopContext';
 
 export const ReviewsSection = () => {
-  const { reviews, addReview, products } = useShop();
+  const { reviews, addReview, products, brandSettings } = useShop();
   
   const [filterType, setFilterType] = useState('all'); // 'all' | 'with_photo' | '5_star'
   const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
@@ -337,7 +337,7 @@ export const ReviewsSection = () => {
               {submitSuccess && (
                 <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-center gap-2 font-bold">
                   <CheckCircle className="w-4 h-4 text-emerald-600" />
-                  <span>Cảm ơn quý khách! Đánh giá đã được ghi nhận trên hệ thống FLAMEGUARD PRO.</span>
+                  <span>Cảm ơn quý khách! Đánh giá đã được ghi nhận trên hệ thống {brandSettings?.brandName || 'FLAMEGUARD PRO'}.</span>
                 </div>
               )}
 

@@ -18,8 +18,11 @@ import {
 import { sendTelegramTestApi, getTelegramChatIdAutoApi, sendFacebookTestApi, authChangePasswordApi } from '../api';
 import { PrintInvoiceModal } from './PrintInvoiceModal';
 import { SalesAnalyticsView } from './SalesAnalyticsView';
+import { ArticlesManagementView } from './ArticlesManagementView';
+import { getProductSlug, getProductUrl, slugifyVietnamese } from '../utils/slugify';
 import { 
   ShoppingBag, 
+  BookOpen,
   Flower2, 
   Camera, 
   CheckCircle2, 
@@ -131,7 +134,8 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
     updateDisplaySettings,
     brandSettings,
     updateBrandSettings,
-    refreshShopData
+    refreshShopData,
+    articles = []
   } = useShop();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -556,6 +560,21 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
     setTimeout(() => setAdLinkCopied(false), 2500);
   };
 
+  const [copiedProdId, setCopiedProdId] = useState(null);
+
+  const handleCopyProductAdLink = (e, prod) => {
+    if (e?.stopPropagation) e.stopPropagation();
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const productUrl = getProductUrl(prod, origin);
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(productUrl);
+    }
+    setCopiedProdId(prod.id);
+    setCopyToast(`📋 Đã copy link chạy Ads cho "${prod.name}": ${productUrl}`);
+    setTimeout(() => setCopiedProdId(null), 3000);
+    setTimeout(() => setCopyToast(''), 4000);
+  };
+
   // Cập nhật trạng thái quyền thông báo trình duyệt
   const handleRequestBrowserNotif = async () => {
     const res = await requestBrowserNotificationPermission();
@@ -566,6 +585,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
     setEditingProductId(null);
     setFormData({
       name: '',
+      slug: '',
       subtitle: '',
       price: 320000,
       originalPrice: 380000,
@@ -585,6 +605,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
     setEditingProductId(prod.id);
     setFormData({
       name: prod.name,
+      slug: prod.slug || slugifyVietnamese(prod.name) || '',
       subtitle: prod.subtitle || '',
       price: prod.price,
       originalPrice: prod.originalPrice || prod.price,
@@ -604,8 +625,10 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
     e.preventDefault();
     const flowerTypesArray = formData.flowerTypes.split(',').map(s => s.trim()).filter(Boolean);
     const now = new Date().toISOString();
+    const cleanSlug = formData.slug ? slugifyVietnamese(formData.slug) : slugifyVietnamese(formData.name);
     const payload = {
       ...formData,
+      slug: cleanSlug,
       price: Number(formData.price),
       originalPrice: Number(formData.originalPrice),
       flowerTypes: flowerTypesArray,
@@ -987,6 +1010,12 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                 ]
               },
               {
+                groupTitle: 'NỘI DUNG & SEO TRAFFIC',
+                items: [
+                  { id: 'articles_cms', label: 'Bài Viết & Tin Tức SEO', icon: BookOpen, count: articles?.length || 0 }
+                ]
+              },
+              {
                 groupTitle: 'BÁO CÁO & PHÂN TÍCH',
                 items: [
                   { id: 'analytics', label: 'Báo Cáo Doanh Thu & VAT', icon: BarChart3 }
@@ -1112,6 +1141,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                   {activeTab === 'orders' && '🧯 Quản Lý Đơn Hàng & Kiểm Định'}
                   {activeTab === 'inventory' && '🛡️ Kho Thiết Bị & Khí Nạp'}
                   {activeTab === 'products_cms' && '📦 Danh Mục Thiết Bị PCCC'}
+                  {activeTab === 'articles_cms' && '📰 Quản Lý Tin Tức & SEO Traffic'}
                   {activeTab === 'discounts' && '🎟️ Voucher & Khuyến Mãi'}
                   {activeTab === 'reviews' && '⭐ Đánh Giá Nghiệm Thu'}
                   {activeTab === 'analytics' && '📊 Báo Cáo Doanh Thu & VAT'}
@@ -1551,6 +1581,11 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
           <SalesAnalyticsView orders={orders} products={products} />
         )}
 
+        {/* TAB TIN TỨC & SEO CONTENT CMS */}
+        {activeTab === 'articles_cms' && (
+          <ArticlesManagementView />
+        )}
+
         {/* TAB 3: QUẢN LÝ SẢN PHẨM (CMS) */}
         {activeTab === 'products_cms' && (
           <div className="space-y-6">
@@ -1644,9 +1679,14 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                   }) || SHOP_CATEGORIES[0];
 
                   return (
-                    <div key={prod.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+                    <div 
+                      key={prod.id} 
+                      onClick={() => handleOpenEditModal(prod)}
+                      className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md hover:border-red-400 transition-all flex flex-col justify-between cursor-pointer group"
+                      title="Nhấn vào sản phẩm để chỉnh sửa"
+                    >
                       <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
-                        <img src={prod.image} alt={prod.name} className="w-full h-full object-cover" />
+                        <img src={prod.image} alt={prod.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                         <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
                           <span className="text-[10px] font-bold bg-slate-900/90 text-white px-2.5 py-0.5 rounded-full shadow-sm flex items-center gap-1 backdrop-blur-xs">
                             <span>{prodCat.icon}</span>
@@ -1656,10 +1696,13 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                             {OCCASIONS.find(o => o.id === prod.occasion)?.label || prod.occasion}
                           </span>
                         </div>
-                        <div className="absolute top-3 right-3">
+                        <div className="absolute top-3 right-3" onClick={(e) => e.stopPropagation()}>
                           <button
-                            onClick={() => toggleProductAvailability(prod.id)}
-                            className={`text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1 transition-all ${
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleProductAvailability(prod.id);
+                            }}
+                            className={`text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1 transition-all cursor-pointer ${
                               prod.isAvailable !== false
                                 ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                                 : 'bg-red-100 text-red-800 border border-red-300'
@@ -1673,7 +1716,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
 
                       <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
                         <div>
-                          <h4 className="font-heading text-base font-bold text-slate-900 line-clamp-1">{prod.name}</h4>
+                          <h4 className="font-heading text-base font-bold text-slate-900 group-hover:text-red-600 transition-colors line-clamp-1">{prod.name}</h4>
                           <p className="text-xs text-gray-500 line-clamp-2 mt-0.5">{prod.subtitle}</p>
                         </div>
 
@@ -1684,11 +1727,56 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                               {prod.price?.toLocaleString('vi-VN')}đ
                             </span>
                           </div>
-                          <div className="flex gap-1.5">
-                            <button onClick={() => handleOpenEditModal(prod)} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors" title="Chỉnh sửa thiết bị">
+                          <div className="flex gap-1.5 items-center flex-wrap" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={(e) => handleCopyProductAdLink(e, prod)}
+                              className={`px-2.5 py-1.5 rounded-xl transition-all flex items-center gap-1 cursor-pointer text-xs font-bold ${
+                                copiedProdId === prod.id
+                                  ? 'bg-emerald-600 text-white shadow-sm'
+                                  : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 hover:border-amber-300'
+                              }`}
+                              title="Sao chép đường dẫn trang chi tiết (Dùng để chạy Ads Facebook/Google hoặc gửi Zalo)"
+                            >
+                              {copiedProdId === prod.id ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5 text-white" />
+                                  <span className="text-[11px] font-semibold">Đã chép</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3.5 h-3.5 text-amber-700" />
+                                  <span className="text-[11px] font-semibold">Link Ads</span>
+                                </>
+                              )}
+                            </button>
+                            <a
+                              href={getProductUrl(prod)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/80 rounded-xl transition-colors cursor-pointer"
+                              title="Xem trang chi tiết sản phẩm chuẩn SEO trong tab mới"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenEditModal(prod);
+                              }} 
+                              className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors cursor-pointer" 
+                              title="Chỉnh sửa thiết bị"
+                            >
                               <Edit3 className="w-4 h-4" />
                             </button>
-                            <button onClick={() => deleteProduct(prod.id)} className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors" title="Xóa thiết bị">
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteProduct(prod.id);
+                              }} 
+                              className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors cursor-pointer" 
+                              title="Xóa thiết bị"
+                            >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
@@ -3917,10 +4005,47 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                   type="text"
                   required
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) => {
+                    const newName = e.target.value;
+                    const prevAutoSlug = slugifyVietnamese(formData.name);
+                    const shouldAutoUpdateSlug = !formData.slug || formData.slug === prevAutoSlug;
+                    setFormData({ 
+                      ...formData, 
+                      name: newName,
+                      slug: shouldAutoUpdateSlug ? slugifyVietnamese(newName) : formData.slug 
+                    });
+                  }}
                   placeholder="VD: Bình Chữa Cháy Bột ABC 4kg MFZL4"
                   className="w-full p-2.5 rounded-xl border border-gray-300 focus:outline-none"
                 />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-bold text-gray-700">Đường dẫn SEO (Slug URL) *</label>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, slug: slugifyVietnamese(formData.name) })}
+                    className="text-[11px] text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+                  >
+                    ⚡ Tạo lại theo tên sản phẩm
+                  </button>
+                </div>
+                <div className="flex items-center rounded-xl border border-gray-300 bg-gray-50 overflow-hidden focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500">
+                  <span className="px-3 text-xs text-gray-400 select-none bg-gray-100 border-r border-gray-300 py-2.5 font-mono">
+                    /san-pham/
+                  </span>
+                  <input
+                    type="text"
+                    value={formData.slug || ''}
+                    onChange={(e) => setFormData({ ...formData, slug: slugifyVietnamese(e.target.value) })}
+                    placeholder={slugifyVietnamese(formData.name) || "binh-chua-chay-bot-abc-4kg"}
+                    className="w-full p-2.5 bg-white text-xs font-mono text-slate-800 focus:outline-none"
+                  />
+                </div>
+                <p className="text-[10px] text-gray-400 mt-1">
+                  Đường dẫn tối ưu cho SEO Google và chiến dịch Ads. Mặc định tự động tạo theo tên sản phẩm.
+                </p>
               </div>
 
               <div>
@@ -4478,7 +4603,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                   <div className="aspect-[4/3] rounded-xl overflow-hidden border-2 border-slate-200 shadow-sm relative bg-slate-900">
                     <img src={proofPhotoInput} alt="Preview ảnh áp suất thật" className="w-full h-full object-cover" />
                     <div className="absolute bottom-2 left-2 bg-slate-950/80 backdrop-blur-xs text-white text-[10px] px-2.5 py-1 rounded-md border border-slate-700">
-                      Đo lúc {new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} • Trạm kiểm định FLAMEGUARD
+                      Đo lúc {new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} • Trạm kiểm định {brandSettings?.brandName || 'FLAMEGUARD'}
                     </div>
                   </div>
                 </div>

@@ -19,7 +19,8 @@ export const CartDrawer = () => {
     removeCoupon,
     setIsCheckoutOpen,
     shopZaloPhone,
-    facebookSettings
+    facebookSettings,
+    brandSettings
   } = useShop();
 
   const [couponInput, setCouponInput] = React.useState('');
@@ -266,7 +267,7 @@ export const CartDrawer = () => {
                       const itemsSummary = cart.map(it => it.name).join(', ');
                       openFacebookMessenger(
                         facebookSettings?.pageId,
-                        `Chào FLAMEGUARD PRO, tôi đang chọn các thiết bị PCCC trong giỏ: ${itemsSummary}. Nhờ kỹ sư kiểm tra báo giá và hồ sơ kiểm định giúp tôi!`
+                        `Chào ${brandSettings?.brandName || 'FLAMEGUARD PRO'}, tôi đang chọn các thiết bị PCCC trong giỏ: ${itemsSummary}. Nhờ kỹ sư kiểm tra báo giá và hồ sơ kiểm định giúp tôi!`
                       );
                     }}
                     className="py-2.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
@@ -282,7 +283,7 @@ export const CartDrawer = () => {
                     const itemsSummary = cart.map(it => it.name).join(', ');
                     openPersonalZaloChat(
                       shopZaloPhone,
-                      `Chào kỹ sư FLAMEGUARD PRO, tôi đang chọn các thiết bị: ${itemsSummary}. Nhờ kỹ sư tư vấn thêm quy chuẩn lắp đặt!`
+                      `Chào kỹ sư ${brandSettings?.brandName || 'FLAMEGUARD PRO'}, tôi đang chọn các thiết bị: ${itemsSummary}. Nhờ kỹ sư tư vấn thêm quy chuẩn lắp đặt!`
                     );
                   }}
                   className={`py-2.5 px-2 bg-blue-50 hover:bg-blue-100 text-[#0068FF] rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors border border-blue-200 ${

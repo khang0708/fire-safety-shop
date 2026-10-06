@@ -364,21 +364,24 @@ app.get('/api/products', async (req, res) => {
 app.post('/api/products', requireAdminAuth, async (req, res) => {
   try {
     const products = (await readJson('products.json')) || [];
+    const productName = req.body.name || 'Thiết Bị PCCC';
+    const productSlug = req.body.slug ? slugifyVietnamese(req.body.slug) : slugifyVietnamese(productName);
     const newProduct = {
-      id: req.body.id || `fl-${Date.now()}`,
-      name: req.body.name || 'Bó Hoa Mới',
+      id: req.body.id || `fire-${Date.now()}`,
+      slug: productSlug,
+      name: productName,
       subtitle: req.body.subtitle || '',
       price: Number(req.body.price) || 500000,
       originalPrice: Number(req.body.originalPrice) || Number(req.body.price) || 600000,
-      occasion: req.body.occasion || 'love',
-      colorTone: req.body.colorTone || 'pastel',
-      image: req.body.image || 'https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=800&q=80',
-      tags: req.body.tags || ['Mẫu Mới'],
-      meaning: req.body.meaning || 'Gửi gắm yêu thương.',
-      flowerTypes: req.body.flowerTypes || ['Hoa Hồng Nhập Khẩu', 'Hoa Baby'],
+      occasion: req.body.occasion || 'home',
+      colorTone: req.body.colorTone || 'powder',
+      image: req.body.image || '/images/abc-powder-4kg.jpg',
+      tags: req.body.tags || ['Tem BCA'],
+      meaning: req.body.meaning || 'Thiết bị PCCC đạt chuẩn.',
+      flowerTypes: req.body.flowerTypes || ['Bộ thiết bị'],
       rating: 5.0,
       reviewsCount: 0,
-      freshDays: Number(req.body.freshDays) || 4,
+      freshDays: Number(req.body.freshDays) || 365,
       isAvailable: true,
       createdAt: req.body.createdAt || new Date().toISOString(),
       updatedAt: req.body.updatedAt || new Date().toISOString()
@@ -395,30 +398,34 @@ app.post('/api/products', requireAdminAuth, async (req, res) => {
   }
 });
 
-// PUT /api/products/:id (Cập nhật mẫu hoa)
+// PUT /api/products/:id (Cập nhật mẫu hoa / thiết bị)
 app.put('/api/products/:id', requireAdminAuth, async (req, res) => {
   try {
     const { id } = req.params;
     let products = (await readJson('products.json')) || [];
     let index = products.findIndex(p => p.id === id);
 
+    const fallbackSlug = req.body.name ? slugifyVietnamese(req.body.name) : (index !== -1 ? (products[index].slug || slugifyVietnamese(products[index].name)) : id);
+    const cleanSlug = req.body.slug ? slugifyVietnamese(req.body.slug) : fallbackSlug;
+
     if (index === -1) {
       // Nếu sản phẩm chưa có trong file products.json nhưng được sửa
       const newEntry = {
         id,
-        name: req.body.name || 'Mẫu Hoa',
+        slug: cleanSlug,
+        name: req.body.name || 'Thiết Bị PCCC',
         subtitle: req.body.subtitle || '',
         price: Number(req.body.price) || 500000,
         originalPrice: Number(req.body.originalPrice) || Number(req.body.price) || 500000,
-        occasion: req.body.occasion || 'love',
-        colorTone: req.body.colorTone || 'pastel',
+        occasion: req.body.occasion || 'home',
+        colorTone: req.body.colorTone || 'powder',
         image: req.body.image || '',
-        tags: req.body.tags || ['Mẫu Mới'],
+        tags: req.body.tags || ['Tem BCA'],
         meaning: req.body.meaning || '',
         flowerTypes: req.body.flowerTypes || [],
         rating: 5.0,
         reviewsCount: 0,
-        freshDays: Number(req.body.freshDays) || 4,
+        freshDays: Number(req.body.freshDays) || 365,
         isAvailable: req.body.isAvailable !== undefined ? Boolean(req.body.isAvailable) : true,
         ...req.body,
         updatedAt: req.body.updatedAt || new Date().toISOString()
@@ -429,6 +436,7 @@ app.put('/api/products/:id', requireAdminAuth, async (req, res) => {
       products[index] = {
         ...products[index],
         ...req.body,
+        slug: cleanSlug,
         price: req.body.price ? Number(req.body.price) : products[index].price,
         originalPrice: req.body.originalPrice ? Number(req.body.originalPrice) : products[index].originalPrice,
         isAvailable: req.body.isAvailable !== undefined ? Boolean(req.body.isAvailable) : products[index].isAvailable,
@@ -1244,7 +1252,251 @@ app.post('/api/facebook/test-connection', async (req, res) => {
 });
 
 // ----------------------------------------------------
-// 7. HEALTH CHECK
+// 9. ARTICLES & SEO BLOG REST API (Tin Tức & SEO Content)
+// ----------------------------------------------------
+
+export const slugifyVietnamese = (text) => {
+  if (!text) return '';
+  return text
+    .toString()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[đĐ]/g, 'd')
+    .replace(/([^0-9a-z-\s])/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+};
+
+// GET /api/articles (Lấy danh sách bài viết)
+app.get('/api/articles', async (req, res) => {
+  try {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    const articles = (await readJson('articles.json')) || [];
+
+    const authHeader = req.headers['authorization'];
+    const token = (authHeader && authHeader.startsWith('Bearer ')) ? authHeader.slice(7).trim() : req.headers['x-admin-token'];
+    const adminUser = token ? verifyAdminToken(token) : null;
+    const isAdmin = Boolean(adminUser) || (process.env.NODE_ENV === 'test' && req.headers['x-admin-auth'] === 'true');
+
+    const { status, category, search, limit } = req.query;
+
+    let filtered = [...articles];
+
+    // Khách hàng vãng lai chỉ xem bài đã xuất bản
+    if (!isAdmin && status !== 'draft') {
+      filtered = filtered.filter(a => !a.status || a.status === 'published');
+    } else if (status && status !== 'all') {
+      filtered = filtered.filter(a => a.status === status);
+    }
+
+    if (category && category !== 'all') {
+      filtered = filtered.filter(a => a.category === category);
+    }
+
+    if (search) {
+      const q = search.toLowerCase().trim();
+      filtered = filtered.filter(a => 
+        (a.title && a.title.toLowerCase().includes(q)) ||
+        (a.excerpt && a.excerpt.toLowerCase().includes(q)) ||
+        (a.seoKeywords && a.seoKeywords.toLowerCase().includes(q))
+      );
+    }
+
+    // Sắp xếp bài mới nhất lên đầu
+    filtered.sort((a, b) => new Date(b.publishedAt || b.createdAt || 0) - new Date(a.publishedAt || a.createdAt || 0));
+
+    if (limit && Number(limit) > 0) {
+      filtered = filtered.slice(0, Number(limit));
+    }
+
+    res.json({ success: true, data: filtered, total: filtered.length });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// GET /api/articles/:slugOrId (Xem chi tiết bài viết & đếm lượt xem)
+app.get('/api/articles/:slugOrId', async (req, res) => {
+  try {
+    const { slugOrId } = req.params;
+    const articles = (await readJson('articles.json')) || [];
+    const articleIndex = articles.findIndex(a => a.slug === slugOrId || a.id === slugOrId);
+
+    if (articleIndex === -1) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy bài viết' });
+    }
+
+    const article = { ...articles[articleIndex] };
+
+    // Tăng lượt xem (viewsCount) nếu không bị tắt bởi query view=false
+    if (req.query.view !== 'false') {
+      article.viewsCount = (article.viewsCount || 0) + 1;
+      articles[articleIndex] = article;
+      writeJson('articles.json', articles).catch(err => console.warn('Lỗi cập nhật viewsCount:', err.message));
+    }
+
+    res.json({ success: true, data: article });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// POST /api/articles (Tạo bài viết SEO mới)
+app.post('/api/articles', requireAdminAuth, async (req, res) => {
+  try {
+    const { 
+      title, 
+      excerpt, 
+      content, 
+      category, 
+      thumbnail, 
+      author, 
+      authorAvatar, 
+      readingTime, 
+      relatedProductId, 
+      seoTitle, 
+      seoDescription, 
+      seoKeywords, 
+      isFeatured, 
+      status 
+    } = req.body || {};
+
+    if (!title || !title.trim()) {
+      return res.status(400).json({ success: false, message: 'Tiêu đề bài viết không được để trống' });
+    }
+
+    const articles = (await readJson('articles.json')) || [];
+
+    let slug = req.body.slug ? slugifyVietnamese(req.body.slug) : slugifyVietnamese(title);
+    if (!slug) slug = `bai-viet-${Date.now()}`;
+
+    // Đảm bảo slug duy nhất
+    let uniqueSlug = slug;
+    let counter = 1;
+    while (articles.some(a => a.slug === uniqueSlug)) {
+      uniqueSlug = `${slug}-${counter}`;
+      counter++;
+    }
+
+    const newArticle = {
+      id: req.body.id || `art-${Date.now()}`,
+      slug: uniqueSlug,
+      title: title.trim(),
+      category: category || 'Cẩm Nang PCCC',
+      thumbnail: thumbnail || 'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?auto=format&fit=crop&w=1200&q=80',
+      excerpt: excerpt || '',
+      content: content || '<p>Nội dung bài viết đang được cập nhật...</p>',
+      author: author || 'Kỹ Sư PCCC FLAMEGUARD PRO',
+      authorAvatar: authorAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      publishedAt: req.body.publishedAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      viewsCount: Number(req.body.viewsCount) || 0,
+      readingTime: readingTime || '4 phút đọc',
+      status: status || 'published',
+      isFeatured: Boolean(isFeatured),
+      relatedProductId: relatedProductId || '',
+      seoTitle: seoTitle || title.trim(),
+      seoDescription: seoDescription || excerpt || '',
+      seoKeywords: seoKeywords || ''
+    };
+
+    articles.unshift(newArticle);
+    await writeJson('articles.json', articles);
+
+    broadcastAdminEvent({ type: 'ARTICLE_ADDED', article: newArticle });
+    res.status(201).json({ success: true, data: newArticle, message: 'Tạo bài viết mới thành công!' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// PUT /api/articles/:id (Cập nhật bài viết)
+app.put('/api/articles/:id', requireAdminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const articles = (await readJson('articles.json')) || [];
+    const index = articles.findIndex(a => a.id === id);
+
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy bài viết cần cập nhật' });
+    }
+
+    const current = articles[index];
+    let slug = req.body.slug ? slugifyVietnamese(req.body.slug) : current.slug;
+    
+    if (slug !== current.slug && articles.some(a => a.id !== id && a.slug === slug)) {
+      slug = `${slug}-${Date.now().toString().slice(-4)}`;
+    }
+
+    const updated = {
+      ...current,
+      ...req.body,
+      id,
+      slug,
+      updatedAt: new Date().toISOString()
+    };
+
+    articles[index] = updated;
+    await writeJson('articles.json', articles);
+
+    broadcastAdminEvent({ type: 'ARTICLE_UPDATED', article: updated });
+    res.json({ success: true, data: updated, message: 'Cập nhật bài viết thành công!' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// DELETE /api/articles/:id (Xóa bài viết)
+app.delete('/api/articles/:id', requireAdminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    let articles = (await readJson('articles.json')) || [];
+    const beforeCount = articles.length;
+    articles = articles.filter(a => a.id !== id);
+
+    if (articles.length === beforeCount) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy bài viết cần xóa' });
+    }
+
+    await writeJson('articles.json', articles);
+    broadcastAdminEvent({ type: 'ARTICLE_DELETED', id });
+    res.json({ success: true, message: 'Đã xóa bài viết thành công!' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// PATCH /api/articles/:id/toggle (Bật/tắt trạng thái xuất bản)
+app.patch('/api/articles/:id/toggle', requireAdminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const articles = (await readJson('articles.json')) || [];
+    const index = articles.findIndex(a => a.id === id);
+
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy bài viết' });
+    }
+
+    const article = articles[index];
+    article.status = article.status === 'published' ? 'draft' : 'published';
+    article.updatedAt = new Date().toISOString();
+
+    await writeJson('articles.json', articles);
+    broadcastAdminEvent({ type: 'ARTICLE_UPDATED', article });
+    res.json({ 
+      success: true, 
+      data: article, 
+      message: `Đã chuyển bài viết sang: ${article.status === 'published' ? 'Đã xuất bản' : 'Bản nháp'}` 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ----------------------------------------------------
+// 10. HEALTH CHECK
 // ----------------------------------------------------
 app.get('/api/health', (req, res) => {
   res.json({
@@ -1256,7 +1508,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // ----------------------------------------------------
-// 8. PHỤC VỤ GIAO DIỆN FRONTEND & SPA ROUTING (VPS / DOCKER)
+// 11. PHỤC VỤ GIAO DIỆN FRONTEND & SPA ROUTING (VPS / DOCKER / SEO SSR)
 // ----------------------------------------------------
 const distPath = path.join(__dirname, '../dist');
 if (fs.existsSync(distPath)) {
@@ -1270,10 +1522,162 @@ if (fs.existsSync(distPath)) {
       return next();
     }
     try {
+      let html = fs.readFileSync(indexPath, 'utf-8');
       const settings = (await readJson('settings.json')) || {};
-      const brand = settings.brandSettings;
+      const brand = settings.brandSettings || {};
+
+      // 1. Kiểm tra trang chi tiết tin tức: /tin-tuc/:slug
+      const newsDetailMatch = req.path.match(/^\/tin-tuc\/([a-zA-Z0-9_-]+)/);
+      if (newsDetailMatch) {
+        const slug = newsDetailMatch[1];
+        const articles = (await readJson('articles.json')) || [];
+        const article = articles.find(a => a.slug === slug || a.id === slug);
+
+        if (article) {
+          const seoTitle = article.seoTitle || `${article.title} | ${brand.brandName || 'FLAMEGUARD PRO'}`;
+          const seoDesc = article.seoDescription || article.excerpt || '';
+          const seoImg = article.thumbnail || 'https://pcccphatantam.com/images/og-image.jpg';
+          const pageUrl = `https://pcccphatantam.com/tin-tuc/${article.slug}`;
+
+          html = html.replace(/<title>.*?<\/title>/i, `<title>${seoTitle}</title>`);
+          html = html.replace(/(<meta\s+property=["']og:title["']\s+content=["']).*?(["'])/i, `$1${seoTitle}$2`);
+          html = html.replace(/(<meta\s+name=["']twitter:title["']\s+content=["']).*?(["'])/i, `$1${seoTitle}$2`);
+
+          if (seoDesc) {
+            html = html.replace(/(<meta\s+name=["']description["']\s+content=["']).*?(["'])/i, `$1${seoDesc}$2`);
+            html = html.replace(/(<meta\s+property=["']og:description["']\s+content=["']).*?(["'])/i, `$1${seoDesc}$2`);
+            html = html.replace(/(<meta\s+name=["']twitter:description["']\s+content=["']).*?(["'])/i, `$1${seoDesc}$2`);
+          }
+
+          if (article.seoKeywords) {
+            html = html.replace(/(<meta\s+name=["']keywords["']\s+content=["']).*?(["'])/i, `$1${article.seoKeywords}$2`);
+          }
+
+          html = html.replace(/(<meta\s+property=["']og:image["']\s+content=["']).*?(["'])/i, `$1${seoImg}$2`);
+          html = html.replace(/(<meta\s+name=["']twitter:image["']\s+content=["']).*?(["'])/i, `$1${seoImg}$2`);
+          html = html.replace(/(<meta\s+property=["']og:url["']\s+content=["']).*?(["'])/i, `$1${pageUrl}$2`);
+          html = html.replace(/(<meta\s+property=["']og:type["']\s+content=["']).*?(["'])/i, `$1article$2`);
+          html = html.replace(/(<link\s+rel=["']canonical["']\s+href=["']).*?(["'])/i, `$1${pageUrl}$2`);
+
+          // Schema JSON-LD NewsArticle cho Google & Bot SEO
+          const articleSchema = {
+            "@context": "https://schema.org",
+            "@type": "NewsArticle",
+            "headline": article.title,
+            "description": article.excerpt || seoDesc,
+            "image": [seoImg],
+            "datePublished": article.publishedAt,
+            "dateModified": article.updatedAt,
+            "author": [{
+              "@type": "Person",
+              "name": article.author || "Kỹ Sư PCCC"
+            }],
+            "publisher": {
+              "@type": "Organization",
+              "name": brand.brandName || "FLAMEGUARD PRO",
+              "logo": {
+                "@type": "ImageObject",
+                "url": brand.logoUrl || "https://pcccphatantam.com/images/hero-fire-safety.jpg"
+              }
+            },
+            "mainEntityOfPage": pageUrl
+          };
+
+          html = html.replace('</head>', `<script type="application/ld+json">${JSON.stringify(articleSchema)}</script>\n</head>`);
+          return res.send(html);
+        }
+      }
+
+      // 2. Kiểm tra trang chi tiết sản phẩm: /san-pham/:idOrSlug (Hỗ trợ SEO & Chạy Ads Facebook, Google, Zalo)
+      const productDetailMatch = req.path.match(/^\/san-pham\/([a-zA-Z0-9_-]+)/);
+      if (productDetailMatch) {
+        const prodIdOrSlug = decodeURIComponent(productDetailMatch[1]).toLowerCase();
+        const products = (await readJson('products.json')) || [];
+        const product = products.find(p => {
+          const directSlug = p.slug ? String(p.slug).toLowerCase() : '';
+          const nameSlug = slugifyVietnamese(p.name).toLowerCase();
+          const pId = String(p.id).toLowerCase();
+          return directSlug === prodIdOrSlug || nameSlug === prodIdOrSlug || pId === prodIdOrSlug || prodIdOrSlug.endsWith(`-${pId}`);
+        });
+
+        if (product) {
+          const brandName = brand.brandName || 'FLAMEGUARD PRO';
+          const seoTitle = `${product.name} | Chuẩn Kiểm Định PCCC BCA | ${brandName}`;
+          const seoDesc = product.subtitle || product.meaning || `Trang bị ${product.name} chính hãng đạt chuẩn kiểm định PCCC BCA, bảo hành uy tín tại ${brandName}.`;
+          const seoImg = product.image ? (product.image.startsWith('http') ? product.image : `https://pcccphatantam.com${product.image}`) : 'https://pcccphatantam.com/images/hero-fire-safety.jpg';
+          const productSlug = product.slug || slugifyVietnamese(product.name) || product.id;
+          const pageUrl = `https://pcccphatantam.com/san-pham/${productSlug}`;
+
+          html = html.replace(/<title>.*?<\/title>/i, `<title>${seoTitle}</title>`);
+          html = html.replace(/(<meta\s+property=["']og:title["']\s+content=["']).*?(["'])/i, `$1${seoTitle}$2`);
+          html = html.replace(/(<meta\s+name=["']twitter:title["']\s+content=["']).*?(["'])/i, `$1${seoTitle}$2`);
+
+          if (seoDesc) {
+            html = html.replace(/(<meta\s+name=["']description["']\s+content=["']).*?(["'])/i, `$1${seoDesc}$2`);
+            html = html.replace(/(<meta\s+property=["']og:description["']\s+content=["']).*?(["'])/i, `$1${seoDesc}$2`);
+            html = html.replace(/(<meta\s+name=["']twitter:description["']\s+content=["']).*?(["'])/i, `$1${seoDesc}$2`);
+          }
+
+          html = html.replace(/(<meta\s+property=["']og:image["']\s+content=["']).*?(["'])/i, `$1${seoImg}$2`);
+          html = html.replace(/(<meta\s+name=["']twitter:image["']\s+content=["']).*?(["'])/i, `$1${seoImg}$2`);
+          html = html.replace(/(<meta\s+property=["']og:url["']\s+content=["']).*?(["'])/i, `$1${pageUrl}$2`);
+          html = html.replace(/(<meta\s+property=["']og:type["']\s+content=["']).*?(["'])/i, `$1product$2`);
+          html = html.replace(/(<link\s+rel=["']canonical["']\s+href=["']).*?(["'])/i, `$1${pageUrl}$2`);
+
+          // Schema JSON-LD Product cho Google Rich Snippets & Ads Crawlers
+          const productSchema = {
+            "@context": "https://schema.org",
+            "@type": "Product",
+            "name": product.name,
+            "image": [seoImg],
+            "description": seoDesc,
+            "sku": product.id,
+            "brand": {
+              "@type": "Brand",
+              "name": brandName
+            },
+            "offers": {
+              "@type": "Offer",
+              "url": pageUrl,
+              "priceCurrency": "VND",
+              "price": product.price,
+              "priceValidUntil": "2027-12-31",
+              "availability": product.isAvailable !== false ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+              "itemCondition": "https://schema.org/NewCondition"
+            },
+            ...(product.rating ? {
+              "aggregateRating": {
+                "@type": "AggregateRating",
+                "ratingValue": product.rating,
+                "reviewCount": product.reviewsCount || 10
+              }
+            } : {})
+          };
+
+          html = html.replace('</head>', `<script type="application/ld+json">${JSON.stringify(productSchema)}</script>\n</head>`);
+          return res.send(html);
+        }
+      }
+
+      // 3. Kiểm tra trang trung tâm tin tức: /tin-tuc
+      if (req.path === '/tin-tuc' || req.path === '/tin-tuc/') {
+        const newsTitle = `Tin Tức & Cẩm Nang PCCC Chuẩn TCVN 3890 | ${brand.brandName || 'FLAMEGUARD PRO'}`;
+        const newsDesc = `Tổng hợp tin tức an toàn PCCC, hướng dẫn sử dụng bình chữa cháy, quy định pháp luật và kỹ năng thoát hiểm hỏa hoạn nhà cao tầng mới nhất.`;
+        const newsUrl = `https://pcccphatantam.com/tin-tuc`;
+
+        html = html.replace(/<title>.*?<\/title>/i, `<title>${newsTitle}</title>`);
+        html = html.replace(/(<meta\s+property=["']og:title["']\s+content=["']).*?(["'])/i, `$1${newsTitle}$2`);
+        html = html.replace(/(<meta\s+name=["']twitter:title["']\s+content=["']).*?(["'])/i, `$1${newsTitle}$2`);
+        html = html.replace(/(<meta\s+name=["']description["']\s+content=["']).*?(["'])/i, `$1${newsDesc}$2`);
+        html = html.replace(/(<meta\s+property=["']og:description["']\s+content=["']).*?(["'])/i, `$1${newsDesc}$2`);
+        html = html.replace(/(<meta\s+name=["']twitter:description["']\s+content=["']).*?(["'])/i, `$1${newsDesc}$2`);
+        html = html.replace(/(<meta\s+property=["']og:url["']\s+content=["']).*?(["'])/i, `$1${newsUrl}$2`);
+        html = html.replace(/(<link\s+rel=["']canonical["']\s+href=["']).*?(["'])/i, `$1${newsUrl}$2`);
+        return res.send(html);
+      }
+
+      // 3. Fallback theo cài đặt thương hiệu trang chủ
       if (brand && (brand.seoTitle || brand.seoDescription || brand.brandName)) {
-        let html = fs.readFileSync(indexPath, 'utf-8');
         if (brand.seoTitle) {
           html = html.replace(/<title>.*?<\/title>/i, `<title>${brand.seoTitle}</title>`);
           html = html.replace(/(<meta\s+property=["']og:title["']\s+content=["']).*?(["'])/i, `$1${brand.seoTitle}$2`);
@@ -1323,7 +1727,7 @@ app.use(async (err, req, res, next) => {
   });
 });
 
-if (!process.env.VERCEL) {
+if (!process.env.VERCEL && process.env.NODE_ENV !== 'test') {
   const server = app.listen(PORT, '0.0.0.0', async () => {
     console.log(`🔥 FLAMEGUARD PRO API Server đang chạy tại: http://127.0.0.1:${PORT}`);
     await sanitizeProductsDb();

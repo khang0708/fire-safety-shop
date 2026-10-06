@@ -61,7 +61,7 @@ export const Footer = ({ onOpenAdminLogin }) => {
               </a>
               <button 
                 type="button"
-                onClick={() => openPersonalZaloChat(cleanPhone, 'Chào FLAMEGUARD PRO, tôi cần tư vấn thiết bị PCCC!')}
+                onClick={() => openPersonalZaloChat(cleanPhone, `Chào ${brandSettings?.brandName || 'FLAMEGUARD PRO'}, tôi cần tư vấn thiết bị PCCC!`)}
                 className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-[#0068FF] hover:text-white flex items-center justify-center transition-all" 
                 title={`Chat Zalo (${formattedPhone})`}
               >
