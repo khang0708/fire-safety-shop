@@ -2,17 +2,38 @@
 // Lớp lưu trữ file JSON an toàn: ghi atomic (.tmp -> rename), giữ bản .bak, không bao giờ
 // trả về dữ liệu rỗng khi file hỏng (tránh ghi đè mất sạch dữ liệu thật).
 
-import 'dotenv/config';
+// LƯU Ý: file này (và monitoringBot.js, auth.js) chỉ được import module có sẵn của Node.
+// Watchdog và reset-admin chạy trực tiếp trên VPS, nơi KHÔNG có node_modules (ứng dụng chạy trong Docker).
+// tests/zero-dependency-test.js kiểm tra điều này.
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// Đọc một biến từ file .env (thư mục gốc repo hoặc thư mục hiện hành) mà không cần thư viện dotenv.
+const readDotenvValue = (name) => {
+  const candidates = [path.join(__dirname, '..', '.env'), path.join(process.cwd(), '.env')];
+  for (const file of candidates) {
+    try {
+      for (const line of fs.readFileSync(file, 'utf-8').split(/\r?\n/)) {
+        const match = line.match(/^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
+        if (match && match[1] === name) {
+          return match[2].trim().replace(/^(['"])(.*)\1$/, '$2');
+        }
+      }
+    } catch {
+      // không có .env ở vị trí này
+    }
+  }
+  return '';
+};
+
 // Dữ liệu mẫu nằm trong git, chỉ đọc. Dữ liệu chạy thật nằm ở DATA_DIR (nên ở NGOÀI thư mục repo).
 export const SEED_DIR = path.join(__dirname, 'seed');
-export const DATA_DIR = process.env.DATA_DIR
-  ? path.resolve(process.env.DATA_DIR)
+const configuredDataDir = process.env.DATA_DIR || readDotenvValue('DATA_DIR');
+export const DATA_DIR = configuredDataDir
+  ? path.resolve(configuredDataDir)
   : path.join(__dirname, 'data');
 
 export class StorageCorruptError extends Error {
