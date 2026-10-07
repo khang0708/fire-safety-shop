@@ -127,8 +127,9 @@ const getDetailedProductSpecs = (product) => {
 
 export const ProductDetailPage = ({ productId }) => {
   const { 
-    products = [], 
-    addToCart, 
+    products = [],
+    productsLoaded = true,
+    addToCart,
     setIsCheckoutOpen, 
     shopZaloPhone, 
     brandSettings, 
@@ -142,9 +143,9 @@ export const ProductDetailPage = ({ productId }) => {
   // Tìm sản phẩm theo id hoặc slug (ưu tiên khớp slug chuẩn SEO theo tên)
   const product = useMemo(() => {
     if (!productId) return products[0] || null;
-    return matchProduct(products, productId) 
-      || products.find(p => p.id === productId || String(p.id) === String(productId)) 
-      || products[0] 
+    // Đường dẫn không khớp sản phẩm nào (ví dụ sản phẩm đã bị xóa) thì báo không tìm thấy, không hiện sản phẩm khác thay thế
+    return matchProduct(products, productId)
+      || products.find(p => p.id === productId || String(p.id) === String(productId))
       || null;
   }, [products, productId]);
 
@@ -180,6 +181,14 @@ export const ProductDetailPage = ({ productId }) => {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://pcccphatantam.com';
     return getProductUrl(product, origin);
   }, [product]);
+
+  if (!product && !productsLoaded) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center p-6 text-center text-sm text-slate-500" role="status">
+        Đang tải thông tin thiết bị...
+      </div>
+    );
+  }
 
   if (!product) {
     return (
