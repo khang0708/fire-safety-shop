@@ -68,7 +68,7 @@ export const ProductDetailModal = () => {
               <img
                 src={quickViewProduct.image}
                 alt={quickViewProduct.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain bg-white"
               />
               <span className="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur-md text-amber-400 font-mono text-[11px] font-bold px-3 py-1 rounded-lg border border-slate-700">
                 🛡️ Tem BCA & Áp Suất Đạt Chuẩn

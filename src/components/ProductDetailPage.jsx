@@ -760,12 +760,12 @@ export const ProductDetailPage = ({ productId }) => {
                 className="group bg-white rounded-2xl border border-slate-200 hover:border-red-500 p-3 sm:p-4 shadow-2xs hover:shadow-lg transition-all cursor-pointer flex flex-col justify-between"
               >
                 <div>
-                  <div className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 mb-3">
-                    <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                    <span className="absolute top-2 left-2 text-[10px] font-bold bg-blue-600 text-white px-2 py-0.5 rounded-md">
-                      Tem BCA
-                    </span>
+                  <div className="relative aspect-square rounded-xl overflow-hidden bg-white border border-slate-100 mb-2">
+                    <img src={p.image} alt={p.name} className="w-full h-full object-contain" />
                   </div>
+                  <span className="inline-block mb-1.5 text-[10px] font-bold bg-blue-600 text-white px-2 py-0.5 rounded-md">
+                    Tem BCA
+                  </span>
                   <h3 className="font-bold text-slate-900 text-xs sm:text-sm group-hover:text-red-600 transition-colors line-clamp-2">
                     {p.name}
                   </h3>
