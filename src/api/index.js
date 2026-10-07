@@ -133,6 +133,35 @@ export const getSseTicketApi = async () => {
   return res.ticket;
 };
 
+// ----------------------------------------------------
+// DANH MỤC SẢN PHẨM CHÍNH
+// ----------------------------------------------------
+export const fetchCategoriesApi = async () => {
+  const res = await request('/categories');
+  return res.data;
+};
+
+export const createCategoryApi = async (data) => {
+  const res = await request('/categories', { method: 'POST', body: JSON.stringify(data) });
+  return res.data;
+};
+
+export const updateCategoryApi = async (id, data) => {
+  const res = await request(`/categories/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) });
+  return res.data;
+};
+
+// Danh mục đang có sản phẩm: bắt buộc truyền reassignTo (danh mục nhận các sản phẩm)
+export const deleteCategoryApi = async (id, reassignTo) => {
+  const query = reassignTo ? `?reassignTo=${encodeURIComponent(reassignTo)}` : '';
+  return await request(`/categories/${encodeURIComponent(id)}${query}`, { method: 'DELETE' });
+};
+
+export const reorderCategoriesApi = async (ids) => {
+  const res = await request('/categories/order', { method: 'PUT', body: JSON.stringify({ ids }) });
+  return res.data;
+};
+
 export const createOrderApi = async (orderData) => {
   const res = await request('/orders', {
     method: 'POST',

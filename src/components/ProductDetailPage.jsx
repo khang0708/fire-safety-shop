@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useShop } from '../context/ShopContext';
-import { SHOP_CATEGORIES, WRAPPING_PAPERS } from '../data/flowers';
+import { WRAPPING_PAPERS } from '../data/flowers';
+import { resolveProductCategoryId } from '../utils/categories';
 import { 
   ShieldCheck, 
   Star, 
@@ -137,7 +138,8 @@ export const ProductDetailPage = ({ productId }) => {
     wishlist = [], 
     toggleWishlist,
     showToast,
-    reviews = []
+    reviews = [],
+    categories
   } = useShop();
 
   // Tìm sản phẩm theo id hoặc slug (ưu tiên khớp slug chuẩn SEO theo tên)
@@ -208,7 +210,7 @@ export const ProductDetailPage = ({ productId }) => {
 
   const isLiked = wishlist.includes(product.id);
   const specs = getDetailedProductSpecs(product);
-  const categoryInfo = SHOP_CATEGORIES.find(c => c.id === product.category) || SHOP_CATEGORIES[0];
+  const categoryInfo = categories.find(c => c.id === resolveProductCategoryId(product, categories)) || categories[0] || { shortName: 'Thiết bị PCCC', label: 'Thiết bị PCCC', icon: '🧯' };
   
   // Tính toán giá và khuyến mãi
   const discountPercent = product.originalPrice && product.originalPrice > product.price

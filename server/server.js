@@ -25,6 +25,13 @@ import {
 } from './monitoringBot.js';
 import { DATA_DIR, ensureDir, readJsonFileSync, writeJsonFileSync } from './storage.js';
 import { createRateLimiter } from './rateLimit.js';
+import {
+  sanitizeCategoryInput,
+  generateCategoryId,
+  sortCategories,
+  resolveProductCategoryId,
+  planCategoryDeletion
+} from './categories.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -387,9 +394,13 @@ app.post('/api/products', requireAdminAuth, async (req, res) => {
     const products = (await readJson('products.json')) || [];
     const productName = req.body.name || 'Thiết Bị PCCC';
     const productSlug = req.body.slug ? slugifyVietnamese(req.body.slug) : slugifyVietnamese(productName);
+    const categories = await loadCategories();
+    const categoryError = checkProductCategory(req.body.category, categories);
+    if (categoryError) return res.status(400).json({ success: false, message: categoryError });
     const newProduct = {
       id: req.body.id || `fire-${Date.now()}`,
       slug: productSlug,
+      category: resolveProductCategoryId(req.body, categories),
       name: productName,
       subtitle: req.body.subtitle || '',
       price: Number(req.body.price) || 500000,
@@ -423,6 +434,8 @@ app.post('/api/products', requireAdminAuth, async (req, res) => {
 app.put('/api/products/:id', requireAdminAuth, async (req, res) => {
   try {
     const { id } = req.params;
+    const categoryError = checkProductCategory(req.body.category, await loadCategories());
+    if (categoryError) return res.status(400).json({ success: false, message: categoryError });
     let products = (await readJson('products.json')) || [];
     let index = products.findIndex(p => p.id === id);
 
@@ -514,6 +527,114 @@ app.delete('/api/products/:id', requireAdminAuth, async (req, res) => {
   }
 });
 
+
+// ----------------------------------------------------
+// 1b. DANH MỤC SẢN PHẨM CHÍNH (thêm / sửa / xóa / sắp xếp)
+// ----------------------------------------------------
+const loadCategories = async () => sortCategories((await readJson('categories.json')) || []);
+
+// Trả về thông báo lỗi nếu sản phẩm gán vào danh mục không tồn tại; rỗng/không gửi = để server tự suy ra
+const checkProductCategory = (categoryId, categories) => {
+  if (categoryId === undefined || categoryId === null || categoryId === '') return null;
+  return categories.some(c => c.id === categoryId) ? null : 'Danh mục không tồn tại. Hãy tải lại trang và chọn danh mục khác.';
+};
+
+const CATEGORY_FIELDS = ['shortName', 'label', 'icon', 'badge', 'tagline', 'showcaseImg', 'showcaseBadge', 'showcaseTitle', 'showcaseDesc'];
+const pickCategoryFields = (source) => Object.fromEntries(CATEGORY_FIELDS.filter(k => source[k] !== undefined).map(k => [k, source[k]]));
+
+// GET /api/categories (công khai: menu, banner, bộ lọc)
+app.get('/api/categories', async (req, res) => {
+  try {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.json({ success: true, data: await loadCategories() });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// POST /api/categories (thêm danh mục mới)
+app.post('/api/categories', requireAdminAuth, async (req, res) => {
+  try {
+    const { value, errors } = sanitizeCategoryInput(req.body, { partial: false });
+    if (errors.length > 0) return res.status(400).json({ success: false, message: errors.join(' ') });
+
+    const categories = await loadCategories();
+    const created = {
+      id: generateCategoryId(value.shortName, categories.map(c => c.id), slugifyVietnamese),
+      ...pickCategoryFields(value),
+      order: categories.length > 0 ? Math.max(...categories.map(c => Number(c.order) || 0)) + 1 : 0
+    };
+    await writeJson('categories.json', [...categories, created]);
+    broadcastAdminEvent({ type: 'CATEGORIES_CHANGED' });
+    res.status(201).json({ success: true, data: created });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// PUT /api/categories/order (sắp xếp lại: body { ids: [...] } phải gồm đủ mọi danh mục, mỗi mục đúng một lần)
+app.put('/api/categories/order', requireAdminAuth, async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body && req.body.ids) ? req.body.ids.map(String) : [];
+    const categories = await loadCategories();
+    const sameSet = ids.length === categories.length && new Set(ids).size === ids.length && ids.every(id => categories.some(c => c.id === id));
+    if (!sameSet) {
+      return res.status(400).json({ success: false, message: 'Danh sách sắp xếp phải gồm đủ tất cả danh mục, mỗi danh mục đúng một lần.' });
+    }
+    const reordered = ids.map((id, index) => ({ ...categories.find(c => c.id === id), order: index }));
+    await writeJson('categories.json', reordered);
+    broadcastAdminEvent({ type: 'CATEGORIES_CHANGED' });
+    res.json({ success: true, data: reordered });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// PUT /api/categories/:id (sửa nội dung; id không đổi để sản phẩm vẫn gắn đúng danh mục)
+app.put('/api/categories/:id', requireAdminAuth, async (req, res) => {
+  try {
+    const { value, errors } = sanitizeCategoryInput(req.body, { partial: true });
+    if (errors.length > 0) return res.status(400).json({ success: false, message: errors.join(' ') });
+
+    const categories = await loadCategories();
+    const index = categories.findIndex(c => c.id === req.params.id);
+    if (index === -1) return res.status(404).json({ success: false, message: 'Không tìm thấy danh mục.' });
+
+    const updated = { ...categories[index], ...pickCategoryFields(value) };
+    const next = categories.map((c, i) => (i === index ? updated : c));
+    await writeJson('categories.json', next);
+    broadcastAdminEvent({ type: 'CATEGORIES_CHANGED' });
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// DELETE /api/categories/:id?reassignTo=<id khác>
+// Danh mục đang có sản phẩm chỉ xóa được khi chỉ định danh mục thay thế; sản phẩm được chuyển trước rồi mới xóa danh mục.
+app.delete('/api/categories/:id', requireAdminAuth, async (req, res) => {
+  try {
+    const categories = await loadCategories();
+    const products = (await readJson('products.json')) || [];
+    const plan = planCategoryDeletion({ categories, products, id: req.params.id, reassignTo: req.query.reassignTo });
+    if (!plan.ok) {
+      return res.status(plan.status).json({ success: false, error: plan.error, message: plan.message, productCount: plan.productCount });
+    }
+
+    if (plan.affected.length > 0) {
+      const now = new Date().toISOString();
+      const moved = new Set(plan.affected);
+      await writeJson('products.json', products.map(p => (moved.has(p) ? { ...p, category: plan.reassignTo, updatedAt: now } : p)));
+    }
+    const remaining = categories.filter(c => c.id !== req.params.id).map((c, index) => ({ ...c, order: index }));
+    await writeJson('categories.json', remaining);
+
+    broadcastAdminEvent({ type: 'CATEGORIES_CHANGED' });
+    res.json({ success: true, movedProducts: plan.affected.length, reassignedTo: plan.reassignTo });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 // ----------------------------------------------------
 // 2. ORDERS REST API (Quản Lý Đơn Hàng & Vận Hành Florist)

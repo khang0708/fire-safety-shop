@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useShop } from '../context/ShopContext';
-import { SHOP_CATEGORIES, OCCASIONS, COLOR_TONES } from '../data/flowers';
+import { OCCASIONS, COLOR_TONES } from '../data/flowers';
+import { resolveProductCategoryId } from '../utils/categories';
+import { CategoryManagerModal } from './CategoryManagerModal';
 import { 
   openPersonalZaloChat, 
   openPersonalZaloToCustomer 
@@ -136,7 +138,8 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
     brandSettings,
     updateBrandSettings,
     refreshShopData,
-    articles = []
+    articles = [],
+    categories
   } = useShop();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -462,14 +465,15 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
     expiresAt: '2026-12-31'
   });
   
-  const [cmsCategoryFilter, setCmsCategoryFilter] = useState('all'); // 'all' | 'extinguishers' | 'rescue' | 'alarms'
+  const [cmsCategoryFilter, setCmsCategoryFilter] = useState('all'); // 'all' hoặc id danh mục
+  const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
     subtitle: '',
     price: 320000,
     originalPrice: 380000,
-    category: 'extinguishers',
+    category: categories[0]?.id || 'extinguishers',
     occasion: 'home',
     colorTone: 'powder',
     image: '/images/abc-powder-4kg.jpg',
@@ -596,7 +600,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
       subtitle: '',
       price: 320000,
       originalPrice: 380000,
-      category: 'extinguishers',
+      category: categories[0]?.id || 'extinguishers',
       occasion: 'home',
       colorTone: 'powder',
       image: '/images/abc-powder-4kg.jpg',
@@ -616,7 +620,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
       subtitle: prod.subtitle || '',
       price: prod.price,
       originalPrice: prod.originalPrice || prod.price,
-      category: prod.category || (['escape'].includes(prod.colorTone) && prod.id !== 'fire-05' ? 'rescue' : (['alarm'].includes(prod.colorTone) || prod.id === 'fire-05') ? 'alarms' : 'extinguishers'),
+      category: resolveProductCategoryId(prod, categories) || categories[0]?.id || 'extinguishers',
       occasion: prod.occasion || 'home',
       colorTone: prod.colorTone || 'powder',
       image: prod.image,
@@ -1606,6 +1610,14 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                 </p>
               </div>
 
+              <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsCategoryManagerOpen(true)}
+                className="bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 text-xs font-bold px-5 py-3 rounded-full shadow-xs transition-all flex items-center gap-2 active:scale-95 cursor-pointer"
+              >
+                <span>Quản lý danh mục</span>
+              </button>
               <button
                 onClick={handleOpenAddModal}
                 className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-5 py-3 rounded-full shadow-md transition-all flex items-center gap-2 active:scale-95 cursor-pointer"
@@ -1613,7 +1625,10 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                 <Plus className="w-4 h-4 text-white" />
                 <span>Thêm Thiết Bị PCCC Mới</span>
               </button>
+              </div>
             </div>
+
+            {isCategoryManagerOpen && <CategoryManagerModal onClose={() => setIsCategoryManagerOpen(false)} />}
 
             {/* Thanh Lọc 3 Trụ Cột Danh Mục PCCC */}
             <div className="bg-white p-2.5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-2 overflow-x-auto text-xs">
@@ -1631,13 +1646,8 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
               >
                 Tất cả ({products.length})
               </button>
-              {SHOP_CATEGORIES.map(cat => {
-                const count = products.filter(p => {
-                  if (cat.id === 'extinguishers') return p.category === 'extinguishers' || ['powder', 'co2', 'foam'].includes(p.colorTone);
-                  if (cat.id === 'rescue') return p.category === 'rescue' || (p.colorTone === 'escape' && p.id !== 'fire-05');
-                  if (cat.id === 'alarms') return p.category === 'alarms' || p.colorTone === 'alarm' || p.id === 'fire-05';
-                  return p.category === cat.id;
-                }).length;
+              {categories.map(cat => {
+                const count = products.filter(p => resolveProductCategoryId(p, categories) === cat.id).length;
                 return (
                   <button
                     key={cat.id}
@@ -1663,27 +1673,9 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {products
-                .filter(prod => {
-                  if (cmsCategoryFilter === 'all') return true;
-                  if (cmsCategoryFilter === 'extinguishers') {
-                    return prod.category === 'extinguishers' || ['powder', 'co2', 'foam'].includes(prod.colorTone);
-                  }
-                  if (cmsCategoryFilter === 'rescue') {
-                    return prod.category === 'rescue' || (prod.colorTone === 'escape' && prod.id !== 'fire-05');
-                  }
-                  if (cmsCategoryFilter === 'alarms') {
-                    return prod.category === 'alarms' || prod.colorTone === 'alarm' || prod.id === 'fire-05';
-                  }
-                  return prod.category === cmsCategoryFilter;
-                })
+                .filter(prod => cmsCategoryFilter === 'all' || resolveProductCategoryId(prod, categories) === cmsCategoryFilter)
                 .map((prod) => {
-                  const prodCat = SHOP_CATEGORIES.find(c => {
-                    if (prod.category === c.id) return true;
-                    if (c.id === 'extinguishers' && ['powder', 'co2', 'foam'].includes(prod.colorTone)) return true;
-                    if (c.id === 'rescue' && prod.colorTone === 'escape' && prod.id !== 'fire-05') return true;
-                    if (c.id === 'alarms' && (prod.colorTone === 'alarm' || prod.id === 'fire-05')) return true;
-                    return false;
-                  }) || SHOP_CATEGORIES[0];
+                  const prodCat = categories.find(c => c.id === resolveProductCategoryId(prod, categories)) || categories[0] || { icon: '📦', shortName: 'Chưa phân loại' };
 
                   return (
                     <div 
@@ -4120,8 +4112,8 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                   <span>Trụ Cột Danh Mục Thiết Bị (Hiển thị Banner) *</span>
                   <span className="text-[10px] text-gray-400 font-normal">Quyết định nhóm thiết bị trên Banner</span>
                 </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {SHOP_CATEGORIES.map((cat) => {
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {categories.map((cat) => {
                     const isSelected = formData.category === cat.id;
                     return (
                       <button
@@ -4141,7 +4133,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                           )}
                         </div>
                         <div className="text-[11px] font-bold leading-tight">{cat.shortName}</div>
-                        <div className="text-[9px] text-gray-400 truncate mt-0.5">{cat.name}</div>
+                        <div className="text-[9px] text-gray-400 truncate mt-0.5">{cat.label}</div>
                       </button>
                     );
                   })}

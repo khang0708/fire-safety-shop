@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useShop, formatPhoneNumber, getCleanPhoneNumber } from '../context/ShopContext';
-import { SHOP_CATEGORIES } from '../data/flowers';
 import { 
   ShoppingBag, 
   Heart, 
@@ -27,7 +26,8 @@ export const Header = () => {
     setActiveCategory,
     brandSettings,
     currentPath = '/',
-    navigateTo
+    navigateTo,
+    categories
   } = useShop();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -240,7 +240,7 @@ export const Header = () => {
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1 hidden sm:inline shrink-0">
             Danh mục:
           </span>
-          {SHOP_CATEGORIES.map((cat) => {
+          {categories.map((cat) => {
             const isActive = activeCategory === cat.id && currentPath === '/';
             return (
               <a
@@ -329,7 +329,7 @@ export const Header = () => {
 
           <div className="flex flex-col gap-1 text-xs font-medium text-slate-800 pt-2 border-t border-gray-100">
             <span className="text-[10px] uppercase font-bold text-slate-400 px-2 pt-1">Danh mục sản phẩm:</span>
-            {SHOP_CATEGORIES.map((cat) => {
+            {categories.map((cat) => {
               const isActive = activeCategory === cat.id && currentPath === '/';
               return (
                 <a
