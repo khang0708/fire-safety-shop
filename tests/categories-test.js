@@ -38,6 +38,12 @@ assert(sanitizeCategoryInput({}).errors.length > 0, 'Thiếu tên ngắn bị t�
 assert(sanitizeCategoryInput({ shortName: 'A'.repeat(41) }).errors.length > 0, 'Tên ngắn quá 40 ký tự bị từ chối');
 assert(sanitizeCategoryInput({ shortName: 'Camera', showcaseImg: 'data:image/png;base64,AAAA' }).errors.length > 0, 'Ảnh nhúng base64 bị từ chối (tránh phình dữ liệu công khai)');
 assert(sanitizeCategoryInput({ shortName: 'Camera', showcaseImg: 'javascript:alert(1)' }).errors.length > 0, 'Đường dẫn ảnh javascript: bị từ chối');
+assert(sanitizeCategoryInput({ shortName: 'Cuu nan', icon: 'svg:ladder' }).errors.length === 0 && sanitizeCategoryInput({ shortName: 'Cuu nan', icon: 'svg:rope-ladder' }).value.icon === 'svg:rope-ladder', 'Biểu tượng SVG hợp lệ (thang, thang dây) được chấp nhận');
+for (const bad of ['svg:', 'svg:../x', 'svg:unknown', 'svg:<script>', 'svg:ladder<', 'svg: ladder']) {
+  assert(sanitizeCategoryInput({ shortName: 'Cuu nan', icon: bad }).errors.length > 0, `Biểu tượng SVG không có trong danh sách bị từ chối: "${bad}"`);
+}
+assert(sanitizeCategoryInput({ shortName: 'Cuu nan', icon: '🦺' }).errors.length === 0, 'Emoji thường vẫn được chấp nhận');
+assert(sanitizeCategoryInput({ shortName: 'Cuu nan', icon: '123456789' }).errors.length > 0, 'Chuỗi icon thường quá 8 ký tự vẫn bị từ chối');
 assert(sanitizeCategoryInput({ shortName: 'Camera', showcaseImg: '/images/../../etc/passwd' }).errors.length > 0, 'Đường dẫn ảnh có ".." bị từ chối');
 {
   const ok = sanitizeCategoryInput({ shortName: '  Camera An Ninh  ', showcaseImg: 'https://example.com/a.jpg' });

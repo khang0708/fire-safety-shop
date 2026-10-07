@@ -14,6 +14,11 @@ export const CATEGORY_LIMITS = {
   showcaseImg: 500
 };
 
+// Biểu tượng SVG vẽ sẵn cho thiết bị cứu nạn (emoji không có thang, thang dây, mặt nạ phòng độc...).
+// Lưu dạng "svg:<khóa>" trong trường icon; giao diện vẽ ở src/components/CategoryIcon.jsx.
+export const SVG_ICON_PREFIX = 'svg:';
+export const CATEGORY_SVG_ICON_KEYS = ['ladder', 'rope-ladder', 'gas-mask', 'helmet', 'harness', 'rescue-rope', 'stretcher', 'exit-sign'];
+
 // id dùng làm khóa lọc/URL, không được trùng các từ khóa đặc biệt của giao diện và đường dẫn API
 export const RESERVED_CATEGORY_IDS = new Set(['all', 'order', 'new']);
 
@@ -42,6 +47,11 @@ export const sanitizeCategoryInput = (body, { partial = false } = {}) => {
       continue;
     }
     const text = input[field].trim();
+    if (field === 'icon' && text.startsWith(SVG_ICON_PREFIX)) {
+      if (CATEGORY_SVG_ICON_KEYS.includes(text.slice(SVG_ICON_PREFIX.length))) value.icon = text;
+      else errors.push('Biểu tượng không hợp lệ.');
+      continue;
+    }
     if (text.length > CATEGORY_LIMITS[field]) {
       errors.push(`${field} tối đa ${CATEGORY_LIMITS[field]} ký tự.`);
       continue;

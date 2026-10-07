@@ -1,4 +1,5 @@
 import React from 'react';
+import { CategoryIcon } from './CategoryIcon';
 import { useShop, formatPhoneNumber, getCleanPhoneNumber } from '../context/ShopContext';
 import { Sparkles, ShieldCheck, Gauge, ArrowRight, Award, Phone } from 'lucide-react';
 
@@ -97,7 +98,7 @@ export const HeroSection = () => {
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-2xl">{cat.icon}</span>
+                      <span className="text-2xl"><CategoryIcon icon={cat.icon} /></span>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
                         isSelected 
                           ? 'bg-white/20 text-white border-white/20' 

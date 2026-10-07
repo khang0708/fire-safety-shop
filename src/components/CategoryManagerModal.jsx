@@ -1,21 +1,29 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { Plus, Pencil, Trash2, ChevronUp, ChevronDown, X, AlertTriangle, ImagePlus, Loader2 } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
-import { resolveProductCategoryId } from '../utils/categories';
+import { resolveProductCategoryId, CATEGORY_SVG_ICON_KEYS, SVG_ICON_PREFIX } from '../utils/categories';
+import { CategoryIcon, SVG_ICON_LABELS, categoryIconText } from './CategoryIcon';
 import { uploadImageApi } from '../api';
 import { fileToUploadDataUrl, ACCEPTED_IMAGE_TYPES } from '../utils/imageUpload';
 
 // Ảnh banner hợp lệ để xem trước: đường dẫn https, ảnh có sẵn trong /images hoặc ảnh admin đã tải lên
 const isPreviewableImage = (value) => /^(https?:\/\/|\/images\/|\/uploads\/)/.test(value || '');
 
-// Bảng biểu tượng để chọn (người dùng không cần tự gõ emoji): thiết bị PCCC, cứu hộ, báo cháy, an ninh, điện, công trình...
-// Chỉ dùng emoji đã có từ lâu (Unicode ≤ 11) để máy cũ/Windows 10 vẫn hiển thị đúng, không bị ô vuông trống.
-const ICON_CHOICES = [
-  '🧯', '🔥', '🚨', '🔔', '🚒', '⛑️', '🚪', '🏃', '😷', '🧪', '💧', '🌬️',
-  '⚠️', '🛡️', '✅', '⭐', '🔦', '💡', '📷', '🎥', '🔒', '🔑', '📟', '📡',
-  '🔌', '🔋', '⚡', '🧰', '🔧', '🛠️', '🏭', '🏢', '🏠', '🚗', '🚚', '📦',
-  '📋', '📄', '🚧', '📢', '🎯', '🧱', '📞', '🔍'
+// Bảng biểu tượng để chọn (người dùng không cần tự gõ emoji), chia nhóm theo lĩnh vực PCCC.
+// Chỉ dùng emoji có từ Unicode 12.1 trở về trước (đã kiểm tra hiển thị được trên Windows 10); tránh emoji đời mới (mũ bảo hộ 🪖, thang 🪜...)
+// vì máy cũ sẽ hiện ô vuông trống.
+// Biểu tượng SVG vẽ sẵn cho thiết bị cứu nạn (emoji không có thang, thang dây, mặt nạ phòng độc...): hiển thị giống nhau trên mọi thiết bị.
+const SVG_ICON_CHOICES = CATEGORY_SVG_ICON_KEYS.map(key => ({ value: `${SVG_ICON_PREFIX}${key}`, label: SVG_ICON_LABELS[key] || key }));
+
+const ICON_GROUPS = [
+  { label: 'Chữa cháy & báo cháy', icons: ['🧯', '🔥', '🚒', '👨‍🚒', '👩‍🚒', '🧑‍🚒', '🚨', '🔔', '📟', '📢', '📣', '🔊', '💧', '💦', '🚰', '💨', '🌫️', '🌡️', '⏱️', '🛢️', '⛽', '☣️', '☢️'] },
+  { label: 'Bảo hộ & cứu hộ', icons: ['⛑️', '👷', '🦺', '😷', '🥽', '🧤', '🥾', '🧥', '🥼', '🧢', '🛡️', '🤿', '🧴', '🧪'] },
+  { label: 'Thoát hiểm & biển báo', icons: ['🚪', '🏃', '🚶', '➡️', '🆘', '🚫', '⛔', '🚭', '⚠️', '🛑', '🚧', '🚑', '🏥', '🔦', '🕯️'] },
+  { label: 'An ninh & điện', icons: ['📷', '🎥', '🔒', '🔑', '📡', '🔌', '🔋', '⚡', '💡', '📞', '🔍'] },
+  { label: 'Kỹ thuật & công trình', icons: ['🧰', '🔧', '🔨', '🛠️', '⚙️', '🏭', '🏢', '🏠', '🏗️', '🧱', '📐'] },
+  { label: 'Giao hàng & chung', icons: ['🚗', '🚚', '📦', '📋', '📄', '✅', '⭐', '🎯', '🔗'] }
 ];
+const ICON_CHOICES = [...SVG_ICON_CHOICES.map(i => i.value), ...ICON_GROUPS.flatMap(g => g.icons)];
 
 const EMPTY_FORM = {
   shortName: '',
@@ -185,7 +193,7 @@ export const CategoryManagerModal = ({ onClose }) => {
                 {categories.map((cat, index) => (
                   <li key={cat.id} className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white p-3">
                     <div className="flex items-center gap-3 min-w-0 basis-full sm:basis-0 sm:flex-1">
-                      <span className="text-2xl w-10 text-center shrink-0" aria-hidden="true">{cat.icon}</span>
+                      <span className="text-2xl w-10 text-center shrink-0" aria-hidden="true"><CategoryIcon icon={cat.icon} /></span>
                       <div className="min-w-0 flex-1">
                         <div className="font-bold text-slate-900 text-sm break-words">{cat.shortName}</div>
                         <div className="text-xs text-slate-500 break-words">{cat.label}</div>
@@ -224,22 +232,53 @@ export const CategoryManagerModal = ({ onClose }) => {
                   <div
                     role="radiogroup"
                     aria-labelledby="cat-icon-label"
-                    className="grid grid-cols-6 sm:grid-cols-8 gap-1.5 max-h-44 overflow-y-auto p-1.5 rounded-xl border border-slate-300 bg-slate-50"
+                    className="max-h-64 overflow-y-auto p-2 space-y-2.5 rounded-xl border border-slate-300 bg-slate-50"
                   >
-                    {(form.icon && !ICON_CHOICES.includes(form.icon) ? [form.icon, ...ICON_CHOICES] : ICON_CHOICES).map(icon => (
-                      <button
-                        key={icon}
-                        type="button"
-                        role="radio"
-                        aria-checked={form.icon === icon}
-                        aria-label={`Biểu tượng ${icon}`}
-                        onClick={() => setForm(prev => ({ ...prev, icon }))}
-                        className={`min-h-11 rounded-lg text-2xl flex items-center justify-center cursor-pointer transition-colors ${
-                          form.icon === icon ? 'bg-red-50 ring-2 ring-red-500' : 'bg-white border border-slate-200 hover:bg-slate-100'
-                        }`}
-                      >
-                        {icon}
-                      </button>
+                    <div>
+                      <div className="text-[11px] font-bold text-slate-500 mb-1">Thiết bị cứu nạn cứu hộ</div>
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {SVG_ICON_CHOICES.map(({ value, label }) => (
+                          <button
+                            key={value}
+                            type="button"
+                            role="radio"
+                            aria-checked={form.icon === value}
+                            aria-label={label}
+                            onClick={() => setForm(prev => ({ ...prev, icon: value }))}
+                            className={`min-h-16 rounded-lg px-1 py-1.5 flex flex-col items-center justify-center gap-0.5 cursor-pointer transition-colors ${
+                              form.icon === value ? 'bg-red-50 ring-2 ring-red-500 text-red-700' : 'bg-white border border-slate-200 hover:bg-slate-100 text-slate-700'
+                            }`}
+                          >
+                            <span className="text-2xl leading-none"><CategoryIcon icon={value} /></span>
+                            <span className="text-[10px] font-semibold leading-tight text-center">{label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {(form.icon && !ICON_CHOICES.includes(form.icon)
+                      ? [{ label: 'Đang dùng', icons: [form.icon] }, ...ICON_GROUPS]
+                      : ICON_GROUPS
+                    ).map(group => (
+                      <div key={group.label}>
+                        <div className="text-[11px] font-bold text-slate-500 mb-1">{group.label}</div>
+                        <div className="grid grid-cols-6 sm:grid-cols-8 gap-1.5">
+                          {group.icons.map(icon => (
+                            <button
+                              key={icon}
+                              type="button"
+                              role="radio"
+                              aria-checked={form.icon === icon}
+                              aria-label={`Biểu tượng ${icon}`}
+                              onClick={() => setForm(prev => ({ ...prev, icon }))}
+                              className={`min-h-11 rounded-lg text-2xl flex items-center justify-center cursor-pointer transition-colors ${
+                                form.icon === icon ? 'bg-red-50 ring-2 ring-red-500' : 'bg-white border border-slate-200 hover:bg-slate-100'
+                              }`}
+                            >
+                              {icon}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -316,7 +355,7 @@ export const CategoryManagerModal = ({ onClose }) => {
               <div className="flex items-start gap-3 rounded-2xl bg-amber-50 border border-amber-200 p-4">
                 <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                 <div className="text-sm text-amber-900">
-                  Bạn sắp xóa danh mục <b>{deleting.icon} {deleting.shortName}</b>.
+                  Bạn sắp xóa danh mục <b><CategoryIcon icon={deleting.icon} /> {deleting.shortName}</b>.
                   {deletingCount > 0
                     ? <> Danh mục đang có <b>{deletingCount} sản phẩm</b>; hãy chọn danh mục khác để chuyển các sản phẩm sang. Sản phẩm sẽ không bị xóa.</>
                     : <> Danh mục này không có sản phẩm nào.</>}
@@ -334,7 +373,7 @@ export const CategoryManagerModal = ({ onClose }) => {
                   >
                     <option value="">-- Chọn danh mục --</option>
                     {otherCategories.map(c => (
-                      <option key={c.id} value={c.id}>{c.icon} {c.shortName}</option>
+                      <option key={c.id} value={c.id}>{categoryIconText(c.icon)} {c.shortName}</option>
                     ))}
                   </select>
                 </div>
