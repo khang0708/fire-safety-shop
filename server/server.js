@@ -32,6 +32,7 @@ import {
   resolveProductCategoryId,
   planCategoryDeletion
 } from './categories.js';
+import { saveImageDataUrl, resolveUploadFile, uploadContentType } from './uploads.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -140,6 +141,11 @@ const reviewCreateLimiter = createRateLimiter({
   windowMs: 60 * 60 * 1000,
   max: 8,
   message: 'Bạn đã gửi quá nhiều đánh giá. Vui lòng thử lại sau.'
+});
+const uploadLimiter = createRateLimiter({
+  windowMs: 10 * 60 * 1000,
+  max: 40,
+  message: 'Bạn tải ảnh lên quá nhiều lần. Vui lòng thử lại sau ít phút.'
 });
 const orderTrackLimiter = createRateLimiter({
   windowMs: 10 * 60 * 1000,
@@ -527,6 +533,26 @@ app.delete('/api/products/:id', requireAdminAuth, async (req, res) => {
   }
 });
 
+
+// ----------------------------------------------------
+// 1a. ẢNH ADMIN TẢI LÊN (lưu thành tệp trong DATA_DIR/uploads)
+// ----------------------------------------------------
+// POST /api/uploads/image  body: { dataUrl: "data:image/jpeg;base64,..." }  =>  { url: "/uploads/<tên>.jpg" }
+app.post('/api/uploads/image', requireAdminAuth, uploadLimiter, (req, res) => {
+  const result = saveImageDataUrl(req.body && req.body.dataUrl);
+  if (!result.ok) return res.status(result.status).json({ success: false, message: result.message });
+  res.status(201).json({ success: true, url: result.url, bytes: result.bytes });
+});
+
+// GET /uploads/<tên>: tên do server sinh nên bất biến => cache dài hạn. nosniff để trình duyệt không đoán kiểu nội dung.
+app.get('/uploads/:name', (req, res) => {
+  const filePath = resolveUploadFile(req.params.name);
+  if (!filePath) return res.status(404).type('text/plain').send('Not found');
+  res.setHeader('Content-Type', uploadContentType(req.params.name));
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  res.sendFile(filePath);
+});
 
 // ----------------------------------------------------
 // 1b. DANH MỤC SẢN PHẨM CHÍNH (thêm / sửa / xóa / sắp xếp)

@@ -1,3 +1,4 @@
+import fs from 'fs';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { 
@@ -12,6 +13,7 @@ import {
   sortCategories,
   planCategoryDeletion
 } from './server/categories.js';
+import { saveImageDataUrl, resolveUploadFile, uploadContentType } from './server/uploads.js';
 
 const devSlugify = (text) => String(text || '')
   .normalize('NFD')
@@ -100,6 +102,20 @@ function fullstackApiPlugin() {
         const rawUrl = req.originalUrl || req.url || '';
         const url = rawUrl.split('?')[0];
 
+        // Ảnh admin đã tải lên (dùng chung logic với server/server.js)
+        if (url.startsWith('/uploads/') && req.method === 'GET') {
+          const filePath = resolveUploadFile(decodeURIComponent(url.slice('/uploads/'.length)));
+          if (!filePath) {
+            res.statusCode = 404;
+            res.end('Not found');
+            return;
+          }
+          res.setHeader('Content-Type', uploadContentType(filePath));
+          res.setHeader('X-Content-Type-Options', 'nosniff');
+          res.end(fs.readFileSync(filePath));
+          return;
+        }
+
         if (!url.startsWith('/api')) {
           return next();
         }
@@ -156,6 +172,23 @@ function fullstackApiPlugin() {
           });
           req.on('error', () => resolve({}));
         });
+
+        // Tải ảnh lên (dev): dùng chung logic với server/server.js
+        if (url === '/api/uploads/image' && req.method === 'POST') {
+          const authHeader = req.headers['authorization'];
+          const adminToken = (authHeader && authHeader.startsWith('Bearer ')) ? authHeader.slice(7).trim() : null;
+          res.setHeader('Content-Type', 'application/json');
+          if (!adminToken || !verifyAdminToken(adminToken)) {
+            res.statusCode = 401;
+            res.end(JSON.stringify({ success: false, error: 'UNAUTHORIZED' }));
+            return;
+          }
+          const body = await readBody();
+          const result = saveImageDataUrl(body && body.dataUrl);
+          res.statusCode = result.ok ? 201 : result.status;
+          res.end(JSON.stringify(result.ok ? { success: true, url: result.url, bytes: result.bytes } : { success: false, message: result.message }));
+          return;
+        }
 
         // Danh mục sản phẩm (dev): dùng chung logic kiểm tra/xóa với server/server.js
         if (url === '/api/categories' || url.startsWith('/api/categories/')) {
