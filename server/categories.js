@@ -24,7 +24,10 @@ const isSafeImageRef = (value) =>
   value.length <= CATEGORY_LIMITS.showcaseImg &&
   !/\s/.test(value) &&
   !value.includes('..') &&
-  (/^https?:\/\/[^\s]+$/i.test(value) || /^\/images\/[A-Za-z0-9_./-]+$/.test(value));
+  (/^https?:\/\/[^\s]+$/i.test(value) ||
+    /^\/images\/[A-Za-z0-9_./-]+$/.test(value) ||
+    // Ảnh admin tải lên qua POST /api/uploads/image (tên tệp do server sinh)
+    /^\/uploads\/[0-9]{13}-[a-f0-9]{16}\.(png|jpg|webp)$/.test(value));
 
 // Kiểm tra và làm sạch dữ liệu nhập. `partial = true` cho cập nhật (chỉ kiểm tra trường có gửi lên).
 export const sanitizeCategoryInput = (body, { partial = false } = {}) => {
@@ -49,7 +52,7 @@ export const sanitizeCategoryInput = (body, { partial = false } = {}) => {
   if (input.showcaseImg !== undefined) {
     const img = typeof input.showcaseImg === 'string' ? input.showcaseImg.trim() : '';
     if (img && !isSafeImageRef(img)) {
-      errors.push('Ảnh banner phải là đường dẫn https://... hoặc /images/... (không dùng ảnh nhúng base64).');
+      errors.push('Ảnh banner phải là ảnh tải lên, đường dẫn https://... hoặc /images/... (không dùng ảnh nhúng base64).');
     } else {
       value.showcaseImg = img;
     }

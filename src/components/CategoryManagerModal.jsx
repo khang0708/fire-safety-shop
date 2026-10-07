@@ -1,7 +1,21 @@
-import React, { useMemo, useState } from 'react';
-import { Plus, Pencil, Trash2, ChevronUp, ChevronDown, X, AlertTriangle } from 'lucide-react';
+import React, { useMemo, useRef, useState } from 'react';
+import { Plus, Pencil, Trash2, ChevronUp, ChevronDown, X, AlertTriangle, ImagePlus, Loader2 } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { resolveProductCategoryId } from '../utils/categories';
+import { uploadImageApi } from '../api';
+import { fileToUploadDataUrl, ACCEPTED_IMAGE_TYPES } from '../utils/imageUpload';
+
+// Ảnh banner hợp lệ để xem trước: đường dẫn https, ảnh có sẵn trong /images hoặc ảnh admin đã tải lên
+const isPreviewableImage = (value) => /^(https?:\/\/|\/images\/|\/uploads\/)/.test(value || '');
+
+// Bảng biểu tượng để chọn (người dùng không cần tự gõ emoji): thiết bị PCCC, cứu hộ, báo cháy, an ninh, điện, công trình...
+// Chỉ dùng emoji đã có từ lâu (Unicode ≤ 11) để máy cũ/Windows 10 vẫn hiển thị đúng, không bị ô vuông trống.
+const ICON_CHOICES = [
+  '🧯', '🔥', '🚨', '🔔', '🚒', '⛑️', '🚪', '🏃', '😷', '🧪', '💧', '🌬️',
+  '⚠️', '🛡️', '✅', '⭐', '🔦', '💡', '📷', '🎥', '🔒', '🔑', '📟', '📡',
+  '🔌', '🔋', '⚡', '🧰', '🔧', '🛠️', '🏭', '🏢', '🏠', '🚗', '🚚', '📦',
+  '📋', '📄', '🚧', '📢', '🎯', '🧱', '📞', '🔍'
+];
 
 const EMPTY_FORM = {
   shortName: '',
@@ -21,10 +35,10 @@ const FORM_FIELDS = [
   { key: 'icon', label: 'Biểu tượng (một emoji)', max: 8 },
   { key: 'badge', label: 'Nhãn nổi bật (ví dụ: Tem BCA Vạch Xanh)', max: 60 },
   { key: 'tagline', label: 'Dòng mô tả ngắn', max: 120 },
-  { key: 'showcaseImg', label: 'Ảnh banner (https://... hoặc /images/...)', max: 500 },
-  { key: 'showcaseBadge', label: 'Nhãn trên banner', max: 80 },
-  { key: 'showcaseTitle', label: 'Tiêu đề banner', max: 100 },
-  { key: 'showcaseDesc', label: 'Mô tả banner', max: 200 }
+  { key: 'showcaseImg', label: 'Ảnh nổi bật trang chủ (tải ảnh lên hoặc dán đường dẫn https://...)', max: 500 },
+  { key: 'showcaseBadge', label: 'Nhãn nhỏ trên ảnh nổi bật', max: 80 },
+  { key: 'showcaseTitle', label: 'Tiêu đề trên ảnh nổi bật', max: 100 },
+  { key: 'showcaseDesc', label: 'Mô tả ngắn trên ảnh nổi bật', max: 200 }
 ];
 
 export const CategoryManagerModal = ({ onClose }) => {
@@ -37,6 +51,8 @@ export const CategoryManagerModal = ({ onClose }) => {
   const [reassignTo, setReassignTo] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(null); // { type: 'error' | 'success', text }
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const productCounts = useMemo(() => {
     const counts = {};
@@ -59,6 +75,24 @@ export const CategoryManagerModal = ({ onClose }) => {
       return false;
     } finally {
       setBusy(false);
+    }
+  };
+
+  const handleBannerFile = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = ''; // cho phép chọn lại đúng tệp đó lần sau
+    if (!file) return;
+    setUploading(true);
+    setMessage(null);
+    try {
+      const dataUrl = await fileToUploadDataUrl(file, { maxWidth: 1600 });
+      const url = await uploadImageApi(dataUrl);
+      setForm(prev => ({ ...prev, showcaseImg: url }));
+      setMessage({ type: 'success', text: 'Đã tải ảnh lên. Bấm "Lưu" để áp dụng cho danh mục.' });
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message || 'Không tải được ảnh, vui lòng thử lại.' });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -184,7 +218,32 @@ export const CategoryManagerModal = ({ onClose }) => {
 
           {view === 'form' && (
             <form onSubmit={submitForm} className="space-y-3">
-              {FORM_FIELDS.map(field => (
+              {FORM_FIELDS.map(field => field.key === 'icon' ? (
+                <div key="icon">
+                  <span id="cat-icon-label" className="block text-xs font-bold text-slate-700 mb-1">Biểu tượng (bấm để chọn)</span>
+                  <div
+                    role="radiogroup"
+                    aria-labelledby="cat-icon-label"
+                    className="grid grid-cols-6 sm:grid-cols-8 gap-1.5 max-h-44 overflow-y-auto p-1.5 rounded-xl border border-slate-300 bg-slate-50"
+                  >
+                    {(form.icon && !ICON_CHOICES.includes(form.icon) ? [form.icon, ...ICON_CHOICES] : ICON_CHOICES).map(icon => (
+                      <button
+                        key={icon}
+                        type="button"
+                        role="radio"
+                        aria-checked={form.icon === icon}
+                        aria-label={`Biểu tượng ${icon}`}
+                        onClick={() => setForm(prev => ({ ...prev, icon }))}
+                        className={`min-h-11 rounded-lg text-2xl flex items-center justify-center cursor-pointer transition-colors ${
+                          form.icon === icon ? 'bg-red-50 ring-2 ring-red-500' : 'bg-white border border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        {icon}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
                 <div key={field.key}>
                   <label htmlFor={`cat-${field.key}`} className="block text-xs font-bold text-slate-700 mb-1">{field.label}</label>
                   <input
@@ -196,10 +255,50 @@ export const CategoryManagerModal = ({ onClose }) => {
                     onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
                     className="w-full min-h-11 px-3 rounded-xl border border-slate-300 text-base focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500"
                   />
+                  {field.key === 'showcaseImg' && (
+                    <div className="mt-2 space-y-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept={ACCEPTED_IMAGE_TYPES.join(',')}
+                        onChange={handleBannerFile}
+                        className="hidden"
+                        aria-label="Chọn ảnh banner từ máy"
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          disabled={busy || uploading}
+                          onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                          className="min-h-11 px-4 rounded-xl border border-slate-300 hover:bg-slate-50 disabled:opacity-60 text-sm font-bold text-slate-700 flex items-center gap-2 cursor-pointer"
+                        >
+                          {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
+                          <span>{uploading ? 'Đang tải ảnh lên...' : 'Tải ảnh từ máy'}</span>
+                        </button>
+                        {form.showcaseImg && (
+                          <button
+                            type="button"
+                            disabled={busy || uploading}
+                            onClick={() => setForm(prev => ({ ...prev, showcaseImg: '' }))}
+                            className="min-h-11 px-4 rounded-xl text-sm font-bold text-red-600 hover:bg-red-50 disabled:opacity-60 cursor-pointer"
+                          >
+                            Gỡ ảnh
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">
+                        Ảnh này hiện ở <b>khung ảnh lớn bên phải đầu trang chủ</b> khi khách chọn danh mục này, kèm nhãn, tiêu đề và mô tả bên dưới đè lên phần cuối ảnh.
+                        Nên dùng <b>ảnh dọc tỉ lệ 4:5</b> (ví dụ 800×1000), chủ thể nằm giữa ảnh. Hỗ trợ JPG, PNG, WEBP; ảnh lớn tự được thu nhỏ và nén.
+                      </p>
+                    </div>
+                  )}
                 </div>
               ))}
-              {form.showcaseImg && /^(https?:\/\/|\/images\/)/.test(form.showcaseImg) && (
-                <img src={form.showcaseImg} alt="Xem trước ảnh banner" className="w-full max-h-40 object-cover rounded-xl border border-slate-200" />
+              {isPreviewableImage(form.showcaseImg) && (
+                <div>
+                  <span className="block text-[11px] font-bold text-slate-600 mb-1">Xem trước (đúng khung 4:5 khách sẽ thấy)</span>
+                  <img src={form.showcaseImg} alt="Xem trước ảnh nổi bật" className="w-40 aspect-[4/5] object-cover object-center bg-slate-100 rounded-2xl border border-slate-200" />
+                </div>
               )}
               <div className="flex gap-2 pt-2">
                 <button type="button" disabled={busy} onClick={() => setView('list')} className="flex-1 min-h-12 rounded-2xl border border-slate-300 font-bold text-sm text-slate-700 hover:bg-slate-50 cursor-pointer">

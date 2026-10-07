@@ -141,6 +141,12 @@ export const fetchCategoriesApi = async () => {
   return res.data;
 };
 
+// Tải ảnh (data URL JPEG/PNG/WEBP đã nén) lên máy chủ, trả về đường dẫn dạng /uploads/<tên>.jpg
+export const uploadImageApi = async (dataUrl) => {
+  const res = await request('/uploads/image', { method: 'POST', body: JSON.stringify({ dataUrl }) });
+  return res.url;
+};
+
 export const createCategoryApi = async (data) => {
   const res = await request('/categories', { method: 'POST', body: JSON.stringify(data) });
   return res.data;
