@@ -1,6 +1,5 @@
 import React from 'react';
 import { useShop, formatPhoneNumber, getCleanPhoneNumber } from '../context/ShopContext';
-import { SHOP_CATEGORIES } from '../data/flowers';
 import { Sparkles, ShieldCheck, Gauge, ArrowRight, Award, Phone } from 'lucide-react';
 
 export const CompactTrustBar = () => {
@@ -44,10 +43,11 @@ export const HeroSection = () => {
     setActiveCategory,
     isBannerEffectivelyHidden, 
     displaySettings,
-    brandSettings
+    brandSettings,
+    categories
   } = useShop();
 
-  const currentCategory = SHOP_CATEGORIES.find(c => c.id === activeCategory) || SHOP_CATEGORIES[0];
+  const currentCategory = categories.find(c => c.id === activeCategory) || categories[0] || {};
 
   if (isBannerEffectivelyHidden) {
     if (displaySettings?.bannerMode === 'hidden') return null;
@@ -83,7 +83,7 @@ export const HeroSection = () => {
 
             {/* 3 Trụ Cột Danh Mục Tương Tác Nhanh Trên Banner (Interactive 3-Pillar Selector) */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 text-left">
-              {SHOP_CATEGORIES.map((cat) => {
+              {categories.map((cat) => {
                 const isSelected = activeCategory === cat.id;
                 return (
                   <button

@@ -6,6 +6,18 @@ import {
   changeAdminPassword 
 } from './server/auth.js';
 import { readJsonFileSync, writeJsonFileSync } from './server/storage.js';
+import {
+  sanitizeCategoryInput,
+  generateCategoryId,
+  sortCategories,
+  planCategoryDeletion
+} from './server/categories.js';
+
+const devSlugify = (text) => String(text || '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/đ/g, 'd')
+  .toLowerCase();
 
 // API dev server dùng chung lớp lưu trữ với server/server.js (DATA_DIR + dữ liệu mẫu server/seed).
 const readJson = (fileName) => readJsonFileSync(fileName, null);
@@ -144,6 +156,63 @@ function fullstackApiPlugin() {
           });
           req.on('error', () => resolve({}));
         });
+
+        // Danh mục sản phẩm (dev): dùng chung logic kiểm tra/xóa với server/server.js
+        if (url === '/api/categories' || url.startsWith('/api/categories/')) {
+          const sendJson = (status, payload) => {
+            res.statusCode = status;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(payload));
+          };
+          const categories = sortCategories(readJsonFileSync('categories.json', []) || []);
+          if (url === '/api/categories' && req.method === 'GET') return sendJson(200, { success: true, data: categories });
+
+          const authHeader = req.headers['authorization'];
+          const adminToken = (authHeader && authHeader.startsWith('Bearer ')) ? authHeader.slice(7).trim() : null;
+          if (!adminToken || !verifyAdminToken(adminToken)) return sendJson(401, { success: false, error: 'UNAUTHORIZED' });
+
+          const body = (req.method === 'POST' || req.method === 'PUT') ? await readBody() : {};
+          const targetId = decodeURIComponent(url.slice('/api/categories/'.length));
+
+          if (url === '/api/categories' && req.method === 'POST') {
+            const { value, errors } = sanitizeCategoryInput(body);
+            if (errors.length) return sendJson(400, { success: false, message: errors.join(' ') });
+            const created = { id: generateCategoryId(value.shortName, categories.map(c => c.id), devSlugify), ...value, order: categories.length };
+            writeJsonFileSync('categories.json', [...categories, created]);
+            return sendJson(201, { success: true, data: created });
+          }
+          if (url === '/api/categories/order' && req.method === 'PUT') {
+            const ids = Array.isArray(body.ids) ? body.ids.map(String) : [];
+            if (ids.length !== categories.length || new Set(ids).size !== ids.length || !ids.every(id => categories.some(c => c.id === id))) {
+              return sendJson(400, { success: false, message: 'Danh sách sắp xếp không hợp lệ.' });
+            }
+            const reordered = ids.map((id, index) => ({ ...categories.find(c => c.id === id), order: index }));
+            writeJsonFileSync('categories.json', reordered);
+            return sendJson(200, { success: true, data: reordered });
+          }
+          if (req.method === 'PUT') {
+            const { value, errors } = sanitizeCategoryInput(body, { partial: true });
+            if (errors.length) return sendJson(400, { success: false, message: errors.join(' ') });
+            const index = categories.findIndex(c => c.id === targetId);
+            if (index === -1) return sendJson(404, { success: false, message: 'Không tìm thấy danh mục.' });
+            const updated = { ...categories[index], ...value };
+            writeJsonFileSync('categories.json', categories.map((c, i) => (i === index ? updated : c)));
+            return sendJson(200, { success: true, data: updated });
+          }
+          if (req.method === 'DELETE') {
+            const products = readJsonFileSync('products.json', []) || [];
+            const reassignTo = new URL(rawUrl, 'http://localhost').searchParams.get('reassignTo');
+            const plan = planCategoryDeletion({ categories, products, id: targetId, reassignTo });
+            if (!plan.ok) return sendJson(plan.status, { success: false, error: plan.error, message: plan.message, productCount: plan.productCount });
+            if (plan.affected.length > 0) {
+              const moved = new Set(plan.affected);
+              writeJsonFileSync('products.json', products.map(p => (moved.has(p) ? { ...p, category: plan.reassignTo, updatedAt: new Date().toISOString() } : p)));
+            }
+            writeJsonFileSync('categories.json', categories.filter(c => c.id !== targetId).map((c, i) => ({ ...c, order: i })));
+            return sendJson(200, { success: true, movedProducts: plan.affected.length, reassignedTo: plan.reassignTo });
+          }
+          return sendJson(404, { success: false, message: 'Không hỗ trợ.' });
+        }
 
         // 0. AUTH API
         if (url === '/api/auth/login' && req.method === 'POST') {

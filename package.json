@@ -9,7 +9,7 @@
     "dev:all": "concurrently \"npm run server\" \"npm run dev\"",
     "build": "vite build",
     "start": "node server/server.js",
-    "test": "node tests/unit-test.js && node tests/security-test.js && node tests/conflict-resolution-test.js && node tests/monitoring-test.js && node tests/brand-settings-test.js && node tests/data-safety-test.js && node tests/api-security-test.js && node tests/migration-test.js && node tests/zero-dependency-test.js && node tests/articles-seo-test.js && node tests/product-detail-ads-test.js",
+    "test": "node tests/unit-test.js && node tests/security-test.js && node tests/conflict-resolution-test.js && node tests/monitoring-test.js && node tests/brand-settings-test.js && node tests/data-safety-test.js && node tests/api-security-test.js && node tests/migration-test.js && node tests/zero-dependency-test.js && node tests/categories-test.js && node tests/articles-seo-test.js && node tests/product-detail-ads-test.js",
     "watchdog": "node scripts/server-watchdog.js",
     "test:dev-alert": "node scripts/test-dev-alert.js",
     "lint": "oxlint",

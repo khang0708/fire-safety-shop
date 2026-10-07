@@ -1,11 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { FLOWERS_DATA } from '../data/flowers';
+import { FLOWERS_DATA, SHOP_CATEGORIES } from '../data/flowers';
 import { 
   fetchProductsApi, 
   createProductApi, 
   updateProductApi, 
   deleteProductApi, 
   toggleProductApi,
+  fetchCategoriesApi,
+  createCategoryApi,
+  updateCategoryApi,
+  deleteCategoryApi,
+  reorderCategoriesApi,
   fetchOrdersApi,
   trackOrderApi,
   getSseTicketApi,
@@ -631,6 +636,28 @@ export const ShopProvider = ({ children }) => {
   const [latestNewOrder, setLatestNewOrder] = useState(null);
 
   // 4. Giỏ hàng & Sản phẩm
+  const [categories, setCategoriesState] = useState(() => {
+    try {
+      const cached = localStorage.getItem('flameguard_categories');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_e) {}
+    return SHOP_CATEGORIES.map((c, index) => ({ ...c, order: index }));
+  });
+  const setCategories = useCallback((next) => {
+    setCategoriesState(next);
+    try {
+      localStorage.setItem('flameguard_categories', JSON.stringify(next));
+    } catch (_e) {}
+  }, []);
+  const reloadCategories = useCallback(async () => {
+    try {
+      const list = await fetchCategoriesApi();
+      if (Array.isArray(list) && list.length > 0) setCategories(list);
+    } catch (_e) {}
+  }, [setCategories]);
   const [activeCategory, setActiveCategory] = useState('extinguishers'); // 'extinguishers' | 'rescue' | 'alarms'
   const [cart, setCart] = useState([]);
   const [wishlist, setWishlist] = useState([]);
@@ -676,6 +703,12 @@ export const ShopProvider = ({ children }) => {
   useEffect(() => {
     activeOrderRef.current = activeOrder;
   }, [activeOrder]);
+
+  useEffect(() => {
+    if (activeCategory !== 'all' && categories.length > 0 && !categories.some(c => c.id === activeCategory)) {
+      setActiveCategory(categories[0].id);
+    }
+  }, [categories, activeCategory]);
 
   // 7. Kho thiết bị & vật tư PCCC
   const [inventory, setInventory] = useState([
@@ -1088,15 +1121,18 @@ export const ShopProvider = ({ children }) => {
   // Đồng bộ lại toàn bộ dữ liệu từ API Server (Dùng cho Focus, Polling & thủ công)
   const refreshShopData = useCallback(async (isSilent = true) => {
     try {
-      const [apiProducts, apiOrders, apiInventory, apiDiscounts, apiReviews, apiSettings, apiArticles] = await Promise.all([
+      const [apiProducts, apiOrders, apiInventory, apiDiscounts, apiReviews, apiSettings, apiArticles, apiCategories] = await Promise.all([
         fetchProductsApi().catch(() => null),
         hasAdminSession() ? fetchOrdersApi().catch(() => null) : Promise.resolve(null),
         fetchInventoryApi().catch(() => null),
         fetchDiscountsApi().catch(() => null),
         fetchReviewsApi().catch(() => null),
         fetchSettingsApi().catch(() => null),
-        fetchArticlesApi({ status: 'all' }).catch(() => null)
+        fetchArticlesApi({ status: 'all' }).catch(() => null),
+        fetchCategoriesApi().catch(() => null)
       ]);
+
+      if (Array.isArray(apiCategories) && apiCategories.length > 0) setCategories(apiCategories);
 
       // 1. Đồng bộ Mẫu Hoa với Conflict Resolution & Auto-Rehydration
       if (Array.isArray(apiProducts) && apiProducts.length > 0) {
@@ -1302,6 +1338,9 @@ export const ShopProvider = ({ children }) => {
       const handleSseMessage = (e) => {
         try {
           const payload = JSON.parse(e.data);
+          if (payload.type === 'CATEGORIES_CHANGED') {
+            reloadCategories();
+          }
           if (payload.type === 'NEW_ORDER' && payload.order) {
             setOrders(prev => {
               const exists = prev.some(o => o.id === payload.order.id);
@@ -1431,8 +1470,34 @@ export const ShopProvider = ({ children }) => {
       }
       clearInterval(pollInterval);
     };
-  }, [triggerAdminOrderAlert, updateProductsLocalAndBroadcast, refreshShopData]);
+  }, [triggerAdminOrderAlert, updateProductsLocalAndBroadcast, refreshShopData, reloadCategories]);
 
+
+  // CRUD DANH MỤC SẢN PHẨM CHÍNH (mọi thao tác đều đọc lại từ máy chủ để luôn khớp dữ liệu thật)
+  const addCategory = async (data) => {
+    const created = await createCategoryApi(data);
+    await reloadCategories();
+    return created;
+  };
+
+  const updateCategory = async (id, data) => {
+    const updated = await updateCategoryApi(id, data);
+    await reloadCategories();
+    return updated;
+  };
+
+  const deleteCategory = async (id, reassignTo) => {
+    const result = await deleteCategoryApi(id, reassignTo);
+    await reloadCategories();
+    await refreshShopData(true); // sản phẩm đã được chuyển danh mục trên máy chủ
+    return result;
+  };
+
+  const reorderCategories = async (ids) => {
+    const list = await reorderCategoriesApi(ids);
+    if (Array.isArray(list) && list.length > 0) setCategories(list);
+    return list;
+  };
 
   // CRUD SẢN PHẨM MẪU HOA
   const addProduct = async (newProduct) => {
@@ -1919,6 +1984,12 @@ export const ShopProvider = ({ children }) => {
         isApiConnected,
         activeCategory,
         setActiveCategory,
+        categories,
+        addCategory,
+        updateCategory,
+        deleteCategory,
+        reorderCategories,
+        reloadCategories,
         cart,
         wishlist,
         selectedOccasion,
