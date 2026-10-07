@@ -1,5 +1,5 @@
 // src/utils/conflictResolution.js
-// Quản lý giải quyết xung đột dữ liệu Local-First & Timestamp Reconciliation (Last-Write-Wins)
+// Đồng bộ danh sách sản phẩm giữa trình duyệt và máy chủ. MÁY CHỦ LÀ NGUỒN SỰ THẬT.
 
 export const getDeletedProductIds = () => {
   try {
@@ -32,45 +32,49 @@ export const unmarkProductDeletedLocal = (productId) => {
   } catch (e) {}
 };
 
-export const mergeProductsWithConflictResolution = (localProducts, serverProducts) => {
+// Sản phẩm vừa tạo/sửa trên máy này có thể chưa kịp xuất hiện trong phản hồi của máy chủ
+export const PENDING_GRACE_MS = 15000;
+
+// Kết quả = đúng danh sách của máy chủ. Quy tắc:
+//  - Sản phẩm máy chủ không có thì KHÔNG được giữ lại (đã xóa ở nơi khác, hoặc là dữ liệu mẫu/cache cũ),
+//    trừ sản phẩm local vừa tạo trong vòng PENDING_GRACE_MS (đang chờ lưu lên máy chủ).
+//  - Sản phẩm cả hai bên đều có: bản nào có updatedAt mới hơn thì thắng (local chỉ thắng khi mới hơn hẳn).
+//  - Sản phẩm vừa bị xóa trên máy này (đang chờ máy chủ xác nhận) tạm thời được ẩn.
+export const mergeProductsWithConflictResolution = (localProducts, serverProducts, now = Date.now()) => {
   const safeLocal = Array.isArray(localProducts) ? localProducts : [];
   const safeServer = Array.isArray(serverProducts) ? serverProducts : [];
-  if (safeServer.length === 0 && safeLocal.length === 0) return [];
 
   const deletedIds = getDeletedProductIds();
-  const productMap = new Map();
-
-  // 1. Thêm các sản phẩm local còn hiệu lực vào map
+  const localById = new Map();
   safeLocal.forEach(lp => {
-    if (lp && lp.id && !deletedIds.has(lp.id)) {
-      productMap.set(lp.id, lp);
-    }
+    if (lp && lp.id) localById.set(lp.id, lp);
   });
 
-  // 2. Duyệt qua sản phẩm từ server và đối chiếu timestamp (Last-Write-Wins)
-  serverProducts.forEach(sp => {
-    if (!sp || !sp.id || deletedIds.has(sp.id)) {
+  const result = [];
+  const serverIds = new Set();
+
+  safeServer.forEach(sp => {
+    if (!sp || !sp.id || deletedIds.has(sp.id)) return;
+    serverIds.add(sp.id);
+
+    const lp = localById.get(sp.id);
+    if (!lp) {
+      result.push(sp);
       return;
     }
+    const localTime = lp.updatedAt ? new Date(lp.updatedAt).getTime() : 0;
+    const serverTime = sp.updatedAt ? new Date(sp.updatedAt).getTime() : 0;
+    // Local mới hơn hẳn => giữ bản local (người dùng vừa sửa); còn lại máy chủ thắng
+    result.push(localTime > 0 && localTime > serverTime ? lp : sp);
+  });
 
-    const lp = productMap.get(sp.id);
-    if (!lp) {
-      // Sản phẩm mới từ server mà máy khách chưa có -> thêm vào
-      productMap.set(sp.id, sp);
-    } else {
-      // Cả 2 cùng có -> So sánh updatedAt
-      const localTime = lp.updatedAt ? new Date(lp.updatedAt).getTime() : 0;
-      const serverTime = sp.updatedAt ? new Date(sp.updatedAt).getTime() : 0;
-
-      if (!lp.updatedAt || localTime === 0 || serverTime > localTime) {
-        // Server có bản cập nhật mới hơn (từ máy khác) hoặc local là dữ liệu mẫu chưa sửa -> chấp nhận server
-        productMap.set(sp.id, sp);
-      } else {
-        // Local có timestamp mới hơn hoặc bằng -> GIỮ NGUYÊN BẢN LOCAL!
-        // Không ghi đè text và giá của user vừa sửa trên máy này!
-      }
+  safeLocal.forEach(lp => {
+    if (!lp || !lp.id || serverIds.has(lp.id) || deletedIds.has(lp.id)) return;
+    const localTime = lp.updatedAt ? new Date(lp.updatedAt).getTime() : 0;
+    if (localTime > 0 && now - localTime >= 0 && now - localTime < PENDING_GRACE_MS) {
+      result.push(lp);
     }
   });
 
-  return Array.from(productMap.values());
+  return result;
 };

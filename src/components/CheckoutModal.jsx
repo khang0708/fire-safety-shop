@@ -557,7 +557,7 @@ export const CheckoutModal = () => {
               <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
                 {cart.map((item) => (
                   <div key={item.cartItemId || item.id} className="flex gap-2.5 text-xs pb-2 border-b border-slate-200">
-                    <img src={item.image} alt={item.name} className="w-12 h-14 object-cover rounded-lg border flex-shrink-0" />
+                    <img src={item.image} alt={item.name} className="w-14 h-14 object-contain bg-white rounded-lg border flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <h5 className="font-heading font-bold text-slate-900 truncate">{item.name}</h5>
                       <span className="text-[10px] text-slate-500">{item.size?.name || 'Tiêu chuẩn'} × {item.quantity}</span>

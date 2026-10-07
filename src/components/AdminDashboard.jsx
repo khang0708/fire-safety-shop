@@ -19,6 +19,7 @@ import { sendTelegramTestApi, getTelegramChatIdAutoApi, sendFacebookTestApi, aut
 import { PrintInvoiceModal } from './PrintInvoiceModal';
 import { SalesAnalyticsView } from './SalesAnalyticsView';
 import { ArticlesManagementView } from './ArticlesManagementView';
+import { ConfirmDialog } from './ConfirmDialog';
 import { getProductSlug, getProductUrl, slugifyVietnamese } from '../utils/slugify';
 import { 
   ShoppingBag, 
@@ -156,6 +157,8 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
   // State Modal Thêm/Sửa Mẫu Thiết Bị PCCC Mới
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
+  const [productToDelete, setProductToDelete] = useState(null); // sản phẩm đang chờ xác nhận xóa
+  const [isDeletingProduct, setIsDeletingProduct] = useState(false);
   const [imageImportMode, setImageImportMode] = useState('upload'); // 'upload' | 'library' | 'url'
 
   // State Modal Chụp / Upload Ảnh Thật & Đồng Hồ Áp Suất Tại Xưởng
@@ -1776,8 +1779,8 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                             <button 
                               onClick={(e) => {
                                 e.stopPropagation();
-                                deleteProduct(prod.id);
-                              }} 
+                                setProductToDelete(prod);
+                              }}
                               className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors cursor-pointer" 
                               title="Xóa thiết bị"
                             >
@@ -3990,6 +3993,30 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
       </main>
     </div>
   </div>
+
+      {/* HỘP XÁC NHẬN XÓA THIẾT BỊ PCCC */}
+      <ConfirmDialog
+        open={Boolean(productToDelete)}
+        title="Xóa thiết bị này?"
+        confirmLabel="Xóa thiết bị"
+        busy={isDeletingProduct}
+        onCancel={() => setProductToDelete(null)}
+        onConfirm={async () => {
+          if (!productToDelete || isDeletingProduct) return;
+          setIsDeletingProduct(true);
+          try {
+            await deleteProduct(productToDelete.id);
+          } finally {
+            setIsDeletingProduct(false);
+            setProductToDelete(null);
+          }
+        }}
+      >
+        <p>
+          <strong className="text-slate-900">{productToDelete?.name}</strong> sẽ biến mất khỏi trang khách hàng.
+        </p>
+        <p className="mt-1">Thao tác này không thể hoàn tác.</p>
+      </ConfirmDialog>
 
       {/* MODAL THÊM / SỬA THIẾT BỊ PCCC */}
       {isProductModalOpen && (

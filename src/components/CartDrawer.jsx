@@ -99,7 +99,7 @@ export const CartDrawer = () => {
                       <img
                         src={item.image}
                         alt={item.name}
-                        className="w-16 h-20 object-cover rounded-xl border border-slate-200 flex-shrink-0"
+                        className="w-20 h-20 object-contain bg-white rounded-xl border border-slate-200 flex-shrink-0"
                       />
                       
                       <div className="flex-1 min-w-0">
