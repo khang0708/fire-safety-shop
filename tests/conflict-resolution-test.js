@@ -153,6 +153,57 @@ test('Zombie Prevention: Mẫu hoa đã xóa ở local KHÔNG BỊ server cũ l�
   assert.ok(!getDeletedProductIds().has('fl-deleted-99'));
 });
 
+// 4b. Máy chủ là nguồn sự thật: sản phẩm đã xóa trên máy chủ không được sống lại từ cache của trình duyệt khách
+test('Server Authoritative: Sản phẩm còn trong cache khách nhưng máy chủ đã xóa thì BỊ LOẠI', () => {
+  mockStorage.clear();
+  const staleVisitorCache = [
+    { id: 'fire-03', name: 'Mẫu đã xóa ở admin', updatedAt: '2026-09-01T00:00:00.000Z' },
+    { id: 'fire-keep', name: 'Vẫn còn', updatedAt: '2026-09-01T00:00:00.000Z' }
+  ];
+  const server = [{ id: 'fire-keep', name: 'Vẫn còn', updatedAt: '2026-09-01T00:00:00.000Z' }];
+
+  const merged = mergeProductsWithConflictResolution(staleVisitorCache, server);
+  assert.deepStrictEqual(merged.map(p => p.id), ['fire-keep']);
+});
+
+test('Server Authoritative: Dữ liệu mẫu đóng gói sẵn (không có updatedAt) mà máy chủ không có thì BỊ LOẠI', () => {
+  mockStorage.clear();
+  const bundledSamples = ['fire-01', 'fire-02', 'fire-03'].map(id => ({ id, name: `Mẫu ${id}` }));
+  const server = [{ id: 'fire-1791381651847', name: 'Sản phẩm thật', updatedAt: '2026-10-05T00:00:00.000Z' }];
+
+  const merged = mergeProductsWithConflictResolution(bundledSamples, server);
+  assert.deepStrictEqual(merged.map(p => p.id), ['fire-1791381651847']);
+});
+
+test('Server Authoritative: Máy chủ trả về danh sách rỗng thì xóa sạch danh sách local', () => {
+  mockStorage.clear();
+  const local = [{ id: 'fire-01', name: 'Mẫu', updatedAt: '2026-09-01T00:00:00.000Z' }];
+  assert.deepStrictEqual(mergeProductsWithConflictResolution(local, []), []);
+});
+
+test('Pending Grace: Sản phẩm local vừa tạo (chưa kịp có trên máy chủ) được giữ, sản phẩm local cũ thì không', () => {
+  mockStorage.clear();
+  const now = new Date('2026-10-07T10:00:00.000Z').getTime();
+  const local = [
+    { id: 'fire-just-created', name: 'Vừa tạo', updatedAt: new Date(now - 3000).toISOString() },
+    { id: 'fire-old-ghost', name: 'Cũ đã xóa', updatedAt: new Date(now - 60 * 60 * 1000).toISOString() }
+  ];
+
+  const merged = mergeProductsWithConflictResolution(local, [], now);
+  assert.deepStrictEqual(merged.map(p => p.id), ['fire-just-created']);
+});
+
+test('Pending Delete: Sản phẩm đang chờ máy chủ xác nhận xóa tạm thời được ẩn, và hiện lại nếu xóa thất bại', () => {
+  mockStorage.clear();
+  const server = [{ id: 'fire-x', name: 'X', updatedAt: '2026-09-01T00:00:00.000Z' }];
+
+  markProductDeletedLocal('fire-x');
+  assert.strictEqual(mergeProductsWithConflictResolution(server, server).length, 0);
+
+  unmarkProductDeletedLocal('fire-x'); // xóa thất bại => bỏ ẩn
+  assert.strictEqual(mergeProductsWithConflictResolution(server, server).length, 1);
+});
+
 // 5. Kiểm tra Settings Timestamp Reconciliation
 test('Settings Reconciliation: Cấu hình local mới hơn không bị stale server đè', () => {
   const localSettingsTime = new Date('2026-09-19T15:20:00.000Z').getTime();
