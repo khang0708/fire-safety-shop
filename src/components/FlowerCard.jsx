@@ -103,63 +103,23 @@ export const FlowerCard = ({ flower }) => {
   return (
     <div className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col border border-slate-200 hover:border-red-500 relative">
       
-      {/* 4:5 Aspect Ratio Container */}
+      {/* Khung ảnh vuông, hiển thị TRỌN ảnh (object-contain) để không cắt chữ/thông tin trên ảnh thật khách đăng */}
       <div 
         onClick={() => setQuickViewProduct(flower)}
-        className="relative aspect-[4/5] overflow-hidden bg-slate-900 cursor-pointer"
+        className="relative aspect-square overflow-hidden bg-white cursor-pointer"
       >
         <img
           src={flower.image}
           alt={`Thiết bị PCCC ${flower.name} - ${brandSettings?.brandName || 'FLAMEGUARD PRO'}`}
-          width="320"
+          width="400"
           height="400"
-          className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+          className="w-full h-full object-contain object-center group-hover:scale-[1.03] transition-transform duration-700 ease-out"
           loading="lazy"
           decoding="async"
         />
 
         {/* Overlay Dark Gradient on hover */}
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-
-        {/* Top Technical Badges */}
-        <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
-          <span className="text-[10px] sm:text-xs font-bold px-2.5 py-1 rounded-lg bg-blue-600/95 text-white backdrop-blur-md shadow-sm w-fit border border-blue-400/50 flex items-center gap-1 font-mono">
-            <span>🛡️</span> TEM BCA 2026
-          </span>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-red-600 text-white shadow-sm w-fit">
-            TCVN 3890:2023
-          </span>
-        </div>
-
-        {/* Wishlist Button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleWishlist(flower.id);
-          }}
-          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center text-slate-700 hover:text-red-600 transition-all shadow-sm z-10 active:scale-90"
-          aria-label="Lưu sản phẩm"
-        >
-          <Heart className={`w-4 h-4 ${isLiked ? 'fill-red-600 text-red-600' : 'stroke-current'}`} />
-        </button>
-
-        {/* Visual Mini Pressure Gauge Indicator */}
-        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-none group-hover:opacity-0 transition-opacity duration-200">
-          <div className="inline-flex items-center gap-1.5 bg-slate-950/90 backdrop-blur-md text-emerald-400 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-slate-700/80 shadow-md font-mono">
-            {/* SVG Mini Dial Gauge */}
-            <svg className="w-3.5 h-3.5" viewBox="0 0 36 36" fill="none">
-              <path d="M6 26 A 14 14 0 0 1 30 26" stroke="#475569" strokeWidth="4" strokeLinecap="round"/>
-              <path d="M12 16 A 14 14 0 0 1 24 16" stroke="#10B981" strokeWidth="4" strokeLinecap="round"/>
-              <line x1="18" y1="24" x2="18" y2="12" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round"/>
-              <circle cx="18" cy="24" r="2.5" fill="#FFFFFF"/>
-            </svg>
-            <span>{specs.gaugeLabel}</span>
-          </div>
-
-          <span className="inline-flex items-center gap-1 bg-slate-950/90 backdrop-blur-md text-amber-300 text-[10px] font-bold px-2 py-1 rounded-lg border border-slate-700/80 font-mono">
-            CO/CQ
-          </span>
-        </div>
 
         {/* Hover Quick View & Detail Buttons */}
         <div className="absolute bottom-3 inset-x-3 opacity-0 group-hover:opacity-100 transition-all duration-300 flex gap-2">
@@ -186,6 +146,34 @@ export const FlowerCard = ({ flower }) => {
           </button>
         </div>
 
+      </div>
+
+      {/* Dải nhãn kỹ thuật nằm dưới ảnh để không che thông tin trên ảnh thật */}
+      <div className="flex items-center justify-between gap-2 px-3 pt-2.5">
+        <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+          <span className="text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-md bg-blue-600 text-white border border-blue-400/50 flex items-center gap-1 font-mono">
+            <span>🛡️</span> TEM BCA 2026
+          </span>
+          <span className="text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-md bg-red-600 text-white">
+            TCVN 3890:2023
+          </span>
+          <span className="text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
+            {specs.gaugeLabel}
+          </span>
+          <span className="text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 font-mono">
+            CO/CQ
+          </span>
+        </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleWishlist(flower.id);
+          }}
+          className="flex-shrink-0 w-9 h-9 rounded-full bg-slate-50 hover:bg-red-50 flex items-center justify-center text-slate-700 hover:text-red-600 transition-all active:scale-90"
+          aria-label="Lưu sản phẩm"
+        >
+          <Heart className={`w-4 h-4 ${isLiked ? 'fill-red-600 text-red-600' : 'stroke-current'}`} />
+        </button>
       </div>
 
       {/* Product Content & Technical Spec Grid */}

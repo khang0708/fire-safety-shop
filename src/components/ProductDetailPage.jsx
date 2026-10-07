@@ -313,47 +313,43 @@ export const ProductDetailPage = ({ productId }) => {
           
           {/* CỘT TRÁI (5 Cột): HÌNH ẢNH SẢN PHẨM & BADGES BẢO HÀNH */}
           <div className="lg:col-span-5 space-y-4">
-            <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 shadow-md group">
+            <div className="relative aspect-square rounded-2xl overflow-hidden bg-white border border-slate-200 shadow-md group">
               <img 
                 src={product.image} 
                 alt={product.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                className="w-full h-full object-contain"
               />
-              
-              {/* Badges Tem BCA & Chuẩn Kỹ Thuật */}
-              <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
-                <span className="px-3 py-1 rounded-xl text-xs font-bold bg-blue-600/95 text-white backdrop-blur-md shadow-md border border-blue-400/50 flex items-center gap-1.5 font-mono">
+            </div>
+
+            {/* Dải nhãn kỹ thuật nằm dưới ảnh để không che thông tin trên ảnh thật khách đăng */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2 min-w-0">
+                <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white border border-blue-400/50 flex items-center gap-1.5 font-mono">
                   <span>🛡️</span> TEM BCA KIỂM ĐỊNH 2026
                 </span>
-                <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-red-600 text-white shadow-md w-fit">
+                <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-red-600 text-white">
                   TCVN 3890:2023
                 </span>
                 {discountPercent > 0 && (
-                  <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500 text-slate-950 shadow-md w-fit">
+                  <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500 text-slate-950">
                     TIẾT KIỆM {discountPercent}%
                   </span>
                 )}
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
+                  <Gauge className="w-3.5 h-3.5" />
+                  Áp Suất Vạch Xanh 1.2 - 1.4 MPa
+                </span>
+                <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 font-mono">
+                  CO/CQ CHÍNH HÃNG
+                </span>
               </div>
-
-              {/* Wishlist Button */}
               <button
                 onClick={() => toggleWishlist?.(product.id)}
-                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center text-slate-700 hover:text-red-600 transition-all shadow-md z-10 active:scale-90 cursor-pointer"
+                className="flex-shrink-0 w-11 h-11 rounded-full bg-slate-50 hover:bg-red-50 flex items-center justify-center text-slate-700 hover:text-red-600 transition-all active:scale-90 cursor-pointer"
                 aria-label="Lưu thiết bị"
               >
                 <Heart className={`w-5 h-5 ${isLiked ? 'fill-red-600 text-red-600' : 'stroke-current'}`} />
               </button>
-
-              {/* Bottom Gauge Indicator Overlay */}
-              <div className="absolute bottom-4 inset-x-4 flex items-center justify-between pointer-events-none">
-                <div className="inline-flex items-center gap-2 bg-slate-950/90 backdrop-blur-md text-emerald-400 text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-700/80 shadow-lg font-mono">
-                  <Gauge className="w-4 h-4 text-emerald-400" />
-                  <span>Áp Suất Vạch Xanh 1.2 - 1.4 MPa</span>
-                </div>
-                <span className="bg-slate-950/90 backdrop-blur-md text-amber-300 text-xs font-bold px-2.5 py-1.5 rounded-xl border border-slate-700/80 font-mono">
-                  CO/CQ CHÍNH HÃNG
-                </span>
-              </div>
             </div>
 
             {/* Khối Cam Kết Uy Tín (Trust Badges Box) */}
