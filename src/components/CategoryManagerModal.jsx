@@ -8,14 +8,18 @@ import { fileToUploadDataUrl, ACCEPTED_IMAGE_TYPES } from '../utils/imageUpload'
 // Ảnh banner hợp lệ để xem trước: đường dẫn https, ảnh có sẵn trong /images hoặc ảnh admin đã tải lên
 const isPreviewableImage = (value) => /^(https?:\/\/|\/images\/|\/uploads\/)/.test(value || '');
 
-// Bảng biểu tượng để chọn (người dùng không cần tự gõ emoji): thiết bị PCCC, cứu hộ, báo cháy, an ninh, điện, công trình...
-// Chỉ dùng emoji đã có từ lâu (Unicode ≤ 11) để máy cũ/Windows 10 vẫn hiển thị đúng, không bị ô vuông trống.
-const ICON_CHOICES = [
-  '🧯', '🔥', '🚨', '🔔', '🚒', '⛑️', '🚪', '🏃', '😷', '🧪', '💧', '🌬️',
-  '⚠️', '🛡️', '✅', '⭐', '🔦', '💡', '📷', '🎥', '🔒', '🔑', '📟', '📡',
-  '🔌', '🔋', '⚡', '🧰', '🔧', '🛠️', '🏭', '🏢', '🏠', '🚗', '🚚', '📦',
-  '📋', '📄', '🚧', '📢', '🎯', '🧱', '📞', '🔍'
+// Bảng biểu tượng để chọn (người dùng không cần tự gõ emoji), chia nhóm theo lĩnh vực PCCC.
+// Chỉ dùng emoji có từ Unicode 12.1 trở về trước (đã kiểm tra hiển thị được trên Windows 10); tránh emoji đời mới (mũ bảo hộ 🪖, thang 🪜...)
+// vì máy cũ sẽ hiện ô vuông trống.
+const ICON_GROUPS = [
+  { label: 'Chữa cháy & báo cháy', icons: ['🧯', '🔥', '🚒', '👨‍🚒', '👩‍🚒', '🧑‍🚒', '🚨', '🔔', '📟', '📢', '📣', '🔊', '💧', '💦', '🚰', '💨', '🌫️', '🌡️', '⏱️', '🛢️', '⛽', '☣️', '☢️'] },
+  { label: 'Bảo hộ & cứu hộ', icons: ['⛑️', '👷', '🦺', '😷', '🥽', '🧤', '🥾', '🧥', '🥼', '🧢', '🛡️', '🤿', '🧴', '🧪'] },
+  { label: 'Thoát hiểm & biển báo', icons: ['🚪', '🏃', '🚶', '➡️', '🆘', '🚫', '⛔', '🚭', '⚠️', '🛑', '🚧', '🚑', '🏥', '🔦', '🕯️'] },
+  { label: 'An ninh & điện', icons: ['📷', '🎥', '🔒', '🔑', '📡', '🔌', '🔋', '⚡', '💡', '📞', '🔍'] },
+  { label: 'Kỹ thuật & công trình', icons: ['🧰', '🔧', '🔨', '🛠️', '⚙️', '🏭', '🏢', '🏠', '🏗️', '🧱', '📐'] },
+  { label: 'Giao hàng & chung', icons: ['🚗', '🚚', '📦', '📋', '📄', '✅', '⭐', '🎯', '🔗'] }
 ];
+const ICON_CHOICES = ICON_GROUPS.flatMap(g => g.icons);
 
 const EMPTY_FORM = {
   shortName: '',
@@ -224,22 +228,32 @@ export const CategoryManagerModal = ({ onClose }) => {
                   <div
                     role="radiogroup"
                     aria-labelledby="cat-icon-label"
-                    className="grid grid-cols-6 sm:grid-cols-8 gap-1.5 max-h-44 overflow-y-auto p-1.5 rounded-xl border border-slate-300 bg-slate-50"
+                    className="max-h-64 overflow-y-auto p-2 space-y-2.5 rounded-xl border border-slate-300 bg-slate-50"
                   >
-                    {(form.icon && !ICON_CHOICES.includes(form.icon) ? [form.icon, ...ICON_CHOICES] : ICON_CHOICES).map(icon => (
-                      <button
-                        key={icon}
-                        type="button"
-                        role="radio"
-                        aria-checked={form.icon === icon}
-                        aria-label={`Biểu tượng ${icon}`}
-                        onClick={() => setForm(prev => ({ ...prev, icon }))}
-                        className={`min-h-11 rounded-lg text-2xl flex items-center justify-center cursor-pointer transition-colors ${
-                          form.icon === icon ? 'bg-red-50 ring-2 ring-red-500' : 'bg-white border border-slate-200 hover:bg-slate-100'
-                        }`}
-                      >
-                        {icon}
-                      </button>
+                    {(form.icon && !ICON_CHOICES.includes(form.icon)
+                      ? [{ label: 'Đang dùng', icons: [form.icon] }, ...ICON_GROUPS]
+                      : ICON_GROUPS
+                    ).map(group => (
+                      <div key={group.label}>
+                        <div className="text-[11px] font-bold text-slate-500 mb-1">{group.label}</div>
+                        <div className="grid grid-cols-6 sm:grid-cols-8 gap-1.5">
+                          {group.icons.map(icon => (
+                            <button
+                              key={icon}
+                              type="button"
+                              role="radio"
+                              aria-checked={form.icon === icon}
+                              aria-label={`Biểu tượng ${icon}`}
+                              onClick={() => setForm(prev => ({ ...prev, icon }))}
+                              className={`min-h-11 rounded-lg text-2xl flex items-center justify-center cursor-pointer transition-colors ${
+                                form.icon === icon ? 'bg-red-50 ring-2 ring-red-500' : 'bg-white border border-slate-200 hover:bg-slate-100'
+                              }`}
+                            >
+                              {icon}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
