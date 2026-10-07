@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { CategoryIcon } from './CategoryIcon';
 import { useShop } from '../context/ShopContext';
 import { WRAPPING_PAPERS } from '../data/flowers';
 import { resolveProductCategoryId } from '../utils/categories';
@@ -382,7 +383,7 @@ export const ProductDetailPage = ({ productId }) => {
               {/* Category Badge & Đánh giá công trình */}
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200">
-                  {categoryInfo.icon} {categoryInfo.label}
+                  <CategoryIcon icon={categoryInfo.icon} /> {categoryInfo.label}
                 </span>
 
                 <div className="flex items-center gap-2 text-xs">

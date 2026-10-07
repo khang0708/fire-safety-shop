@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { CategoryIcon } from './CategoryIcon';
 import { useShop } from '../context/ShopContext';
 import { OCCASIONS, COLOR_TONES } from '../data/flowers';
 import { resolveProductCategoryId } from '../utils/categories';
@@ -1659,7 +1660,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                         : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                     }`}
                   >
-                    <span>{cat.icon}</span>
+                    <span><CategoryIcon icon={cat.icon} /></span>
                     <span>{cat.shortName}</span>
                     <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-normal ${
                       cmsCategoryFilter === cat.id ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
@@ -1688,7 +1689,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                         <img src={prod.image} alt={prod.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                         <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
                           <span className="text-[10px] font-bold bg-slate-900/90 text-white px-2.5 py-0.5 rounded-full shadow-sm flex items-center gap-1 backdrop-blur-xs">
-                            <span>{prodCat.icon}</span>
+                            <span><CategoryIcon icon={prodCat.icon} /></span>
                             <span>{prodCat.shortName}</span>
                           </span>
                           <span className="text-[9px] font-bold bg-red-600 text-white px-2 py-0.5 rounded-full shadow-xs">
@@ -4127,7 +4128,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                         }`}
                       >
                         <div className="flex items-center justify-between w-full mb-1">
-                          <span className="text-base">{cat.icon}</span>
+                          <span className="text-base"><CategoryIcon icon={cat.icon} /></span>
                           {isSelected && (
                             <span className="w-2 h-2 rounded-full bg-red-600"></span>
                           )}

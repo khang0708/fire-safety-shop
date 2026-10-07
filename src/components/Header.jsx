@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { CategoryIcon } from './CategoryIcon';
 import { useShop, formatPhoneNumber, getCleanPhoneNumber } from '../context/ShopContext';
 import { 
   ShoppingBag, 
@@ -258,7 +259,7 @@ export const Header = () => {
                     : 'text-slate-700 hover:text-red-600 hover:bg-slate-100 bg-slate-50 border border-slate-200/80'
                 }`}
               >
-                <span className="shrink-0">{cat.icon}</span>
+                <span className="shrink-0"><CategoryIcon icon={cat.icon} /></span>
                 <span>{cat.fullName || cat.label}</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-normal hidden md:inline shrink-0 ${
                   isActive ? 'bg-white/20 text-white' : 'bg-slate-200/80 text-slate-600'
@@ -346,7 +347,7 @@ export const Header = () => {
                   }`}
                 >
                   <span className="flex items-center gap-2">
-                    <span>{cat.icon}</span>
+                    <span><CategoryIcon icon={cat.icon} /></span>
                     <span>{cat.fullName || cat.label}</span>
                   </span>
                   <span className={`text-[11px] ${isActive ? 'text-red-100' : 'text-slate-400'}`}>
