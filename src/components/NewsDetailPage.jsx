@@ -244,7 +244,7 @@ export const NewsDetailPage = ({ slug }) => {
                 <img 
                   src={currentArticle.thumbnail} 
                   alt={currentArticle.title}
-                  className="w-full max-h-[460px] object-cover" 
+                  className="w-full max-h-[460px] object-contain bg-slate-100" 
                 />
                 <figcaption className="text-center text-[11px] text-slate-400 py-2 bg-slate-50 italic">
                   Hình ảnh: Kỹ sư kiểm định thực hiện đo áp kế và kiểm tra tem Cục Cảnh sát PCCC BCA.

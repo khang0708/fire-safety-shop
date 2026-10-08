@@ -134,13 +134,13 @@ export const NewsListPage = () => {
           <div className="mb-10 bg-white rounded-2xl overflow-hidden shadow-md border border-slate-200 hover:shadow-xl transition-all group">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
               <div 
-                className="lg:col-span-7 h-64 sm:h-80 lg:h-96 overflow-hidden relative cursor-pointer"
+                className="lg:col-span-7 h-64 sm:h-80 lg:h-96 overflow-hidden relative bg-slate-100 cursor-pointer"
                 onClick={() => navigateTo(`/tin-tuc/${featuredArticle.slug}`)}
               >
                 <img 
                   src={featuredArticle.thumbnail} 
                   alt={featuredArticle.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" 
                 />
                 <div className="absolute top-4 left-4 bg-red-600 text-white text-[11px] font-extrabold uppercase px-3 py-1 rounded-full shadow-md flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" />
@@ -212,11 +212,11 @@ export const NewsListPage = () => {
                 className="bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-xl border border-slate-200/80 transition-all duration-300 flex flex-col group cursor-pointer"
               >
                 {/* Thumbnail */}
-                <div className="h-48 overflow-hidden relative">
+                <div className="h-48 overflow-hidden relative bg-slate-100">
                   <img 
                     src={article.thumbnail} 
                     alt={article.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" 
                   />
                   <div className="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-xs text-white text-[10px] font-bold px-2.5 py-1 rounded-lg">
                     {article.category}

@@ -69,11 +69,11 @@ export const HomeNewsSection = () => {
               className="group bg-white rounded-2xl border border-slate-200 hover:border-red-500 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col cursor-pointer"
             >
               {/* 16:10 Thumbnail Container */}
-              <div className="relative aspect-[16/10] overflow-hidden bg-slate-900">
+              <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
                 <img
                   src={article.thumbnail}
                   alt={article.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
