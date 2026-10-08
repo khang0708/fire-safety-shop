@@ -1774,7 +1774,8 @@ app.get('/api/health', (req, res) => {
 // ----------------------------------------------------
 const distPath = path.join(__dirname, '../dist');
 if (fs.existsSync(distPath)) {
-  app.use(express.static(distPath));
+  // index:false — để "/" đi qua handler SSR bên dưới (inject SEO), không bị static trả index.html gốc
+  app.use(express.static(distPath, { index: false }));
   app.get('*', async (req, res, next) => {
     if (req.path.startsWith('/api')) {
       return next();
@@ -1939,20 +1940,33 @@ if (fs.existsSync(distPath)) {
       }
 
       // 3. Fallback theo cài đặt thương hiệu trang chủ
-      if (brand && (brand.seoTitle || brand.seoDescription || brand.brandName)) {
+      if (brand && (brand.seoTitle || brand.seoDescription || brand.brandName || brand.logoUrl)) {
+        // Escape + dùng hàm thay thế để ký tự `"`, `<`, `$` trong cấu hình không làm hỏng HTML
+        const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const setMeta = (re, val) => { html = html.replace(re, (_m, a, b) => `${a}${esc(val)}${b}`); };
+        const metaRe = (attr, name) => new RegExp(`(<meta\\s+${attr}=["']${name}["']\\s+content=["'])[^"']*(["'])`, 'i');
+
         if (brand.seoTitle) {
-          html = html.replace(/<title>.*?<\/title>/i, `<title>${brand.seoTitle}</title>`);
-          html = html.replace(/(<meta\s+property=["']og:title["']\s+content=["']).*?(["'])/i, `$1${brand.seoTitle}$2`);
-          html = html.replace(/(<meta\s+name=["']twitter:title["']\s+content=["']).*?(["'])/i, `$1${brand.seoTitle}$2`);
+          html = html.replace(/<title>.*?<\/title>/i, () => `<title>${esc(brand.seoTitle)}</title>`);
+          setMeta(metaRe('property', 'og:title'), brand.seoTitle);
+          setMeta(metaRe('name', 'twitter:title'), brand.seoTitle);
         }
         if (brand.seoDescription) {
-          html = html.replace(/(<meta\s+name=["']description["']\s+content=["']).*?(["'])/i, `$1${brand.seoDescription}$2`);
-          html = html.replace(/(<meta\s+property=["']og:description["']\s+content=["']).*?(["'])/i, `$1${brand.seoDescription}$2`);
-          html = html.replace(/(<meta\s+name=["']twitter:description["']\s+content=["']).*?(["'])/i, `$1${brand.seoDescription}$2`);
+          setMeta(metaRe('name', 'description'), brand.seoDescription);
+          setMeta(metaRe('property', 'og:description'), brand.seoDescription);
+          setMeta(metaRe('name', 'twitter:description'), brand.seoDescription);
         }
-        if (brand.brandName) {
-          html = html.replace(/(<meta\s+property=["']og:site_name["']\s+content=["']).*?(["'])/i, `$1${brand.brandName}$2`);
+        if (brand.seoKeywords) setMeta(metaRe('name', 'keywords'), brand.seoKeywords);
+        if (brand.brandName) setMeta(metaRe('property', 'og:site_name'), brand.brandName);
+        // Ảnh chia sẻ: chỉ nhận URL http(s) hoặc đường dẫn tuyệt đối (bỏ qua ảnh base64 vì crawler không đọc được)
+        const logo = String(brand.logoUrl || '');
+        if (/^https?:\/\//i.test(logo) || logo.startsWith('/')) {
+          const img = logo.startsWith('/') ? `https://pcccphatantam.com${logo}` : logo;
+          setMeta(metaRe('property', 'og:image'), img);
+          setMeta(metaRe('property', 'og:image:secure_url'), img);
+          setMeta(metaRe('name', 'twitter:image'), img);
         }
+        res.setHeader('Cache-Control', 'no-cache');
         return res.send(html);
       }
     } catch (_e) {}
