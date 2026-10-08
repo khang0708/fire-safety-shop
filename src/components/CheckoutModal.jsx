@@ -100,14 +100,14 @@ export const CheckoutModal = () => {
   };
 
   // Form State
-  const [senderName, setSenderName] = useState('Nguyễn Hoàng Nam');
-  const [senderPhone, setSenderPhone] = useState('0909 123 456');
-  const [receiverName, setReceiverName] = useState('Trần Ngọc Bích');
-  const [receiverPhone, setReceiverPhone] = useState('0988 765 432');
-  const [receiverAddress, setReceiverAddress] = useState('Căn hộ 1208, Tháp A, Chung cư The Sun Avenue, P. An Phú, TP. Thủ Đức, TP.HCM');
+  const [senderName, setSenderName] = useState('');
+  const [senderPhone, setSenderPhone] = useState('');
+  const [receiverName, setReceiverName] = useState('');
+  const [receiverPhone, setReceiverPhone] = useState('');
+  const [receiverAddress, setReceiverAddress] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(true); // Biên bản kiểm định Cục PCCC & VAT
   const [purposeType, setPurposeType] = useState('apartment'); // 'apartment' | 'factory' | 'official_inspection'
-  const [handoverNote, setHandoverNote] = useState('Kiểm tra kỹ tem chì niêm phong và đồng hồ áp suất vạch xanh trước khi nhận');
+  const [handoverNote, setHandoverNote] = useState('');
   const [requestPhotoProof, setRequestPhotoProof] = useState(true);
   
   // Delivery Schedule
@@ -163,6 +163,8 @@ export const CheckoutModal = () => {
       deliverySlot: computedSlot,
       paymentMethod,
     });
+    // Xóa thông tin vừa nhập để đơn kế tiếp bắt đầu từ form trống
+    [setSenderName, setSenderPhone, setReceiverName, setReceiverPhone, setReceiverAddress, setHandoverNote].forEach((set) => set(''));
   };
 
   if (!isCheckoutOpen) return null;
@@ -209,6 +211,7 @@ export const CheckoutModal = () => {
                     required
                     value={senderName}
                     onChange={(e) => setSenderName(e.target.value)}
+                    placeholder="Nhập họ tên hoặc tên đơn vị"
                     className="w-full p-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-red-500 bg-white"
                   />
                 </div>
@@ -219,6 +222,7 @@ export const CheckoutModal = () => {
                     required
                     value={senderPhone}
                     onChange={(e) => setSenderPhone(e.target.value)}
+                    placeholder="Nhập số điện thoại"
                     className="w-full p-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-red-500 bg-white"
                   />
                 </div>
@@ -253,6 +257,7 @@ export const CheckoutModal = () => {
                     required
                     value={receiverName}
                     onChange={(e) => setReceiverName(e.target.value)}
+                    placeholder="Nhập tên người nhận"
                     className="w-full p-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-red-500 bg-white"
                   />
                 </div>
@@ -263,6 +268,7 @@ export const CheckoutModal = () => {
                     required
                     value={receiverPhone}
                     onChange={(e) => setReceiverPhone(e.target.value)}
+                    placeholder="Nhập số điện thoại người nhận"
                     className="w-full p-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-red-500 bg-white"
                   />
                 </div>
