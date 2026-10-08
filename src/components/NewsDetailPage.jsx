@@ -44,14 +44,18 @@ export const NewsDetailPage = ({ slug }) => {
     return articles.find(a => a.slug === slug || a.id === slug) || articles[0];
   }, [articles, slug]);
 
-  // Cập nhật document title khi xem bài viết
+  // Cuộn lên đầu trang khi mở bài viết hoặc chuyển sang bài viết khác theo slug
   useEffect(() => {
-    if (currentArticle?.title) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [slug]);
+
+  // Cập nhật document title khi xem bài viết (tách riêng, không gây cuộn trang khi dữ liệu đồng bộ lại)
+  useEffect(() => {
+    if (currentArticle?.title && typeof document !== 'undefined') {
       const brand = brandSettings?.brandName || 'FLAMEGUARD PRO';
       document.title = `${currentArticle.seoTitle || currentArticle.title} | ${brand}`;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [currentArticle, brandSettings]);
+  }, [currentArticle?.title, currentArticle?.seoTitle, brandSettings?.brandName]);
 
   // Tìm sản phẩm liên quan trong kho
   const relatedProduct = useMemo(() => {
