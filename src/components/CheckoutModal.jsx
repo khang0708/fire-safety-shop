@@ -492,8 +492,8 @@ export const CheckoutModal = () => {
               )}
             </div>
 
-            {/* 4. Phương thức thanh toán */}
-            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
+            {/* 4. Phương thức thanh toán - tạm ẩn (bỏ class hidden để hiện lại) */}
+            <div className="hidden bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
               <h3 className="font-heading text-base font-bold text-slate-900 flex items-center gap-2">
                 <span className="w-5 h-5 rounded-full bg-red-600 text-white text-[11px] flex items-center justify-center font-bold">4</span>
                 Phương Thức Thanh Toán
