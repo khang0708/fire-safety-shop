@@ -1940,7 +1940,7 @@ if (fs.existsSync(distPath)) {
       }
 
       // 3. Fallback theo cài đặt thương hiệu trang chủ
-      if (brand && (brand.seoTitle || brand.seoDescription || brand.brandName || brand.logoUrl)) {
+      if (brand && (brand.seoTitle || brand.seoDescription || brand.brandName || brand.logoUrl || brand.seoImage)) {
         // Escape + dùng hàm thay thế để ký tự `"`, `<`, `$` trong cấu hình không làm hỏng HTML
         const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const setMeta = (re, val) => { html = html.replace(re, (_m, a, b) => `${a}${esc(val)}${b}`); };
@@ -1958,8 +1958,8 @@ if (fs.existsSync(distPath)) {
         }
         if (brand.seoKeywords) setMeta(metaRe('name', 'keywords'), brand.seoKeywords);
         if (brand.brandName) setMeta(metaRe('property', 'og:site_name'), brand.brandName);
-        // Ảnh chia sẻ: chỉ nhận URL http(s) hoặc đường dẫn tuyệt đối (bỏ qua ảnh base64 vì crawler không đọc được)
-        const logo = String(brand.logoUrl || '');
+        // Ảnh chia sẻ (ưu tiên seoImage, fallback logoUrl): chỉ nhận URL http(s) hoặc đường dẫn tuyệt đối (bỏ qua ảnh base64 vì crawler không đọc được)
+        const logo = String(brand.seoImage || brand.logoUrl || '');
         if (/^https?:\/\//i.test(logo) || logo.startsWith('/')) {
           const img = logo.startsWith('/') ? `https://pcccphatantam.com${logo}` : logo;
           setMeta(metaRe('property', 'og:image'), img);

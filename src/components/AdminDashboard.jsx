@@ -18,7 +18,8 @@ import {
   requestBrowserNotificationPermission, 
   getBrowserNotificationPermission 
 } from '../services/notificationService';
-import { sendTelegramTestApi, getTelegramChatIdAutoApi, sendFacebookTestApi, authChangePasswordApi } from '../api';
+import { sendTelegramTestApi, getTelegramChatIdAutoApi, sendFacebookTestApi, authChangePasswordApi, uploadImageApi } from '../api';
+import { fileToUploadDataUrl } from '../utils/imageUpload';
 import { PrintInvoiceModal } from './PrintInvoiceModal';
 import { SalesAnalyticsView } from './SalesAnalyticsView';
 import { ArticlesManagementView } from './ArticlesManagementView';
@@ -266,7 +267,8 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
     email: brandSettings?.email ?? 'kythuat@flameguard.vn',
     seoTitle: brandSettings?.seoTitle ?? 'FLAMEGUARD PRO | Thiết Bị Cứu Hỏa & An Toàn PCCC Chuẩn Kiểm Định',
     seoDescription: brandSettings?.seoDescription ?? 'FLAMEGUARD PRO - Hệ thống phân phối thiết bị phòng cháy chữa cháy (PCCC) đạt chuẩn tem kiểm định Bộ Công An. Bình chữa cháy bột ABC, khí CO2, bọt foam, mặt nạ chống khói, thang dây thoát hiểm, kiểm tra áp suất trước khi giao.',
-    seoKeywords: brandSettings?.seoKeywords ?? 'bình chữa cháy, thiết bị pccc, bình cứu hỏa, mặt nạ chống khói độc, thang dây thoát hiểm'
+    seoKeywords: brandSettings?.seoKeywords ?? 'bình chữa cháy, thiết bị pccc, bình cứu hỏa, mặt nạ chống khói độc, thang dây thoát hiểm',
+    seoImage: brandSettings?.seoImage ?? ''
   });
   const [isBrandSaved, setIsBrandSaved] = useState(false);
   const [logoUploadError, setLogoUploadError] = useState('');
@@ -292,7 +294,8 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
         email: brandSettings.email ?? 'kythuat@flameguard.vn',
         seoTitle: brandSettings.seoTitle ?? 'FLAMEGUARD PRO | Thiết Bị Cứu Hỏa & An Toàn PCCC Chuẩn Kiểm Định',
         seoDescription: brandSettings.seoDescription ?? 'FLAMEGUARD PRO - Hệ thống phân phối thiết bị phòng cháy chữa cháy (PCCC) đạt chuẩn tem kiểm định Bộ Công An. Bình chữa cháy bột ABC, khí CO2, bọt foam, mặt nạ chống khói, thang dây thoát hiểm, kiểm tra áp suất trước khi giao.',
-        seoKeywords: brandSettings.seoKeywords ?? 'bình chữa cháy, thiết bị pccc, bình cứu hỏa, mặt nạ chống khói độc, thang dây thoát hiểm'
+        seoKeywords: brandSettings.seoKeywords ?? 'bình chữa cháy, thiết bị pccc, bình cứu hỏa, mặt nạ chống khói độc, thang dây thoát hiểm',
+        seoImage: brandSettings.seoImage ?? ''
       });
     }
   }, [brandSettings, shopZaloPhone]);
@@ -358,6 +361,25 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
     reader.readAsDataURL(file);
   };
 
+  const [seoImageUploading, setSeoImageUploading] = useState(false);
+  const [seoImageError, setSeoImageError] = useState('');
+  const handleSeoImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setSeoImageError('');
+    setSeoImageUploading(true);
+    try {
+      const dataUrl = await fileToUploadDataUrl(file, { maxWidth: 1200 });
+      const url = await uploadImageApi(dataUrl);
+      setBrandForm(prev => ({ ...prev, seoImage: url }));
+    } catch (err) {
+      setSeoImageError(err.message || 'Không tải được ảnh lên.');
+    } finally {
+      setSeoImageUploading(false);
+    }
+  };
+
   const handleSaveBrandSettings = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     try {
@@ -388,7 +410,8 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
         email: 'kythuat@flameguard.vn',
         seoTitle: 'FLAMEGUARD PRO | Thiết Bị Cứu Hỏa & An Toàn PCCC Chuẩn Kiểm Định',
         seoDescription: 'FLAMEGUARD PRO - Hệ thống phân phối thiết bị phòng cháy chữa cháy (PCCC) đạt chuẩn tem kiểm định Bộ Công An. Bình chữa cháy bột ABC, khí CO2, bọt foam, mặt nạ chống khói, thang dây thoát hiểm, kiểm tra áp suất trước khi giao.',
-        seoKeywords: 'bình chữa cháy, thiết bị pccc, bình cứu hỏa, mặt nạ chống khói độc, thang dây thoát hiểm'
+        seoKeywords: 'bình chữa cháy, thiết bị pccc, bình cứu hỏa, mặt nạ chống khói độc, thang dây thoát hiểm',
+        seoImage: ''
       };
       setBrandForm(defaults);
       updateBrandSettings(defaults);
@@ -3551,6 +3574,44 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                         />
                         <p className="text-[11px] text-slate-500 mt-1">
                           Các từ khóa phân cách bởi dấu phẩy giúp máy tìm kiếm hiểu đúng các mặt hàng kinh doanh.
+                        </p>
+                      </div>
+
+                      {/* SEO Image */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-800 mb-1.5">
+                          Ảnh Chia Sẻ SEO (og:image)
+                        </label>
+                        <div className="flex flex-wrap items-start gap-3">
+                          <div className="w-40 h-[84px] rounded-xl border border-slate-300 bg-slate-100 overflow-hidden flex items-center justify-center text-[11px] text-slate-500">
+                            {brandForm.seoImage ? (
+                              <img src={brandForm.seoImage} alt="Ảnh chia sẻ SEO" className="w-full h-full object-cover" />
+                            ) : 'Chưa chọn ảnh'}
+                          </div>
+                          <div className="flex-1 min-w-[220px] space-y-2">
+                            <input
+                              type="text"
+                              value={brandForm.seoImage}
+                              onChange={(e) => setBrandForm({ ...brandForm, seoImage: e.target.value })}
+                              placeholder="Dán link ảnh (https://...) hoặc tải ảnh lên"
+                              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 text-slate-900"
+                            />
+                            <div className="flex items-center gap-2">
+                              <label className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-800 cursor-pointer">
+                                {seoImageUploading ? 'Đang tải...' : 'Tải ảnh lên'}
+                                <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={seoImageUploading} onChange={handleSeoImageUpload} />
+                              </label>
+                              {brandForm.seoImage && (
+                                <button type="button" onClick={() => setBrandForm({ ...brandForm, seoImage: '' })} className="text-xs font-bold text-red-600 hover:underline cursor-pointer">
+                                  Xóa ảnh
+                                </button>
+                              )}
+                            </div>
+                            {seoImageError && <p className="text-[11px] text-red-600 font-semibold">{seoImageError}</p>}
+                          </div>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          Ảnh hiện khi gửi link qua Zalo/Facebook. Nên dùng ảnh ngang tỉ lệ 1200x630 (JPG/PNG/WEBP). Để trống sẽ dùng ảnh mặc định.
                         </p>
                       </div>
                     </div>

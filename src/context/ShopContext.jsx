@@ -65,7 +65,8 @@ export const DEFAULT_BRAND_SETTINGS = {
   email: 'kythuat@flameguard.vn',
   seoTitle: 'FLAMEGUARD PRO | Thiết Bị Cứu Hỏa & An Toàn PCCC Chuẩn Kiểm Định',
   seoDescription: 'FLAMEGUARD PRO - Hệ thống phân phối thiết bị phòng cháy chữa cháy (PCCC) đạt chuẩn tem kiểm định Bộ Công An. Bình chữa cháy bột ABC, khí CO2, bọt foam, mặt nạ chống khói, thang dây thoát hiểm, kiểm tra áp suất trước khi giao.',
-  seoKeywords: 'bình chữa cháy, thiết bị pccc, bình cứu hỏa, mặt nạ chống khói độc, thang dây thoát hiểm, pccc gia đình, pccc chung cư, nạp sạc bình chữa cháy'
+  seoKeywords: 'bình chữa cháy, thiết bị pccc, bình cứu hỏa, mặt nạ chống khói độc, thang dây thoát hiểm, pccc gia đình, pccc chung cư, nạp sạc bình chữa cháy',
+  seoImage: ''
 };
 
 export const formatPhoneNumber = (phone) => {
@@ -556,13 +557,15 @@ export const ShopProvider = ({ children }) => {
       const ogSiteName = document.querySelector('meta[property="og:site_name"]');
       if (ogSiteName) ogSiteName.setAttribute('content', brandSettings.brandName);
     }
-    if (brandSettings?.logoUrl) {
+    const shareImage = brandSettings?.seoImage || brandSettings?.logoUrl;
+    if (shareImage) {
+      const abs = shareImage.startsWith('/') ? window.location.origin + shareImage : shareImage;
       const ogImage = document.querySelector('meta[property="og:image"]');
-      if (ogImage) ogImage.setAttribute('content', brandSettings.logoUrl);
+      if (ogImage) ogImage.setAttribute('content', abs);
       const twitterImage = document.querySelector('meta[name="twitter:image"]');
-      if (twitterImage) twitterImage.setAttribute('content', brandSettings.logoUrl);
+      if (twitterImage) twitterImage.setAttribute('content', abs);
     }
-  }, [brandSettings?.seoTitle, brandSettings?.seoDescription, brandSettings?.brandName, brandSettings?.logoUrl]);
+  }, [brandSettings?.seoTitle, brandSettings?.seoDescription, brandSettings?.brandName, brandSettings?.logoUrl, brandSettings?.seoImage]);
 
   // Kiểm tra nếu URL có tham số quảng cáo / catalog mode
   const [isAdsUrlActive, setIsAdsUrlActive] = useState(() => {
