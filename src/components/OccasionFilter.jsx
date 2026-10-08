@@ -30,6 +30,8 @@ export const OccasionFilter = () => {
         </p>
       </div>
 
+      {/* Tạm ẩn 2 hàng bộ lọc (khu vực + công nghệ dập lửa). Bỏ thuộc tính hidden để hiện lại. */}
+      <div hidden>
       {/* Row 1: Khu Vực Lắp Đặt (Khu Vực Tabs) */}
       <div className="-mx-3 px-3 sm:mx-0 sm:px-0 flex items-center justify-start sm:justify-center gap-1.5 sm:gap-2 overflow-x-auto pb-2 sm:pb-3 pt-0.5 scrollbar-none scroll-smooth">
         {OCCASIONS.map((occ) => {
@@ -101,6 +103,7 @@ export const OccasionFilter = () => {
             );
           })}
         </div>
+      </div>
       </div>
 
     </div>
