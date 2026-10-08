@@ -51,3 +51,26 @@ export const fileToUploadDataUrl = async (file, { maxWidth = 1600 } = {}) => {
   }
   throw new Error('Ảnh vẫn quá nặng sau khi nén. Hãy chọn ảnh có kích thước nhỏ hơn.');
 };
+
+// Ảnh chia sẻ mạng xã hội (og:image): đặt nguyên ảnh vào khung 1200x630 nền trắng, không cắt/méo,
+// vì Zalo/Facebook sẽ cắt ảnh không đúng tỉ lệ 1.91:1.
+export const fileToOgImageDataUrl = async (file) => {
+  if (!file) throw new Error('Chưa chọn ảnh.');
+  if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) throw new Error('Chỉ nhận ảnh JPG, PNG hoặc WEBP.');
+  if (file.size > MAX_INPUT_BYTES) throw new Error('Ảnh quá lớn (tối đa 20MB). Hãy chọn ảnh nhỏ hơn.');
+
+  const img = await loadImage(file);
+  const W = 1200;
+  const H = 630;
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+  const scale = Math.min(W / img.naturalWidth, H / img.naturalHeight);
+  const w = Math.round(img.naturalWidth * scale);
+  const h = Math.round(img.naturalHeight * scale);
+  ctx.drawImage(img, Math.round((W - w) / 2), Math.round((H - h) / 2), w, h);
+  return canvas.toDataURL('image/jpeg', 0.88);
+};

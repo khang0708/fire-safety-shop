@@ -19,7 +19,7 @@ import {
   getBrowserNotificationPermission 
 } from '../services/notificationService';
 import { sendTelegramTestApi, getTelegramChatIdAutoApi, sendFacebookTestApi, authChangePasswordApi, uploadImageApi } from '../api';
-import { fileToUploadDataUrl } from '../utils/imageUpload';
+import { fileToUploadDataUrl, fileToOgImageDataUrl } from '../utils/imageUpload';
 import { PrintInvoiceModal } from './PrintInvoiceModal';
 import { SalesAnalyticsView } from './SalesAnalyticsView';
 import { ArticlesManagementView } from './ArticlesManagementView';
@@ -370,7 +370,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
     setSeoImageError('');
     setSeoImageUploading(true);
     try {
-      const dataUrl = await fileToUploadDataUrl(file, { maxWidth: 1200 });
+      const dataUrl = await fileToOgImageDataUrl(file);
       const url = await uploadImageApi(dataUrl);
       setBrandForm(prev => ({ ...prev, seoImage: url }));
     } catch (err) {
@@ -3585,7 +3585,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                         <div className="flex flex-wrap items-start gap-3">
                           <div className="w-40 h-[84px] rounded-xl border border-slate-300 bg-slate-100 overflow-hidden flex items-center justify-center text-[11px] text-slate-500">
                             {brandForm.seoImage ? (
-                              <img src={brandForm.seoImage} alt="Ảnh chia sẻ SEO" className="w-full h-full object-cover" />
+                              <img src={brandForm.seoImage} alt="Ảnh chia sẻ SEO" className="w-full h-full object-contain bg-white" />
                             ) : 'Chưa chọn ảnh'}
                           </div>
                           <div className="flex-1 min-w-[220px] space-y-2">
@@ -3611,7 +3611,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                           </div>
                         </div>
                         <p className="text-[11px] text-slate-500 mt-1">
-                          Ảnh hiện khi gửi link qua Zalo/Facebook. Nên dùng ảnh ngang tỉ lệ 1200x630 (JPG/PNG/WEBP). Để trống sẽ dùng ảnh mặc định.
+                          Ảnh hiện khi gửi link qua Zalo/Facebook. Ảnh tải lên được tự đặt vào khung 1200x630 nền trắng (không bị cắt). Nếu dán link, nên dùng ảnh ngang 1200x630. Để trống sẽ dùng ảnh mặc định.
                         </p>
                       </div>
                     </div>
