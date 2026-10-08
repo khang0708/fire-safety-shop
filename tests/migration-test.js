@@ -47,9 +47,22 @@ for (const file of ['.github/workflows/deploy.yml', 'deploy.sh']) {
 
 // 2. Mô phỏng bằng git thật
 console.log('\n2️⃣ MÔ PHỎNG LẦN DEPLOY ĐẦU TIÊN BẰNG GIT THẬT:');
+function toBashPath(targetPath) {
+  if (process.platform !== 'win32') return targetPath;
+  const normalized = targetPath.replace(/\\/g, '/');
+  const wslCheck = spawnSync('bash', ['-c', `wslpath -u "${normalized}"`], { encoding: 'utf-8' });
+  if (wslCheck.status === 0 && wslCheck.stdout.trim()) {
+    return wslCheck.stdout.trim();
+  }
+  return normalized.replace(/^([a-zA-Z]):\//, (_, d) => `/mnt/${d.toLowerCase()}/`);
+}
+
+const bashScript = toBashPath(path.join(__dirname, 'migration-sim.sh'));
+const bashRoot = toBashPath(ROOT);
+
 const sim = (mode) =>
-  spawnSync('bash', [path.join(__dirname, 'migration-sim.sh'), mode], {
-    env: { ...process.env, REPO_ROOT: ROOT },
+  spawnSync('bash', ['-c', `REPO_ROOT="${bashRoot}" "${bashScript}" "${mode}"`], {
+    env: { ...process.env, REPO_ROOT: bashRoot },
     encoding: 'utf-8',
     timeout: 60000
   });
