@@ -1,4 +1,5 @@
 import React, { useMemo, useEffect, useState } from 'react';
+import { sanitizeHtml } from '../../server/htmlSafe.js';
 import { useShop, formatPhoneNumber, getCleanPhoneNumber } from '../context/ShopContext';
 import { 
   Calendar, 
@@ -269,7 +270,7 @@ export const NewsDetailPage = ({ slug }) => {
                 prose-blockquote:border-l-4 prose-blockquote:border-red-500 prose-blockquote:bg-red-50/50 prose-blockquote:p-4 prose-blockquote:rounded-r-xl prose-blockquote:italic
                 prose-table:w-full prose-table:border-collapse prose-table:my-4
               "
-              dangerouslySetInnerHTML={{ __html: currentArticle.content }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentArticle.content) }}
             />
 
             {/* EMBEDDED PRODUCT CTA CARD: Thẻ Sản Phẩm Khuyên Dùng Trong Bài */}
