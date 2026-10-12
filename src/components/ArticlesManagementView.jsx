@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { sanitizeHtml } from '../../server/htmlSafe.js';
 import { useShop } from '../context/ShopContext';
 import { ARTICLE_CATEGORIES } from '../data/articles';
 import { ArticleRichEditor } from './ArticleRichEditor';
@@ -1093,7 +1094,7 @@ export const ArticlesManagementView = () => {
 
                   <div 
                     className="prose prose-slate max-w-none text-xs sm:text-sm leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: formData.content || '<p>Chưa có nội dung...</p>' }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(formData.content) || '<p>Chưa có nội dung...</p>' }}
                   />
                 </div>
               )}

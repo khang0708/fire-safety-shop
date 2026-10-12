@@ -32,6 +32,7 @@ import {
   resolveProductCategoryId,
   planCategoryDeletion
 } from './categories.js';
+import { escapeHtml as escapeAttr, jsonLdSafe, sanitizeHtml } from './htmlSafe.js';
 import { saveImageDataUrl, resolveUploadFile, uploadContentType } from './uploads.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -91,7 +92,47 @@ const fetchWithTimeout = (url, options = {}, ms = DEFAULT_TIMEOUT_MS) => {
 };
 
 // Middleware
-app.use(cors());
+// Header bảo mật cho mọi phản hồi. Trang /demo/ là bản tĩnh dùng script nội tuyến nên không áp CSP nghiêm ngặt.
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  "img-src 'self' data: blob: https:",
+  "connect-src 'self' https:",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'"
+].join('; ');
+app.disable('x-powered-by');
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+  if (!req.path.startsWith('/demo/') && !req.path.startsWith('/api/')) {
+    res.setHeader('Content-Security-Policy', CSP);
+  }
+  next();
+});
+
+// CORS: chỉ cho phép chính tên miền của shop (DOMAIN), CORS_ORIGINS (phân tách bằng dấu phẩy) và localhost khi phát triển.
+// Yêu cầu cùng origin (Origin trùng Host) và yêu cầu không có Origin (curl, máy chủ, webhook) luôn được qua.
+const allowedOrigins = new Set(
+  [
+    process.env.DOMAIN && `https://${process.env.DOMAIN}`,
+    process.env.DOMAIN && `https://www.${process.env.DOMAIN}`,
+    ...(process.env.CORS_ORIGINS || '').split(',')
+  ].map((o) => (o || '').trim().replace(/\/$/, '')).filter(Boolean)
+);
+const isDevOrigin = (origin) => process.env.NODE_ENV !== 'production' && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+app.use(cors((req, callback) => {
+  const origin = req.headers.origin;
+  let sameOrigin = false;
+  try { sameOrigin = Boolean(origin) && new URL(origin).host === req.headers.host; } catch { /* Origin sai định dạng */ }
+  callback(null, { origin: !origin || sameOrigin || allowedOrigins.has(origin) || isDevOrigin(origin) });
+}));
 
 // Giữ nguyên body gốc cho webhook Facebook để kiểm tra chữ ký HMAC
 const captureRawBody = (req, res, buf) => {
@@ -742,7 +783,7 @@ const sendTelegramNotificationForOrder = async (order, customToken = null, custo
     let itemsListText = '';
     if (Array.isArray(order.items) && order.items.length > 0) {
       itemsListText = '\n📋 <b>Chi tiết thiết bị:</b>\n' +
-        order.items.map((it, idx) => `  ${idx + 1}. ${escapeHtml(it.name)} (<b>${Number(it.price || 0).toLocaleString('vi-VN')}đ</b>)`).join('\n') + '\n';
+        order.items.map((it, idx) => `  ${idx + 1}. ${escapeAttr(it.name)} (<b>${Number(it.price || 0).toLocaleString('vi-VN')}đ</b>)`).join('\n') + '\n';
     }
 
     const anonymousNotice = order.isAnonymous ? ' <i>(🕵️ Đơn gửi ẩn danh)</i>' : '';
@@ -1649,7 +1690,7 @@ app.post('/api/articles', requireAdminAuth, async (req, res) => {
       category: category || 'Cẩm Nang PCCC',
       thumbnail: thumbnail || 'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?auto=format&fit=crop&w=1200&q=80',
       excerpt: excerpt || '',
-      content: content || '<p>Nội dung bài viết đang được cập nhật...</p>',
+      content: sanitizeHtml(content || '') || '<p>Nội dung bài viết đang được cập nhật...</p>',
       author: author || 'Kỹ Sư PCCC FLAMEGUARD PRO',
       authorAvatar: authorAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
       publishedAt: req.body.publishedAt || new Date().toISOString(),
@@ -1699,6 +1740,7 @@ app.put('/api/articles/:id', requireAdminAuth, async (req, res) => {
       slug,
       updatedAt: new Date().toISOString()
     };
+    if (typeof req.body.content === 'string') updated.content = sanitizeHtml(req.body.content);
 
     articles[index] = updated;
     await writeJson('articles.json', articles);
@@ -1802,25 +1844,25 @@ if (fs.existsSync(distPath)) {
           const seoImg = article.thumbnail || 'https://pcccphatantam.com/images/og-image.jpg';
           const pageUrl = `https://pcccphatantam.com/tin-tuc/${article.slug}`;
 
-          html = html.replace(/<title>.*?<\/title>/i, `<title>${seoTitle}</title>`);
-          html = html.replace(/(<meta\s+property=["']og:title["']\s+content=["']).*?(["'])/i, `$1${seoTitle}$2`);
-          html = html.replace(/(<meta\s+name=["']twitter:title["']\s+content=["']).*?(["'])/i, `$1${seoTitle}$2`);
+          html = html.replace(/<title>.*?<\/title>/i, () => `<title>${escapeAttr(seoTitle)}</title>`);
+          html = html.replace(/(<meta\s+property=["']og:title["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(seoTitle)}${b}`);
+          html = html.replace(/(<meta\s+name=["']twitter:title["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(seoTitle)}${b}`);
 
           if (seoDesc) {
-            html = html.replace(/(<meta\s+name=["']description["']\s+content=["']).*?(["'])/i, `$1${seoDesc}$2`);
-            html = html.replace(/(<meta\s+property=["']og:description["']\s+content=["']).*?(["'])/i, `$1${seoDesc}$2`);
-            html = html.replace(/(<meta\s+name=["']twitter:description["']\s+content=["']).*?(["'])/i, `$1${seoDesc}$2`);
+            html = html.replace(/(<meta\s+name=["']description["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(seoDesc)}${b}`);
+            html = html.replace(/(<meta\s+property=["']og:description["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(seoDesc)}${b}`);
+            html = html.replace(/(<meta\s+name=["']twitter:description["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(seoDesc)}${b}`);
           }
 
           if (article.seoKeywords) {
-            html = html.replace(/(<meta\s+name=["']keywords["']\s+content=["']).*?(["'])/i, `$1${article.seoKeywords}$2`);
+            html = html.replace(/(<meta\s+name=["']keywords["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(article.seoKeywords)}${b}`);
           }
 
-          html = html.replace(/(<meta\s+property=["']og:image["']\s+content=["']).*?(["'])/i, `$1${seoImg}$2`);
-          html = html.replace(/(<meta\s+name=["']twitter:image["']\s+content=["']).*?(["'])/i, `$1${seoImg}$2`);
-          html = html.replace(/(<meta\s+property=["']og:url["']\s+content=["']).*?(["'])/i, `$1${pageUrl}$2`);
-          html = html.replace(/(<meta\s+property=["']og:type["']\s+content=["']).*?(["'])/i, `$1article$2`);
-          html = html.replace(/(<link\s+rel=["']canonical["']\s+href=["']).*?(["'])/i, `$1${pageUrl}$2`);
+          html = html.replace(/(<meta\s+property=["']og:image["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(seoImg)}${b}`);
+          html = html.replace(/(<meta\s+name=["']twitter:image["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(seoImg)}${b}`);
+          html = html.replace(/(<meta\s+property=["']og:url["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(pageUrl)}${b}`);
+          html = html.replace(/(<meta\s+property=["']og:type["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}article${b}`);
+          html = html.replace(/(<link\s+rel=["']canonical["']\s+href=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(pageUrl)}${b}`);
 
           // Schema JSON-LD NewsArticle cho Google & Bot SEO
           const articleSchema = {
@@ -1846,7 +1888,7 @@ if (fs.existsSync(distPath)) {
             "mainEntityOfPage": pageUrl
           };
 
-          html = html.replace('</head>', `<script type="application/ld+json">${JSON.stringify(articleSchema)}</script>\n</head>`);
+          html = html.replace('</head>', () => `<script type="application/ld+json">${jsonLdSafe(articleSchema)}</script>\n</head>`);
           return res.send(html);
         }
       }
@@ -1871,21 +1913,21 @@ if (fs.existsSync(distPath)) {
           const productSlug = product.slug || slugifyVietnamese(product.name) || product.id;
           const pageUrl = `https://pcccphatantam.com/san-pham/${productSlug}`;
 
-          html = html.replace(/<title>.*?<\/title>/i, `<title>${seoTitle}</title>`);
-          html = html.replace(/(<meta\s+property=["']og:title["']\s+content=["']).*?(["'])/i, `$1${seoTitle}$2`);
-          html = html.replace(/(<meta\s+name=["']twitter:title["']\s+content=["']).*?(["'])/i, `$1${seoTitle}$2`);
+          html = html.replace(/<title>.*?<\/title>/i, () => `<title>${escapeAttr(seoTitle)}</title>`);
+          html = html.replace(/(<meta\s+property=["']og:title["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(seoTitle)}${b}`);
+          html = html.replace(/(<meta\s+name=["']twitter:title["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(seoTitle)}${b}`);
 
           if (seoDesc) {
-            html = html.replace(/(<meta\s+name=["']description["']\s+content=["']).*?(["'])/i, `$1${seoDesc}$2`);
-            html = html.replace(/(<meta\s+property=["']og:description["']\s+content=["']).*?(["'])/i, `$1${seoDesc}$2`);
-            html = html.replace(/(<meta\s+name=["']twitter:description["']\s+content=["']).*?(["'])/i, `$1${seoDesc}$2`);
+            html = html.replace(/(<meta\s+name=["']description["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(seoDesc)}${b}`);
+            html = html.replace(/(<meta\s+property=["']og:description["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(seoDesc)}${b}`);
+            html = html.replace(/(<meta\s+name=["']twitter:description["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(seoDesc)}${b}`);
           }
 
-          html = html.replace(/(<meta\s+property=["']og:image["']\s+content=["']).*?(["'])/i, `$1${seoImg}$2`);
-          html = html.replace(/(<meta\s+name=["']twitter:image["']\s+content=["']).*?(["'])/i, `$1${seoImg}$2`);
-          html = html.replace(/(<meta\s+property=["']og:url["']\s+content=["']).*?(["'])/i, `$1${pageUrl}$2`);
-          html = html.replace(/(<meta\s+property=["']og:type["']\s+content=["']).*?(["'])/i, `$1product$2`);
-          html = html.replace(/(<link\s+rel=["']canonical["']\s+href=["']).*?(["'])/i, `$1${pageUrl}$2`);
+          html = html.replace(/(<meta\s+property=["']og:image["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(seoImg)}${b}`);
+          html = html.replace(/(<meta\s+name=["']twitter:image["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(seoImg)}${b}`);
+          html = html.replace(/(<meta\s+property=["']og:url["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(pageUrl)}${b}`);
+          html = html.replace(/(<meta\s+property=["']og:type["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}product${b}`);
+          html = html.replace(/(<link\s+rel=["']canonical["']\s+href=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(pageUrl)}${b}`);
 
           // Schema JSON-LD Product cho Google Rich Snippets & Ads Crawlers
           const productSchema = {
@@ -1917,7 +1959,7 @@ if (fs.existsSync(distPath)) {
             } : {})
           };
 
-          html = html.replace('</head>', `<script type="application/ld+json">${JSON.stringify(productSchema)}</script>\n</head>`);
+          html = html.replace('</head>', () => `<script type="application/ld+json">${jsonLdSafe(productSchema)}</script>\n</head>`);
           return res.send(html);
         }
       }
@@ -1928,14 +1970,14 @@ if (fs.existsSync(distPath)) {
         const newsDesc = `Tổng hợp tin tức an toàn PCCC, hướng dẫn sử dụng bình chữa cháy, quy định pháp luật và kỹ năng thoát hiểm hỏa hoạn nhà cao tầng mới nhất.`;
         const newsUrl = `https://pcccphatantam.com/tin-tuc`;
 
-        html = html.replace(/<title>.*?<\/title>/i, `<title>${newsTitle}</title>`);
-        html = html.replace(/(<meta\s+property=["']og:title["']\s+content=["']).*?(["'])/i, `$1${newsTitle}$2`);
-        html = html.replace(/(<meta\s+name=["']twitter:title["']\s+content=["']).*?(["'])/i, `$1${newsTitle}$2`);
-        html = html.replace(/(<meta\s+name=["']description["']\s+content=["']).*?(["'])/i, `$1${newsDesc}$2`);
-        html = html.replace(/(<meta\s+property=["']og:description["']\s+content=["']).*?(["'])/i, `$1${newsDesc}$2`);
-        html = html.replace(/(<meta\s+name=["']twitter:description["']\s+content=["']).*?(["'])/i, `$1${newsDesc}$2`);
-        html = html.replace(/(<meta\s+property=["']og:url["']\s+content=["']).*?(["'])/i, `$1${newsUrl}$2`);
-        html = html.replace(/(<link\s+rel=["']canonical["']\s+href=["']).*?(["'])/i, `$1${newsUrl}$2`);
+        html = html.replace(/<title>.*?<\/title>/i, () => `<title>${escapeAttr(newsTitle)}</title>`);
+        html = html.replace(/(<meta\s+property=["']og:title["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(newsTitle)}${b}`);
+        html = html.replace(/(<meta\s+name=["']twitter:title["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(newsTitle)}${b}`);
+        html = html.replace(/(<meta\s+name=["']description["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(newsDesc)}${b}`);
+        html = html.replace(/(<meta\s+property=["']og:description["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(newsDesc)}${b}`);
+        html = html.replace(/(<meta\s+name=["']twitter:description["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(newsDesc)}${b}`);
+        html = html.replace(/(<meta\s+property=["']og:url["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(newsUrl)}${b}`);
+        html = html.replace(/(<link\s+rel=["']canonical["']\s+href=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(newsUrl)}${b}`);
         return res.send(html);
       }
 

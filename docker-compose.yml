@@ -24,6 +24,7 @@ services:
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
       - ADMIN_PIN=${ADMIN_PIN:-}
       - SESSION_SECRET=${SESSION_SECRET:-}
+      - CORS_ORIGINS=${CORS_ORIGINS:-}
       - FACEBOOK_APP_SECRET=${FACEBOOK_APP_SECRET:-}
     volumes:
       # Giữ nguyên dữ liệu sản phẩm, đơn hàng, cài đặt, tài khoản admin khi cập nhật container.
