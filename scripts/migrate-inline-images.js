@@ -1,4 +1,5 @@
 // scripts/migrate-inline-images.js
+// Mỗi ảnh còn được thu nhỏ (tối đa 1000px, logo 600px) và nén lại (JPEG/WebP) nên nhẹ hơn nhiều so với bản gốc.
 // Chuyển ảnh base64 đang nhúng trong dữ liệu thật (settings/products/orders/reviews/articles/categories) thành tệp trong DATA_DIR/uploads.
 // Mặc định CHỈ BÁO CÁO (dry-run). Thêm --apply để ghi; mỗi tệp JSON được sao lưu thành <tên>.pre-image-migration.bak trước khi sửa.
 //
@@ -10,6 +11,7 @@ import fs from 'fs';
 import path from 'path';
 import { DATA_DIR, writeJsonFileSync } from '../server/storage.js';
 import { externalizeInlineImages, DATA_FILES_WITH_IMAGES } from '../server/inlineImages.js';
+import { optimizeAndSaveDataUrl } from '../server/imageOptimize.js';
 
 const apply = process.argv.includes('--apply');
 console.log(`Thư mục dữ liệu: ${DATA_DIR}`);
@@ -23,7 +25,7 @@ for (const fileName of DATA_FILES_WITH_IMAGES) {
 
   const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
   // Xem trước: dùng hàm lưu giả để không tạo tệp
-  const stats = externalizeInlineImages(data, apply ? undefined : () => ({ ok: true, url: '/uploads/<se-duoc-tao>' }));
+  const stats = await externalizeInlineImages(data, apply ? optimizeAndSaveDataUrl : () => ({ ok: true, url: '/uploads/<se-duoc-tao>' }));
   if (stats.replaced === 0 && stats.skipped === 0) {
     console.log(`✔ ${fileName}: không có ảnh nhúng`);
     continue;
