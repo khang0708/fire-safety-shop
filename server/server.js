@@ -32,6 +32,7 @@ import {
   resolveProductCategoryId,
   planCategoryDeletion
 } from './categories.js';
+import { getAdminTokenFromRequest, buildSessionCookie, buildClearCookie } from './authCookie.js';
 import { escapeHtml as escapeAttr, jsonLdSafe, sanitizeHtml } from './htmlSafe.js';
 import { saveImageDataUrl, resolveUploadFile, uploadContentType } from './uploads.js';
 
@@ -151,12 +152,13 @@ app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 // Lấy admin từ header (Authorization: Bearer ... hoặc x-admin-token). Không nhận token qua query string
 // vì URL bị ghi vào log truy cập.
 export function getRequestAdmin(req) {
-  const authHeader = req.headers['authorization'];
-  const token = (authHeader && authHeader.startsWith('Bearer '))
-    ? authHeader.slice(7).trim()
-    : req.headers['x-admin-token'];
+  const token = getAdminTokenFromRequest(req);
   return token ? verifyAdminToken(token) : null;
 }
+
+// Cookie chỉ gắn cờ Secure khi yêu cầu đến qua HTTPS (trust proxy đã cấu hình nên req.secure đúng khi sau Nginx)
+const setSessionCookie = (req, res, token) => res.append('Set-Cookie', buildSessionCookie(token, req.secure));
+const clearSessionCookie = (req, res) => res.append('Set-Cookie', buildClearCookie(req.secure));
 
 export const requireAdminAuth = (req, res, next) => {
   const user = getRequestAdmin(req);
@@ -379,6 +381,7 @@ app.post('/api/auth/login', (req, res) => {
   const result = authenticateAdmin({ username, password, pin, clientIp });
 
   if (result.success) {
+    setSessionCookie(req, res, result.token);
     return res.json(result);
   }
   const statusCode = result.error === 'LOCKED' ? 429 : 401;
@@ -387,14 +390,13 @@ app.post('/api/auth/login', (req, res) => {
 
 // GET /api/auth/me (Kiểm tra token còn hợp lệ không)
 app.get('/api/auth/me', (req, res) => {
-  const authHeader = req.headers['authorization'];
-  const hasToken = Boolean((authHeader && authHeader.startsWith('Bearer ')) || req.headers['x-admin-token']);
-  if (!hasToken) {
+  if (!getAdminTokenFromRequest(req)) {
     return res.status(401).json({ success: false, error: 'NO_TOKEN', message: 'Chưa cung cấp token xác thực' });
   }
 
   const user = getRequestAdmin(req);
   if (!user) {
+    clearSessionCookie(req, res);
     return res.status(401).json({ success: false, error: 'INVALID_TOKEN', message: 'Phiên làm việc đã hết hạn hoặc không hợp lệ' });
   }
 
@@ -405,6 +407,7 @@ app.get('/api/auth/me', (req, res) => {
 app.post('/api/auth/change-password', requireAdminAuth, (req, res) => {
   const result = changeAdminPassword(req.adminUser.sub, req.body || {});
   if (result.success) {
+    setSessionCookie(req, res, result.token);
     return res.json(result);
   }
   return res.status(400).json(result);
@@ -417,6 +420,7 @@ app.post('/api/auth/sse-ticket', requireAdminAuth, (req, res) => {
 
 // POST /api/auth/logout
 app.post('/api/auth/logout', (req, res) => {
+  clearSessionCookie(req, res);
   res.json({ success: true, message: 'Đã đăng xuất phiên làm việc' });
 });
 

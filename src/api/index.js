@@ -3,17 +3,21 @@
 
 const API_BASE = '/api';
 
+// Phiên admin nằm trong cookie HttpOnly do máy chủ đặt (JavaScript không đọc được). Trình duyệt tự gửi cookie cùng origin;
+// header X-Requested-With là lớp chống CSRF bắt buộc với yêu cầu ghi dữ liệu.
+// Dọn token cũ từng lưu trong localStorage ở các phiên bản trước.
+try { if (typeof localStorage !== 'undefined') localStorage.removeItem('flameguard_admin_token'); } catch (_e) { /* bỏ qua */ }
+
 async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
-  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('flameguard_admin_token') : null;
   const headers = {
     'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    'X-Requested-With': 'fetch',
     ...(options.headers || {})
   };
 
   try {
-    const response = await fetch(url, { ...options, headers });
+    const response = await fetch(url, { ...options, headers, credentials: 'same-origin' });
     const text = await response.text();
     let data;
     try {
@@ -24,7 +28,6 @@ async function request(endpoint, options = {}) {
 
     if (response.status === 401 && endpoint !== '/auth/login' && endpoint !== '/auth/me') {
       if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem('flameguard_admin_token');
         localStorage.removeItem('flameguard_admin_user');
       }
       if (typeof window !== 'undefined') {
@@ -70,7 +73,6 @@ export const authLogoutApi = async () => {
     await request('/auth/logout', { method: 'POST' });
   } catch (_e) {}
   if (typeof localStorage !== 'undefined') {
-    localStorage.removeItem('flameguard_admin_token');
     localStorage.removeItem('flameguard_admin_user');
   }
 };

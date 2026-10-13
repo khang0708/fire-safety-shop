@@ -232,10 +232,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
         newPin: securityForm.newPin
       });
       if (res.success) {
-        // Server thu hồi mọi phiên cũ khi đổi mật khẩu/PIN và cấp token mới cho phiên hiện tại
-        if (res.token && typeof localStorage !== 'undefined') {
-          localStorage.setItem('flameguard_admin_token', res.token);
-        }
+        // Server thu hồi mọi phiên cũ khi đổi mật khẩu/PIN và tự cấp lại cookie phiên cho thiết bị hiện tại
         setSecurityStatus({ type: 'success', message: res.message || 'Đổi mật khẩu thành công!' });
         setSecurityForm({ currentPassword: '', newPassword: '', confirmPassword: '', newPin: '' });
       } else {

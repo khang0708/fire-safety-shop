@@ -34,18 +34,16 @@ function AppContent() {
   const [adminUser, setAdminUser] = useState(() => {
     try {
       const cached = localStorage.getItem('flameguard_admin_user');
-      const token = localStorage.getItem('flameguard_admin_token');
-      if (cached && token) return JSON.parse(cached);
+      if (cached) return JSON.parse(cached);
     } catch (_e) {}
     return null;
   });
 
   const isAdminAuthenticated = Boolean(adminUser);
 
-  // Xác thực token với máy chủ khi tải trang
+  // Xác thực phiên (cookie HttpOnly) với máy chủ khi tải trang; flameguard_admin_user chỉ là gợi ý giao diện, không chứa bí mật
   useEffect(() => {
-    const token = localStorage.getItem('flameguard_admin_token');
-    if (token) {
+    if (localStorage.getItem('flameguard_admin_user')) {
       authMeApi()
         .then(res => {
           if (res.success && res.user) {
@@ -53,7 +51,6 @@ function AppContent() {
           }
         })
         .catch(() => {
-          localStorage.removeItem('flameguard_admin_token');
           localStorage.removeItem('flameguard_admin_user');
           setAdminUser(null);
           if (window.location.hash === '#admin') {

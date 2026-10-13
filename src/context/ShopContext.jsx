@@ -228,7 +228,7 @@ if (typeof localStorage !== 'undefined') {
   } catch (e) {}
 }
 
-const hasAdminSession = () => typeof localStorage !== 'undefined' && Boolean(localStorage.getItem('flameguard_admin_token'));
+const hasAdminSession = () => typeof localStorage !== 'undefined' && Boolean(localStorage.getItem('flameguard_admin_user'));
 
 // Trả về mảng sản phẩm đã cache (kể cả rỗng), hoặc null nếu chưa có cache hợp lệ
 const readCachedProducts = () => {
@@ -1158,8 +1158,7 @@ export const ShopProvider = ({ children }) => {
         setProductsLoaded(true);
 
         // Re-push ngoài render lifecycle của React (chỉ thực hiện khi có Token Quản trị viên)
-        const adminToken = typeof localStorage !== 'undefined' ? localStorage.getItem('flameguard_admin_token') : null;
-        if (itemsToRehydrate.length > 0 && adminToken) {
+        if (itemsToRehydrate.length > 0 && hasAdminSession()) {
           itemsToRehydrate.forEach(mp => {
             updateProductApi(mp.id, mp).catch(() => {});
           });
@@ -1264,8 +1263,7 @@ export const ShopProvider = ({ children }) => {
           if (typeof localStorage !== 'undefined') localStorage.setItem('flameguard_settings_updated_at', apiSettings.updatedAt);
         } else if (localSettingsTime > serverSettingsTime) {
           // Local mới hơn server -> Chỉ Rehydrate server ngầm nếu là Quản trị viên có Token hợp lệ
-          const adminToken = typeof localStorage !== 'undefined' ? localStorage.getItem('flameguard_admin_token') : null;
-          if (adminToken) {
+          if (hasAdminSession()) {
             const localSettingsPayload = {
               shopZaloPhone: typeof localStorage !== 'undefined' ? localStorage.getItem('flameguard_shop_zalo_phone') : undefined,
               telegramBotToken: typeof localStorage !== 'undefined' ? localStorage.getItem('flameguard_tg_token') : undefined,

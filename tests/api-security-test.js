@@ -245,6 +245,35 @@ const newTokenUse = await call('GET', '/api/orders', { token: strong.json?.token
 assert(newTokenUse.status === 200, 'Token mới dùng được');
 
 // ----------------------------------------------------
+console.log('\n🔟 PHIÊN ADMIN TRONG COOKIE HTTPONLY (TOKEN KHÔNG NẰM Ở localStorage):');
+const NEW_PASSWORD = 'Mat-Khau-Moi-Rat-Dai-2026';
+const cookieLogin = await fetch(base + '/api/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ username: 'admin', password: NEW_PASSWORD })
+});
+const setCookie = cookieLogin.headers.get('set-cookie') || '';
+assert(cookieLogin.status === 200 && /^fg_admin=/.test(setCookie), 'Đăng nhập đặt cookie phiên fg_admin');
+assert(/HttpOnly/i.test(setCookie) && /SameSite=Strict/i.test(setCookie) && /Path=\//.test(setCookie), 'Cookie có HttpOnly, SameSite=Strict, Path=/', setCookie);
+const cookie = setCookie.split(';')[0];
+
+const meCookie = await call('GET', '/api/auth/me', { headers: { Cookie: cookie } });
+assert(meCookie.status === 200 && meCookie.json?.user?.username === 'admin', 'GET /api/auth/me chỉ với cookie => 200');
+const ordersCookie = await call('GET', '/api/orders', { headers: { Cookie: cookie } });
+assert(ordersCookie.status === 200, 'Đọc dữ liệu admin chỉ với cookie => 200');
+
+const csrfBlocked = await call('POST', '/api/auth/sse-ticket', { headers: { Cookie: cookie } });
+assert(csrfBlocked.status === 401, 'Yêu cầu ghi bằng cookie thiếu header X-Requested-With bị từ chối (chống CSRF)', `status=${csrfBlocked.status}`);
+const csrfOk = await call('POST', '/api/auth/sse-ticket', { headers: { Cookie: cookie, 'X-Requested-With': 'fetch' } });
+assert(csrfOk.status === 200 && Boolean(csrfOk.json?.ticket), 'Yêu cầu ghi bằng cookie kèm X-Requested-With => 200');
+
+const badCookie = await call('GET', '/api/orders', { headers: { Cookie: 'fg_admin=gia.mao.token' } });
+assert(badCookie.status === 401, 'Cookie giả mạo => 401');
+
+const logoutRes = await fetch(base + '/api/auth/logout', { method: 'POST', headers: { Cookie: cookie, 'X-Requested-With': 'fetch' } });
+assert(/fg_admin=;/.test(logoutRes.headers.get('set-cookie') || '') && /Max-Age=0/.test(logoutRes.headers.get('set-cookie') || ''), 'Đăng xuất xóa cookie phiên');
+
+// ----------------------------------------------------
 console.log('\n====================================================');
 console.log(`🏁 KẾT QUẢ KIỂM THỬ BẢO MẬT API: ${passed} ĐẠT / ${passed + failed} BÀI TEST`);
 console.log('====================================================');

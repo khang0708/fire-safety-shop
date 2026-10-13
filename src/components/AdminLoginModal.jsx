@@ -33,7 +33,6 @@ export const AdminLoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
     try {
       const res = await authLoginApi({ username: username.trim(), password });
       if (res.success && res.token) {
-        localStorage.setItem('flameguard_admin_token', res.token);
         localStorage.setItem('flameguard_admin_user', JSON.stringify(res.user));
         setIsLoading(false);
         window.dispatchEvent(new Event('flameguard:admin-login'));
@@ -56,7 +55,6 @@ export const AdminLoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
     try {
       const res = await authLoginApi({ pin: pin.trim() });
       if (res.success && res.token) {
-        localStorage.setItem('flameguard_admin_token', res.token);
         localStorage.setItem('flameguard_admin_user', JSON.stringify(res.user));
         setIsLoading(false);
         window.dispatchEvent(new Event('flameguard:admin-login'));

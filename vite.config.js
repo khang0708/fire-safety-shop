@@ -13,6 +13,7 @@ import {
   sortCategories,
   planCategoryDeletion
 } from './server/categories.js';
+import { getAdminTokenFromRequest, buildSessionCookie, buildClearCookie } from './server/authCookie.js';
 import { saveImageDataUrl, resolveUploadFile, uploadContentType } from './server/uploads.js';
 
 const devSlugify = (text) => String(text || '')
@@ -175,8 +176,7 @@ function fullstackApiPlugin() {
 
         // Tải ảnh lên (dev): dùng chung logic với server/server.js
         if (url === '/api/uploads/image' && req.method === 'POST') {
-          const authHeader = req.headers['authorization'];
-          const adminToken = (authHeader && authHeader.startsWith('Bearer ')) ? authHeader.slice(7).trim() : null;
+          const adminToken = getAdminTokenFromRequest(req);
           res.setHeader('Content-Type', 'application/json');
           if (!adminToken || !verifyAdminToken(adminToken)) {
             res.statusCode = 401;
@@ -200,8 +200,7 @@ function fullstackApiPlugin() {
           const categories = sortCategories(readJsonFileSync('categories.json', []) || []);
           if (url === '/api/categories' && req.method === 'GET') return sendJson(200, { success: true, data: categories });
 
-          const authHeader = req.headers['authorization'];
-          const adminToken = (authHeader && authHeader.startsWith('Bearer ')) ? authHeader.slice(7).trim() : null;
+          const adminToken = getAdminTokenFromRequest(req);
           if (!adminToken || !verifyAdminToken(adminToken)) return sendJson(401, { success: false, error: 'UNAUTHORIZED' });
 
           const body = (req.method === 'POST' || req.method === 'PUT') ? await readBody() : {};
@@ -253,14 +252,14 @@ function fullstackApiPlugin() {
           const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || '127.0.0.1';
           const result = authenticateAdmin({ ...body, clientIp });
           res.statusCode = result.success ? 200 : (result.error === 'LOCKED' ? 429 : 401);
+          if (result.success) res.setHeader('Set-Cookie', buildSessionCookie(result.token, false));
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify(result));
           return;
         }
 
         if (url === '/api/auth/me' && req.method === 'GET') {
-          const authHeader = req.headers['authorization'];
-          const token = (authHeader && authHeader.startsWith('Bearer ')) ? authHeader.slice(7).trim() : req.headers['x-admin-token'];
+          const token = getAdminTokenFromRequest(req);
           const user = token ? verifyAdminToken(token) : null;
           if (user) {
             res.setHeader('Content-Type', 'application/json');
@@ -274,8 +273,7 @@ function fullstackApiPlugin() {
         }
 
         if (url === '/api/auth/change-password' && req.method === 'POST') {
-          const authHeader = req.headers['authorization'];
-          const token = (authHeader && authHeader.startsWith('Bearer ')) ? authHeader.slice(7).trim() : req.headers['x-admin-token'];
+          const token = getAdminTokenFromRequest(req);
           const user = token ? verifyAdminToken(token) : null;
           if (!user) {
             res.statusCode = 401;
@@ -286,12 +284,14 @@ function fullstackApiPlugin() {
           const body = await readBody();
           const result = changeAdminPassword(user.sub, body);
           res.statusCode = result.success ? 200 : 400;
+          if (result.success) res.setHeader('Set-Cookie', buildSessionCookie(result.token, false));
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify(result));
           return;
         }
 
         if (url === '/api/auth/logout' && req.method === 'POST') {
+          res.setHeader('Set-Cookie', buildClearCookie(false));
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify({ success: true, message: 'Đã đăng xuất' }));
           return;
