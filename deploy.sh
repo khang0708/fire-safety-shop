@@ -131,6 +131,22 @@ if [ ! -f "$DATA_DIR/.migrated" ]; then
   docker compose stop web || true
   bash scripts/prepare-data.sh finalize "$PWD"
 fi
+# 5b. Sao lưu dữ liệu rồi TỰ ĐỘNG chuyển ảnh base64 còn nhúng trong dữ liệu thành tệp đã nén (scripts/migrate-inline-images.js).
+#     Idempotent: không còn ảnh nhúng thì không làm gì. Sao lưu lỗi => HỦY deploy (website vẫn chạy bản cũ).
+#     Container cũ chỉ được dừng ở lúc chuyển ảnh, để nó không ghi đè lại dữ liệu cũ từ bộ nhớ đệm.
+#     Bỏ qua bằng SKIP_IMAGE_MIGRATION=1. Chuyển ảnh lỗi không chặn deploy (đã có bản sao lưu, lần deploy sau sẽ thử lại).
+if [ "${SKIP_IMAGE_MIGRATION:-0}" = 1 ]; then
+  log "⏭️ 5b. Bỏ qua sao lưu + chuyển ảnh (SKIP_IMAGE_MIGRATION=1)."
+else
+  log "💾 5b. Sao lưu dữ liệu trước khi chuyển ảnh..."
+  bash scripts/backup-data.sh || fail "Sao lưu dữ liệu thất bại; HỦY deploy (website vẫn chạy bản cũ)."
+  log "🖼️ 5b. Chuyển ảnh base64 trong dữ liệu thành tệp nén (dừng container cũ trong lúc chuyển)..."
+  docker compose stop web || true
+  if ! docker compose run --rm --no-deps -T web node scripts/migrate-inline-images.js --apply; then
+    echo "⚠️ Chuyển ảnh gặp lỗi (dữ liệu đã có bản sao lưu). Vẫn tiếp tục deploy; lần deploy sau sẽ thử lại." >&2
+  fi
+fi
+
 log "🚀 5. Khởi động container mới..."
 docker compose up -d --remove-orphans
 

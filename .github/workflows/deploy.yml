@@ -96,6 +96,7 @@ jobs:
             if [ -s "$NGINX_BACKUP" ]; then cp "$NGINX_BACKUP" nginx/conf.d/app.conf; fi
             rm -f "$NGINX_BACKUP"
 
-            # 4. Build, thử khởi động bản mới, thay container và kiểm tra sức khỏe (xem deploy.sh)
+            # 4. Build, thử khởi động bản mới, SAO LƯU dữ liệu + tự chuyển ảnh base64 thành tệp nén (scripts/migrate-inline-images.js),
+            #    thay container và kiểm tra sức khỏe (xem deploy.sh)
             chmod +x deploy.sh init-ssl.sh scripts/*.sh 2>/dev/null || true
             ./deploy.sh --no-sync
