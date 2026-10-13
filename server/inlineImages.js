@@ -7,6 +7,7 @@ import { saveImageDataUrl } from './uploads.js';
 
 const MIN_INLINE_LENGTH = 20 * 1024; // chuỗi nhỏ hơn mức này (icon nhỏ) giữ nguyên
 const INLINE_IMAGE = /^data:image\/(png|jpe?g|webp);base64,/i;
+const EMBEDDED_IMAGE = /data:image\/(?:png|jpe?g|webp);base64,[A-Za-z0-9+/=]+/gi;
 
 // Duyệt đệ quy, thay mọi chuỗi data:image lớn bằng URL tệp. `save(dataUrl, đườngDẫnTrườngDữLiệu)` => { ok, url } | { ok:false, message } (có thể async).
 // Trả về số liệu để báo cáo; dữ liệu được sửa tại chỗ.
@@ -14,25 +15,49 @@ export const externalizeInlineImages = async (root, save = saveImageDataUrl) => 
   const stats = { replaced: 0, skipped: 0, bytesBefore: 0, details: [] };
   const cache = new Map(); // cùng một ảnh xuất hiện nhiều nơi chỉ lưu một tệp
 
-  // Trả về URL mới nếu `value` là ảnh nhúng cần chuyển, ngược lại undefined
-  const convert = async (value, here) => {
-    if (typeof value !== 'string' || value.length < MIN_INLINE_LENGTH || !INLINE_IMAGE.test(value)) return undefined;
-    let url = cache.get(value);
-    if (!url) {
-      // data:image/jpg không phải MIME chuẩn: quy về image/jpeg để uploads.js nhận
-      const result = await save(value.replace(/^data:image\/jpg;/i, 'data:image/jpeg;'), here);
-      if (!result.ok) {
-        stats.skipped++;
-        stats.details.push(`${here}: bỏ qua (${result.message})`);
-        return undefined;
-      }
-      url = result.url;
-      cache.set(value, url);
+  // Lưu một data URL (có cache để cùng ảnh chỉ lưu một tệp). Trả về URL, hoặc undefined nếu không lưu được.
+  const store = async (dataUrl, here) => {
+    let url = cache.get(dataUrl);
+    if (url) return url;
+    // data:image/jpg không phải MIME chuẩn: quy về image/jpeg để uploads.js nhận
+    const result = await save(dataUrl.replace(/^data:image\/jpg;/i, 'data:image/jpeg;'), here);
+    if (!result.ok) {
+      stats.skipped++;
+      stats.details.push(`${here}: bỏ qua (${result.message})`);
+      return undefined;
     }
-    stats.bytesBefore += value.length;
-    stats.replaced++;
-    stats.details.push(`${here}: ${Math.round(value.length / 1024)}KB -> ${url}`);
-    return url;
+    cache.set(dataUrl, result.url);
+    return result.url;
+  };
+
+  // Trả về chuỗi mới nếu `value` chứa ảnh nhúng cần chuyển (cả khi cả chuỗi là data URL lẫn khi nằm trong HTML bài viết), ngược lại undefined
+  const convert = async (value, here) => {
+    if (value.length < MIN_INLINE_LENGTH) return undefined;
+    if (INLINE_IMAGE.test(value)) {
+      const url = await store(value, here);
+      if (!url) return undefined;
+      stats.bytesBefore += value.length;
+      stats.replaced++;
+      stats.details.push(`${here}: ${Math.round(value.length / 1024)}KB -> ${url}`);
+      return url;
+    }
+    if (!/data:image\/(?:png|jpe?g|webp);base64,/i.test(value)) return undefined;
+    // Ảnh nhúng trong HTML (ví dụ <img src="data:image/png;base64,...">)
+    let out = '';
+    let last = 0;
+    let changed = false;
+    for (const m of value.matchAll(EMBEDDED_IMAGE)) {
+      if (m[0].length < MIN_INLINE_LENGTH) continue;
+      const url = await store(m[0], here);
+      if (!url) continue;
+      out += value.slice(last, m.index) + url;
+      last = m.index + m[0].length;
+      stats.bytesBefore += m[0].length;
+      stats.replaced++;
+      stats.details.push(`${here}: ảnh trong HTML ${Math.round(m[0].length / 1024)}KB -> ${url}`);
+      changed = true;
+    }
+    return changed ? out + value.slice(last) : undefined;
   };
 
   const visit = async (node, trail) => {

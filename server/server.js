@@ -33,6 +33,8 @@ import {
   planCategoryDeletion
 } from './categories.js';
 import { escapeHtml as escapeAttr, jsonLdSafe, sanitizeHtml } from './htmlSafe.js';
+import { externalizeInlineImages, DATA_FILES_WITH_IMAGES } from './inlineImages.js';
+import { optimizeAndSaveDataUrl } from './imageOptimize.js';
 import { saveImageDataUrl, resolveUploadFile, uploadContentType } from './uploads.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -287,6 +289,17 @@ const readJson = async (fileName) => {
 
 const writeJson = async (fileName, data) => {
   const key = fileName.replace('.json', '');
+
+  // Chặn ảnh base64 lọt vào dữ liệu (từ giao diện cũ, API gọi trực tiếp, ảnh trong HTML bài viết...): đổi thành tệp /uploads
+  // đã thu nhỏ + nén, để JSON luôn nhẹ. Lỗi ở bước này không được làm mất lần ghi dữ liệu.
+  if (DATA_FILES_WITH_IMAGES.includes(fileName)) {
+    try {
+      const stats = await externalizeInlineImages(data, optimizeAndSaveDataUrl);
+      if (stats.replaced > 0) console.log(`[images] ${fileName}: đã chuyển ${stats.replaced} ảnh base64 thành tệp (${(stats.bytesBefore / 1024).toFixed(0)}KB)`);
+    } catch (err) {
+      console.warn(`[images] Không chuyển được ảnh nhúng trong ${fileName}:`, err.message);
+    }
+  }
 
   // 1. Lưu vào Neon Database (Đồng bộ tức thì lên đám mây cho mọi container)
   if (sql) {

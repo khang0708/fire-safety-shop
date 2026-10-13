@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { fileToUploadDataUrl } from '../utils/imageUpload';
+import { uploadImageApi } from '../api';
 import {
   Bold,
   Italic,
@@ -205,15 +207,12 @@ export const ArticleRichEditor = ({ value = '', onChange, onReadingTimeCalculate
       alert('Vui lòng chọn file hình ảnh (JPG, PNG, WEBP)');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (uploadEvt) => {
-      const base64 = uploadEvt.target?.result;
-      if (base64) {
-        setImgUrl(base64);
-      }
-    };
-    reader.readAsDataURL(file);
     e.target.value = '';
+    // Thu nhỏ + nén rồi lưu thành tệp /uploads để bài viết chỉ chứa đường dẫn ảnh
+    fileToUploadDataUrl(file, { maxWidth: 1200 })
+      .then(uploadImageApi)
+      .then((url) => setImgUrl(url))
+      .catch((err) => alert(err.message || 'Không tải được ảnh lên.'));
   };
 
   // Hoàn tất chèn ảnh vào bài

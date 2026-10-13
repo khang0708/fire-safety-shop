@@ -50,5 +50,23 @@ const optLogo = await optimizeAndSaveDataUrl(`data:image/png;base64,${alphaPng.t
 const logoMeta = await sharp(path.join(UPLOAD_DIR, path.basename(optLogo.url))).metadata();
 assert(optLogo.ok && optLogo.url.endsWith('.webp') && logoMeta.width === 600 && logoMeta.hasAlpha, 'Logo trong suốt giữ alpha (WebP) và thu về 600px');
 
+// Ghi dữ liệu qua API: ảnh base64 gửi lên (từ giao diện cũ / gọi trực tiếp) tự thành tệp, kể cả ảnh trong HTML bài viết
+const { default: app } = await import('../server/server.js');
+const server = app.listen(0);
+const base = `http://127.0.0.1:${server.address().port}`;
+const loginRes = await (await fetch(base + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'admin', password: process.env.ADMIN_PASSWORD }) })).json();
+const bigDataUrl = `data:image/png;base64,${bigPng.toString('base64')}`;
+const created = await (await fetch(base + '/api/articles', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${loginRes.token}` },
+  body: JSON.stringify({ title: 'Bai thu anh', thumbnail: bigDataUrl, content: `<p>x</p><img src="${bigDataUrl}" alt="a">` })
+})).json();
+const art = created.data;
+assert(/^\/uploads\/.+\.jpg$/.test(art?.thumbnail || ''), 'Ảnh đại diện base64 gửi qua API được đổi thành tệp /uploads');
+assert(/<img src="\/uploads\/[^"]+\.jpg"/.test(art?.content || '') && !(art?.content || '').includes('base64'), 'Ảnh base64 nằm trong HTML bài viết cũng được đổi thành tệp');
+const savedJson = fs.readFileSync(path.join(process.env.DATA_DIR, 'articles.json'), 'utf-8');
+assert(!savedJson.includes('base64,'), `articles.json không còn base64 (${Math.round(savedJson.length / 1024)}KB)`);
+server.close();
+
 console.log(failed ? `\n❌ ${failed} test thất bại` : '\n✅ Tất cả đạt');
 process.exit(failed ? 1 : 0);
