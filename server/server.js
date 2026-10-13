@@ -1817,7 +1817,15 @@ app.get('/api/health', (req, res) => {
 const distPath = path.join(__dirname, '../dist');
 if (fs.existsSync(distPath)) {
   // index:false — để "/" đi qua handler SSR bên dưới (inject SEO), không bị static trả index.html gốc
-  app.use(express.static(distPath, { index: false }));
+  // Tệp trong /assets có hash trong tên nên bất biến => cache 1 năm; ảnh/tệp tĩnh khác cache 7 ngày; HTML luôn kiểm tra lại
+  app.use(express.static(distPath, {
+    index: false,
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache');
+      else if (filePath.includes(`${path.sep}assets${path.sep}`)) res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      else res.setHeader('Cache-Control', 'public, max-age=604800');
+    }
+  }));
   app.get('*', async (req, res, next) => {
     if (req.path.startsWith('/api')) {
       return next();
@@ -1882,7 +1890,7 @@ if (fs.existsSync(distPath)) {
               "name": brand.brandName || "FLAMEGUARD PRO",
               "logo": {
                 "@type": "ImageObject",
-                "url": brand.logoUrl || "https://pcccphatantam.com/images/hero-fire-safety.jpg"
+                "url": brand.logoUrl ? (brand.logoUrl.startsWith('/') ? `https://pcccphatantam.com${brand.logoUrl}` : brand.logoUrl) : "https://pcccphatantam.com/images/hero-fire-safety.jpg"
               }
             },
             "mainEntityOfPage": pageUrl

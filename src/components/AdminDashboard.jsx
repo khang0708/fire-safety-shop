@@ -346,19 +346,20 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
     });
   };
 
-  const handleLogoFileUpload = (e) => {
+  // Ảnh được thu nhỏ + nén ở trình duyệt rồi lưu thành tệp trên máy chủ; cài đặt chỉ giữ đường dẫn /uploads/...
+  // (không nhúng base64 vào JSON, vì /api/settings được tải ở mọi lượt mở trang).
+  const handleLogoFileUpload = async (e) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      setLogoUploadError('Kích thước ảnh logo tối đa 2MB');
-      return;
-    }
     setLogoUploadError('');
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setBrandForm(prev => ({ ...prev, logoUrl: event.target.result }));
-    };
-    reader.readAsDataURL(file);
+    try {
+      const dataUrl = await fileToUploadDataUrl(file, { maxWidth: 600 });
+      const url = await uploadImageApi(dataUrl);
+      setBrandForm(prev => ({ ...prev, logoUrl: url }));
+    } catch (err) {
+      setLogoUploadError(err.message || 'Không tải được logo lên.');
+    }
   };
 
   const [seoImageUploading, setSeoImageUploading] = useState(false);
@@ -459,21 +460,18 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
     { name: 'Bình Cứu Hỏa Mini Ô Tô', url: '/images/car-mini-extinguisher.jpg' }
   ];
 
-  const handleImageFileUpload = (e) => {
+  // Ảnh sản phẩm: thu nhỏ về tối đa 1000px, nén JPEG, lưu thành tệp /uploads/... (không nhúng base64 vào danh sách sản phẩm)
+  const handleImageFileUpload = async (e) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      alert('Vui lòng chọn một file hình ảnh (JPG, PNG, WEBP,...)');
-      return;
+    try {
+      const dataUrl = await fileToUploadDataUrl(file, { maxWidth: 1000 });
+      const url = await uploadImageApi(dataUrl);
+      setFormData(prev => ({ ...prev, image: url }));
+    } catch (err) {
+      alert(err.message || 'Không tải được ảnh lên.');
     }
-    const reader = new FileReader();
-    reader.onload = (uploadEvent) => {
-      const base64Data = uploadEvent.target?.result;
-      if (base64Data) {
-        setFormData(prev => ({ ...prev, image: base64Data }));
-      }
-    };
-    reader.readAsDataURL(file);
   };
 
   // State Modal Thêm Voucher
@@ -843,20 +841,16 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
     setProofTabMode('upload');
   };
 
-  const handleProofFileUpload = (e) => {
+  const handleProofFileUpload = async (e) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      alert('Vui lòng chọn một file hình ảnh hợp lệ (JPG, PNG, WEBP, HEIC)!');
-      return;
+    try {
+      const dataUrl = await fileToUploadDataUrl(file, { maxWidth: 1200 });
+      setProofPhotoInput(await uploadImageApi(dataUrl));
+    } catch (err) {
+      alert(err.message || 'Không tải được ảnh lên.');
     }
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setProofPhotoInput(event.target.result);
-      }
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleSaveProofPhoto = (e) => {
