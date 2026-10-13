@@ -33,6 +33,8 @@ import {
   planCategoryDeletion
 } from './categories.js';
 import { escapeHtml as escapeAttr, jsonLdSafe, sanitizeHtml } from './htmlSafe.js';
+import { externalizeInlineImages, DATA_FILES_WITH_IMAGES } from './inlineImages.js';
+import { optimizeAndSaveDataUrl } from './imageOptimize.js';
 import { saveImageDataUrl, resolveUploadFile, uploadContentType } from './uploads.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -287,6 +289,17 @@ const readJson = async (fileName) => {
 
 const writeJson = async (fileName, data) => {
   const key = fileName.replace('.json', '');
+
+  // Chặn ảnh base64 lọt vào dữ liệu (từ giao diện cũ, API gọi trực tiếp, ảnh trong HTML bài viết...): đổi thành tệp /uploads
+  // đã thu nhỏ + nén, để JSON luôn nhẹ. Lỗi ở bước này không được làm mất lần ghi dữ liệu.
+  if (DATA_FILES_WITH_IMAGES.includes(fileName)) {
+    try {
+      const stats = await externalizeInlineImages(data, optimizeAndSaveDataUrl);
+      if (stats.replaced > 0) console.log(`[images] ${fileName}: đã chuyển ${stats.replaced} ảnh base64 thành tệp (${(stats.bytesBefore / 1024).toFixed(0)}KB)`);
+    } catch (err) {
+      console.warn(`[images] Không chuyển được ảnh nhúng trong ${fileName}:`, err.message);
+    }
+  }
 
   // 1. Lưu vào Neon Database (Đồng bộ tức thì lên đám mây cho mọi container)
   if (sql) {
@@ -1817,7 +1830,15 @@ app.get('/api/health', (req, res) => {
 const distPath = path.join(__dirname, '../dist');
 if (fs.existsSync(distPath)) {
   // index:false — để "/" đi qua handler SSR bên dưới (inject SEO), không bị static trả index.html gốc
-  app.use(express.static(distPath, { index: false }));
+  // Tệp trong /assets có hash trong tên nên bất biến => cache 1 năm; ảnh/tệp tĩnh khác cache 7 ngày; HTML luôn kiểm tra lại
+  app.use(express.static(distPath, {
+    index: false,
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache');
+      else if (filePath.includes(`${path.sep}assets${path.sep}`)) res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      else res.setHeader('Cache-Control', 'public, max-age=604800');
+    }
+  }));
   app.get('*', async (req, res, next) => {
     if (req.path.startsWith('/api')) {
       return next();
@@ -1882,7 +1903,7 @@ if (fs.existsSync(distPath)) {
               "name": brand.brandName || "FLAMEGUARD PRO",
               "logo": {
                 "@type": "ImageObject",
-                "url": brand.logoUrl || "https://pcccphatantam.com/images/hero-fire-safety.jpg"
+                "url": brand.logoUrl ? (brand.logoUrl.startsWith('/') ? `https://pcccphatantam.com${brand.logoUrl}` : brand.logoUrl) : "https://pcccphatantam.com/images/hero-fire-safety.jpg"
               }
             },
             "mainEntityOfPage": pageUrl

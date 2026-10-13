@@ -45,6 +45,17 @@ for (const file of ['.github/workflows/deploy.yml', 'deploy.sh']) {
   assert(!/fl-1787735321783|startsWith\('fl-'\)/.test(wf), 'Workflow không còn đoạn tự xóa sản phẩm fl-');
 }
 
+// 1b. Deploy phải sao lưu TRƯỚC khi chuyển ảnh, và chuyển ảnh phải xong TRƯỚC khi bật container mới
+{
+  const sh = fs.readFileSync(path.join(ROOT, 'deploy.sh'), 'utf-8').replace(/\r\n/g, '\n');
+  const backupAt = sh.indexOf('bash scripts/backup-data.sh');
+  const migrateAt = sh.indexOf('node scripts/migrate-inline-images.js --apply');
+  const upAt = sh.indexOf('docker compose up -d --remove-orphans');
+  assert(backupAt !== -1 && migrateAt !== -1, 'deploy.sh có bước sao lưu và bước chuyển ảnh');
+  assert(backupAt < migrateAt && migrateAt < upAt, 'deploy.sh: sao lưu -> chuyển ảnh -> khởi động container mới');
+  assert(/backup-data\.sh \|\| fail/.test(sh), 'Sao lưu thất bại thì hủy deploy');
+}
+
 // 2. Mô phỏng bằng git thật
 console.log('\n2️⃣ MÔ PHỎNG LẦN DEPLOY ĐẦU TIÊN BẰNG GIT THẬT:');
 function toBashPath(targetPath) {

@@ -1,3 +1,11 @@
+# Nén gzip cho văn bản/JSON/JS/CSS/SVG (ảnh JPG/PNG/WEBP đã nén sẵn nên không đưa vào)
+gzip on;
+gzip_comp_level 5;
+gzip_min_length 512;
+gzip_vary on;
+gzip_proxied any;
+gzip_types text/plain text/css text/xml application/json application/javascript text/javascript application/xml application/ld+json image/svg+xml;
+
 # ====================================================
 # CẤU HÌNH NGINX HTTPS & TỰ ĐỘNG CHUYỂN HƯỚNG HTTP SANG HTTPS
 # Thay thế "YOUR_DOMAIN" bằng domain thật của bạn (ví dụ: cuahangpccc.vn)

@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import { fileToUploadDataUrl } from '../utils/imageUpload';
+import { uploadImageApi } from '../api';
 import { sanitizeHtml } from '../../server/htmlSafe.js';
 import { useShop } from '../context/ShopContext';
 import { ARTICLE_CATEGORIES } from '../data/articles';
@@ -262,16 +264,15 @@ export const ArticlesManagementView = () => {
       alert('Vui lòng chọn một file hình ảnh hợp lệ (JPG, PNG, WEBP, GIF,...)');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (uploadEvent) => {
-      const base64Data = uploadEvent.target?.result;
-      if (base64Data) {
-        setFormData(prev => ({ ...prev, thumbnail: base64Data }));
-        showToast('Đã tải ảnh lên thành công!');
-      }
-    };
-    reader.readAsDataURL(file);
     e.target.value = '';
+    // Thu nhỏ + nén ở trình duyệt rồi lưu thành tệp /uploads (không nhúng base64 vào bài viết)
+    fileToUploadDataUrl(file, { maxWidth: 1200 })
+      .then(uploadImageApi)
+      .then((url) => {
+        setFormData(prev => ({ ...prev, thumbnail: url }));
+        showToast('Đã tải ảnh lên thành công!');
+      })
+      .catch((err) => alert(err.message || 'Không tải được ảnh lên.'));
   };
 
   return (
