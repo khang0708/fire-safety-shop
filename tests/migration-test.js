@@ -56,6 +56,12 @@ for (const file of ['.github/workflows/deploy.yml', 'deploy.sh']) {
   assert(/backup-data\.sh \|\| fail/.test(sh), 'Sao lưu thất bại thì hủy deploy');
 }
 
+// 1c. Build phải có thử lại khi Docker Hub timeout
+{
+  const sh = fs.readFileSync(path.join(ROOT, 'deploy.sh'), 'utf-8');
+  assert(/retry 3 docker compose build web/.test(sh) && /retry 3 docker pull node:20-alpine/.test(sh), 'deploy.sh thử lại build và kéo image nền khi lỗi mạng');
+}
+
 // 2. Mô phỏng bằng git thật
 console.log('\n2️⃣ MÔ PHỎNG LẦN DEPLOY ĐẦU TIÊN BẰNG GIT THẬT:');
 function toBashPath(targetPath) {
