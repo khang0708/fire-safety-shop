@@ -80,7 +80,20 @@ log "🐳 3. Build image mới..."
 if docker image inspect "$IMAGE" >/dev/null 2>&1; then
   docker tag "$IMAGE" fire-safety-shop-web:previous
 fi
-docker compose build web
+# Mạng từ VPS tới Docker Hub đôi khi timeout ("failed to resolve source metadata"): kéo image nền trước và thử lại có chờ.
+# Container đang chạy không bị ảnh hưởng nếu build vẫn thất bại sau các lần thử.
+retry() {
+  local max="$1" n=1
+  shift
+  until "$@"; do
+    [ "$n" -ge "$max" ] && return 1
+    echo "⚠️ Lần $n thất bại: $*. Thử lại sau $((n * 20)) giây..." >&2
+    sleep $((n * 20))
+    n=$((n + 1))
+  done
+}
+retry 3 docker pull node:20-alpine || echo "⚠️ Không kéo được node:20-alpine; vẫn thử build (dùng bản đã có trên máy nếu có)." >&2
+retry 3 docker compose build web || fail "Build image thất bại sau 3 lần thử (thường do mạng tới Docker Hub). Website vẫn chạy bản cũ; chạy lại workflow hoặc ./deploy.sh --no-sync."
 
 # 4. Thử khởi động bản mới ở cổng phụ với một BẢN SAO dữ liệu thật; không đụng container đang chạy
 smoke_test() {
