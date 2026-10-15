@@ -179,11 +179,16 @@ assert(adminSettings.json?.data?.telegramBotToken === '123456...-XYZ' && adminSe
 
 // Token Telegram chỉ dùng ở máy chủ: kiểm tra bằng cách chặn lời gọi tới api.telegram.org
 const telegramCalls = [];
+const facebookCalls = [];
 const realFetch = globalThis.fetch;
 globalThis.fetch = async (url, options) => {
   if (String(url).startsWith('https://api.telegram.org/')) {
     telegramCalls.push(String(url));
     return new Response(JSON.stringify({ ok: true, result: { message_id: 1 } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }
+  if (String(url).startsWith('https://graph.facebook.com/')) {
+    facebookCalls.push(String(url));
+    return new Response(JSON.stringify({ message_id: 'm1' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   }
   return realFetch(url, options);
 };
@@ -198,6 +203,27 @@ const testAfter = await call('POST', '/api/notifications/telegram-test', { token
 assert(saveMasked.status === 200 && testAfter.status === 200 && telegramCalls.at(-1)?.includes('SECRET-TELEGRAM-TOKEN-XYZ'), 'Lưu lại bản che không ghi đè token thật', afterMasked.text.slice(0, 80));
 const noAuthTest = await call('POST', '/api/notifications/telegram-test', { body: {} });
 assert(noAuthTest.status === 401, 'Test Telegram cần quyền admin');
+
+// Facebook: Page Access Token / App Secret cũng chỉ ở dạng che với admin; verify token vẫn thấy để dán sang Meta
+const fbAdmin = adminSettings.json?.data?.facebookSettings || {};
+assert(!adminSettings.text.includes('EAAGsecretPageToken123') && !adminSettings.text.includes('app-secret-xyz'), 'Admin không nhận Page Access Token / App Secret đầy đủ');
+assert(fbAdmin.pageAccessToken === 'EAAGse...n123' && fbAdmin.appSecret && fbAdmin.appSecret.includes('...') || fbAdmin.appSecret === '********', 'Admin chỉ nhận bản che của token Facebook', JSON.stringify(fbAdmin));
+assert(fbAdmin.verifyToken === 'verify-secret-abc' && fbAdmin.hasFacebookPageToken === undefined && adminSettings.json?.data?.hasFacebookPageToken === true, 'Admin vẫn thấy verifyToken để cấu hình Meta, và có cờ hasFacebookPageToken');
+const fbTestSaved = await call('POST', '/api/facebook/test-connection', { token, body: { pageId: 'trang-test', recipientId: '777', pageAccessToken: fbAdmin.pageAccessToken } });
+assert(fbTestSaved.status === 200 && facebookCalls.at(-1)?.includes('EAAGsecretPageToken123'), 'Test Facebook với ô token là bản che => máy chủ dùng token đã lưu', facebookCalls.join(','));
+const fbTestNew = await call('POST', '/api/facebook/test-connection', { token, body: { pageId: 'trang-test', recipientId: '777', pageAccessToken: 'EAAGtokenMoi999' } });
+assert(fbTestNew.status === 200 && facebookCalls.at(-1)?.includes('EAAGtokenMoi999'), 'Dán Page Access Token mới => máy chủ dùng token mới');
+const fbResaveMasked = await call('POST', '/api/settings', { token, body: { facebookSettings: { ...fbAdmin, pageName: 'Đổi tên' } } });
+const fbResaveEmpty = await call('POST', '/api/settings', { token, body: { facebookSettings: { pageAccessToken: '', appSecret: '', isEnabled: true } } });
+const fbAfterEmpty = await call('POST', '/api/facebook/test-connection', { token, body: { pageId: 'x', recipientId: '777' } });
+assert(fbResaveMasked.status === 200 && fbResaveEmpty.status === 200 && facebookCalls.at(-1)?.includes('EAAGsecretPageToken123') && fbAfterEmpty.status === 200, 'Lưu lại bản che hoặc chuỗi rỗng không làm mất token thật');
+assert(!fbResaveMasked.text.includes('EAAGsecretPageToken123') && !fbResaveMasked.text.includes('SECRET-TELEGRAM-TOKEN-XYZ'), 'Phản hồi của POST /api/settings cũng không chứa token đầy đủ');
+const fbReplaced = await call('POST', '/api/settings', { token, body: { facebookSettings: { pageAccessToken: 'EAAGtokenThayThe555' } } });
+await call('POST', '/api/facebook/test-connection', { token, body: { pageId: 'x', recipientId: '777' } });
+assert(fbReplaced.status === 200 && facebookCalls.at(-1)?.includes('EAAGtokenThayThe555'), 'Token Facebook mới được lưu và dùng');
+await call('POST', '/api/settings', { token, body: { facebookSettings: { pageAccessToken: 'EAAGsecretPageToken123', verifyToken: 'flameguard_webhook_secret_2026' } } });
+const legacyVerify = await call('GET', '/api/facebook/webhook?hub.mode=subscribe&hub.verify_token=flameguard_webhook_secret_2026&hub.challenge=abc');
+assert(legacyVerify.status === 403, 'Verify token mặc định cũ không bao giờ được chấp nhận, kể cả khi bị lưu lại');
 globalThis.fetch = realFetch;
 
 // ----------------------------------------------------

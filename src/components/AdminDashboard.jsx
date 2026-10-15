@@ -521,7 +521,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
   const [inputFbPageId, setInputFbPageId] = useState(facebookSettings?.pageId || 'flameguardvietnam');
   const [inputFbPageName, setInputFbPageName] = useState(facebookSettings?.pageName || 'FLAMEGUARD PRO - Thiết Bị PCCC');
   const [inputFbToken, setInputFbToken] = useState(facebookSettings?.pageAccessToken || '');
-  const [inputFbVerifyToken, setInputFbVerifyToken] = useState(facebookSettings?.verifyToken || 'flameguard_webhook_secret_2026');
+  const [inputFbVerifyToken, setInputFbVerifyToken] = useState(facebookSettings?.verifyToken || '');
   const [inputFbRecipientId, setInputFbRecipientId] = useState(facebookSettings?.adminRecipientId || '');
   const [inputFbEnabled, setInputFbEnabled] = useState(facebookSettings?.isEnabled !== false);
   const [inputFbWelcomeMsg, setInputFbWelcomeMsg] = useState(facebookSettings?.welcomeMessage || 'Chào bạn! FLAMEGUARD PRO rất vui được hỗ trợ tư vấn thiết bị PCCC cho bạn.');
@@ -2566,7 +2566,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                                 🌐 Callback URL: <span className="font-bold text-blue-700">{typeof window !== 'undefined' ? `${window.location.origin}/api/facebook/webhook` : 'https://flameguard.vn/api/facebook/webhook'}</span>
                               </p>
                               <p className="text-blue-950 bg-white/80 p-2 rounded-lg border border-blue-200 font-mono text-[10px]">
-                                🔑 Verify Token: <span className="font-bold text-blue-700">{inputFbVerifyToken || 'flameguard_webhook_secret_2026'}</span>
+                                🔑 Verify Token: <span className="font-bold text-blue-700">{inputFbVerifyToken || '(chưa đặt: hãy nhập Verify Token bên dưới rồi Lưu)'}</span>
                               </p>
                               <span className="text-gray-600 block text-[10px]">Trường sự kiện cần tick: <code>messages</code>, <code>messaging_postbacks</code></span>
                             </div>
@@ -2616,7 +2616,7 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                           type="text"
                           value={inputFbVerifyToken}
                           onChange={(e) => setInputFbVerifyToken(e.target.value)}
-                          placeholder="flameguard_webhook_secret_2026"
+                          placeholder="Chuỗi bí mật tự đặt, ví dụ: fg-9f3k2x7q1m"
                           className="w-full p-2.5 rounded-xl border border-gray-300 focus:outline-none font-mono text-[11px]"
                         />
                       </div>
@@ -2640,8 +2640,12 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                         value={inputFbToken}
                         onChange={(e) => setInputFbToken(e.target.value)}
                         placeholder="EAABw... (Để trống nếu dùng liên kết m.me trực tiếp)"
+                        autoComplete="off"
                         className="w-full p-2.5 rounded-xl border border-gray-300 focus:outline-none font-mono text-[11px]"
                       />
+                      <p className="text-[10px] text-gray-500 mt-1">
+                        🔒 Token chỉ lưu ở máy chủ và hiển thị dạng che. Để nguyên để giữ token hiện tại; dán token mới rồi Lưu để thay.
+                      </p>
                     </div>
 
                     <div>

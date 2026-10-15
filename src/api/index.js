@@ -340,9 +340,11 @@ export const checkHealthApi = async () => {
 // 10. FACEBOOK MESSENGER API
 // ----------------------------------------------------
 export const sendFacebookTestApi = async (fbConfig) => {
+  // Page Access Token chỉ gửi khi admin vừa dán token mới; ô trống/bản che => máy chủ dùng token đã lưu
+  const token = (fbConfig?.pageAccessToken || '').trim();
   const res = await request('/facebook/test-connection', {
     method: 'POST',
-    body: JSON.stringify(fbConfig)
+    body: JSON.stringify({ ...fbConfig, pageAccessToken: token && !token.includes('...') ? token : undefined })
   });
   return res;
 };

@@ -940,10 +940,9 @@ app.patch('/api/orders/:id/status', requireAdminAuth, async (req, res) => {
 
 // Token Telegram chỉ nằm ở máy chủ. Trình duyệt admin chỉ thấy bản che (ví dụ 123456...abcd) nên khi form gửi lên ô trống hoặc bản che
 // thì dùng token đã lưu trong cài đặt (hoặc biến môi trường); chỉ khi admin dán token MỚI thì dùng giá trị đó.
-const isNewTokenInput = (value) => typeof value === 'string' && value.trim() !== '' && !value.includes('...');
 const resolveTelegramCredentials = async (body = {}) => {
   const settings = (await readJson('settings.json')) || {};
-  const botToken = isNewTokenInput(body.botToken) ? body.botToken : (settings.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN || '');
+  const botToken = isNewSecretInput(body.botToken) ? body.botToken : (settings.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN || '');
   const chatId = body.chatId ? body.chatId : (settings.telegramChatId || process.env.TELEGRAM_CHAT_ID || '');
   return { botToken, chatId };
 };
@@ -1277,6 +1276,40 @@ const redactSecrets = (value) => {
   return value;
 };
 
+// Giá trị mặc định cũ từng được công khai trong mã nguồn: không bao giờ được dùng làm verify token
+const LEGACY_FB_VERIFY_TOKEN = 'flameguard_webhook_secret_2026';
+// Bí mật của Facebook mà ngay cả admin cũng chỉ thấy bản che (verifyToken thì admin cần xem để dán sang Meta for Developers)
+const FACEBOOK_SECRET_FIELDS = ['pageAccessToken', 'appSecret'];
+const isNewSecretInput = (value) => typeof value === 'string' && value.trim() !== '' && !value.includes('...');
+
+// Bản cài đặt dành cho admin: token Telegram và Facebook chỉ ở dạng che
+const maskSettingsForAdmin = (settings) => {
+  const out = { ...settings };
+  if ('telegramBotToken' in out) out.telegramBotToken = maskSecret(out.telegramBotToken);
+  if (out.facebookSettings && typeof out.facebookSettings === 'object') {
+    out.facebookSettings = { ...out.facebookSettings };
+    for (const key of FACEBOOK_SECRET_FIELDS) {
+      if (key in out.facebookSettings) out.facebookSettings[key] = maskSecret(out.facebookSettings[key]);
+    }
+  }
+  return out;
+};
+
+// Gộp facebookSettings gửi lên với bản đã lưu: bí mật không gửi / để trống / là bản che => giữ bản cũ
+// (trình duyệt chưa đồng bộ xong có thể gửi chuỗi rỗng, không được phép làm mất token thật); chỉ giá trị mới mới ghi đè.
+const mergeFacebookSettings = (currentFb = {}, incomingFb = {}) => {
+  const merged = { ...currentFb, ...incomingFb };
+  for (const key of FACEBOOK_SECRET_FIELDS) {
+    const incoming = incomingFb[key];
+    if (!isNewSecretInput(incoming)) {
+      if (currentFb[key] !== undefined) merged[key] = currentFb[key];
+      else delete merged[key];
+    }
+  }
+  if (merged.verifyToken === LEGACY_FB_VERIFY_TOKEN) merged.verifyToken = '';
+  return merged;
+};
+
 app.get('/api/settings', async (req, res) => {
   try {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -1291,7 +1324,7 @@ app.get('/api/settings', async (req, res) => {
 
     // Ngay cả admin cũng không nhận token Telegram đầy đủ: chỉ bản che. Muốn đổi thì dán token mới (POST /api/settings).
     const safeSettings = isAdmin
-      ? { ...settings, telegramBotToken: maskSecret(settings.telegramBotToken), ...flags }
+      ? { ...maskSettingsForAdmin(settings), ...flags }
       : { ...redactSecrets(settings), ...flags };
 
     res.json({ success: true, data: safeSettings });
@@ -1332,8 +1365,12 @@ app.post('/api/settings', requireAdminAuth, async (req, res) => {
       };
     }
 
+    if (payload.facebookSettings && typeof payload.facebookSettings === 'object') {
+      updated.facebookSettings = mergeFacebookSettings(current.facebookSettings, payload.facebookSettings);
+    }
+
     await writeJson('settings.json', updated);
-    res.json({ success: true, data: updated, message: 'Đã lưu cấu hình cài đặt thành công!' });
+    res.json({ success: true, data: maskSettingsForAdmin(updated), message: 'Đã lưu cấu hình cài đặt thành công!' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -1390,7 +1427,7 @@ app.get('/api/facebook/webhook', async (req, res) => {
 
     const settings = (await readJson('settings.json')) || {};
     const expectedToken = settings.facebookSettings?.verifyToken;
-    if (!expectedToken) {
+    if (!expectedToken || expectedToken === LEGACY_FB_VERIFY_TOKEN) {
       return res.status(403).send('Forbidden: Webhook verify token chưa được cấu hình');
     }
 
@@ -1513,7 +1550,7 @@ app.post('/api/facebook/send-message', requireAdminAuth, async (req, res) => {
   try {
     const { recipientId, message, pageAccessToken, quickReplies } = req.body;
     const settings = (await readJson('settings.json')) || {};
-    const token = pageAccessToken || settings.facebookSettings?.pageAccessToken;
+    const token = isNewSecretInput(pageAccessToken) ? pageAccessToken : settings.facebookSettings?.pageAccessToken;
     const targetRecipient = recipientId || settings.facebookSettings?.adminRecipientId;
 
     if (!targetRecipient) {
@@ -1543,7 +1580,10 @@ app.post('/api/facebook/send-message', requireAdminAuth, async (req, res) => {
 // 8.4. API thử nghiệm kết nối Facebook Messenger (Test Connection)
 app.post('/api/facebook/test-connection', requireAdminAuth, async (req, res) => {
   try {
-    const { pageId, pageAccessToken, recipientId, testOrder } = req.body;
+    const { pageId, recipientId, testOrder } = req.body;
+    const savedFb = ((await readJson('settings.json')) || {}).facebookSettings || {};
+    // Ô token trống hoặc là bản che => dùng token đã lưu ở máy chủ
+    const pageAccessToken = isNewSecretInput(req.body.pageAccessToken) ? req.body.pageAccessToken : savedFb.pageAccessToken;
     const cleanId = (pageId || 'tiemhoaflorabloom').trim();
 
     const order = testOrder || {

@@ -482,16 +482,23 @@ export const ShopProvider = ({ children }) => {
   };
 
   // 3.2. Cấu hình Facebook Fanpage & Messenger
+  // Bí mật Facebook (Page Access Token, App Secret) KHÔNG lưu ở trình duyệt; máy chủ chỉ trả bản che cho admin.
+  // Verify Token cũ từng công khai trong mã nguồn nên cũng bị loại.
+  const stripFacebookSecrets = (fb = {}) => {
+    const { pageAccessToken: _t, appSecret: _s, ...rest } = fb;
+    if (rest.verifyToken === 'flameguard_webhook_secret_2026') rest.verifyToken = '';
+    return rest;
+  };
   const [facebookSettings, setFacebookSettingsState] = useState(() => {
     try {
       const cached = localStorage.getItem('flameguard_facebook_settings');
-      if (cached) return JSON.parse(cached);
+      if (cached) return stripFacebookSecrets(JSON.parse(cached));
     } catch (e) {}
     return {
       pageId: 'flameguardpccc',
       pageName: 'FLAMEGUARD PRO - Thiết Bị PCCC & Cứu Nạn Cứu Hộ',
       pageAccessToken: '',
-      verifyToken: 'flameguard_webhook_secret_2026',
+      verifyToken: '',
       adminRecipientId: '',
       isEnabled: true,
       welcomeMessage: 'Chào bạn! FLAMEGUARD PRO sẵn sàng tư vấn giải pháp thiết bị PCCC chuẩn kiểm định Bộ Công An.',
@@ -504,7 +511,7 @@ export const ShopProvider = ({ children }) => {
     setFacebookSettingsState(prev => {
       const merged = { ...prev, ...newSettings };
       try {
-        localStorage.setItem('flameguard_facebook_settings', JSON.stringify(merged));
+        localStorage.setItem('flameguard_facebook_settings', JSON.stringify(stripFacebookSecrets(merged)));
       } catch (e) {}
       saveSettingsApi({ facebookSettings: merged, updatedAt: now }).catch(() => {});
       return merged;
@@ -1248,7 +1255,7 @@ export const ShopProvider = ({ children }) => {
           }
           if (apiSettings.facebookSettings) {
             setFacebookSettingsState(prev => ({ ...prev, ...apiSettings.facebookSettings }));
-            if (typeof localStorage !== 'undefined') localStorage.setItem('flameguard_facebook_settings', JSON.stringify(apiSettings.facebookSettings));
+            if (typeof localStorage !== 'undefined') localStorage.setItem('flameguard_facebook_settings', JSON.stringify(stripFacebookSecrets(apiSettings.facebookSettings)));
           }
           if (apiSettings.displaySettings) {
             setDisplaySettingsState(prev => ({ ...prev, ...apiSettings.displaySettings }));
