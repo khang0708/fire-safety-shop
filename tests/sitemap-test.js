@@ -6,7 +6,9 @@ console.log('🗺️ KIỂM THỬ SITEMAP\n');
 
 const { default: app, buildSitemapXml } = await import('../server/server.js');
 const server = app.listen(0);
-const res = await fetch(`http://127.0.0.1:${server.address().port}/sitemap.xml`);
+const port = server.address().port;
+const res = await fetch(`http://127.0.0.1:${port}/sitemap.xml`);
+const redirect = await fetch(`http://127.0.0.1:${port}/san-pham`, { redirect: 'manual' });
 const xml = await res.text();
 server.close();
 
@@ -16,6 +18,11 @@ assert(locs.includes('https://pcccphatantam.com/') && locs.includes('https://pcc
 assert(locs.some((l) => l.includes('/san-pham/binh-chua-chay-bot-abc-4kg-mfzl4')), 'Có trang sản phẩm');
 assert(locs.some((l) => l.includes('/tin-tuc/cach-kiem-tra-binh-chua-chay')), 'Có bài viết đã đăng');
 assert(!locs.some((l) => l.includes('#') || l.endsWith('.txt')), 'Không còn URL dạng #fragment hay llms.txt');
+const productLocs = locs.filter((l) => l.includes('/san-pham/'));
+assert(productLocs.length === 8, `Đủ 8 sản phẩm trong dữ liệu mẫu (có ${productLocs.length})`);
+assert(/<image:loc>https:\/\/pcccphatantam\.com\/images\/abc-powder-4kg\.jpg<\/image:loc>/.test(xml) || /<image:loc>https?:\/\/[^<]+<\/image:loc>/.test(xml), 'Có ảnh (image:image) với URL tuyệt đối');
+assert(!/<image:loc>data:/.test(xml), 'Không đưa ảnh base64 vào sitemap');
+assert(redirect.status === 301 && redirect.headers.get('location') === '/#catalog', '/san-pham (không kèm sản phẩm) chuyển hướng 301 tới /#catalog');
 assert(new Set(locs).size === locs.length, 'Không trùng URL');
 
 const custom = buildSitemapXml({

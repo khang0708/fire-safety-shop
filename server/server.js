@@ -1838,28 +1838,50 @@ export const buildSitemapXml = ({ products = [], articles = [], origin = SITE_OR
     const t = Date.parse(value);
     return Number.isNaN(t) ? null : new Date(t).toISOString().slice(0, 10);
   };
+  // Ảnh trong sitemap phải là URL tuyệt đối http(s); bỏ ảnh nhúng base64 hoặc đường dẫn lạ
+  const absoluteImage = (src) => {
+    if (typeof src !== 'string' || !src) return null;
+    if (/^https?:\/\//i.test(src)) return src;
+    return src.startsWith('/') && !src.startsWith('//') ? `${origin}${src}` : null;
+  };
   const urls = [];
-  const add = (loc, { lastmod, changefreq, priority }) => urls.push({ loc: `${origin}${loc}`, lastmod: toDate(lastmod), changefreq, priority });
+  const add = (loc, { lastmod, changefreq, priority, image }) =>
+    urls.push({ loc: `${origin}${loc}`, lastmod: toDate(lastmod), changefreq, priority, image: absoluteImage(image) });
 
   const published = articles.filter((a) => a && a.slug && (a.status || 'published') === 'published');
   const latest = (items, field) => items.map((i) => Date.parse(i[field])).filter(Number.isFinite).sort((a, b) => b - a)[0];
 
   add('/', { lastmod: latest([...published, ...products], 'updatedAt'), changefreq: 'daily', priority: '1.0' });
   add('/tin-tuc', { lastmod: latest(published, 'updatedAt'), changefreq: 'daily', priority: '0.8' });
+  const seen = new Set();
   for (const p of products) {
+    // Cùng cách chọn slug với trang /san-pham/:slug (SSR) để URL trong sitemap luôn mở đúng trang
     const slug = p.slug || slugifyVietnamese(p.name) || p.id;
-    if (!slug) continue;
-    add(`/san-pham/${encodeURIComponent(slug)}`, { lastmod: p.updatedAt, changefreq: 'weekly', priority: '0.9' });
+    if (!slug || seen.has(slug)) continue;
+    seen.add(slug);
+    add(`/san-pham/${encodeURIComponent(slug)}`, { lastmod: p.updatedAt, changefreq: 'weekly', priority: '0.9', image: p.image });
   }
   for (const a of published) {
-    add(`/tin-tuc/${encodeURIComponent(a.slug)}`, { lastmod: a.updatedAt || a.publishedAt, changefreq: 'monthly', priority: '0.7' });
+    add(`/tin-tuc/${encodeURIComponent(a.slug)}`, { lastmod: a.updatedAt || a.publishedAt, changefreq: 'monthly', priority: '0.7', image: a.thumbnail });
   }
 
   const body = urls
-    .map((u) => `  <url>\n    <loc>${escapeAttr(u.loc)}</loc>${u.lastmod ? `\n    <lastmod>${u.lastmod}</lastmod>` : ''}\n    <changefreq>${u.changefreq}</changefreq>\n    <priority>${u.priority}</priority>\n  </url>`)
+    .map((u) => [
+      '  <url>',
+      `    <loc>${escapeAttr(u.loc)}</loc>`,
+      u.lastmod ? `    <lastmod>${u.lastmod}</lastmod>` : null,
+      `    <changefreq>${u.changefreq}</changefreq>`,
+      `    <priority>${u.priority}</priority>`,
+      u.image ? `    <image:image><image:loc>${escapeAttr(u.image)}</image:loc></image:image>` : null,
+      '  </url>'
+    ].filter(Boolean).join('\n'))
     .join('\n');
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${body}\n</urlset>\n`;
 };
+
+// /san-pham (không kèm sản phẩm) không phải trang riêng: giao diện chỉ hiện trang chủ => chuyển hướng vĩnh viễn tới danh mục
+// để công cụ tìm kiếm không coi đó là trang trùng lặp.
+app.get(['/san-pham', '/san-pham/'], (req, res) => res.redirect(301, '/#catalog'));
 
 app.get('/sitemap.xml', async (req, res) => {
   try {
