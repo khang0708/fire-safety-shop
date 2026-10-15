@@ -1,4 +1,7 @@
 import './_setup-env.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 let failed = 0;
 const assert = (cond, msg) => { console.log(`  ${cond ? '✅ [PASS]' : '❌ [FAIL]'} ${msg}`); if (!cond) failed++; };
@@ -19,7 +22,6 @@ const third = await api('POST', '/api/products', { name: 'Bình CO2 5kg MT5', pr
 const resaved = await api('PUT', `/api/products/${first.data.id}`, { name: 'Bình CO2 5kg MT5' });
 const clash = await api('PUT', `/api/products/${third.data.id}`, { name: 'Bình CO2 5kg MT5', slug: second.data.slug });
 const xml = await res.text();
-server.close();
 
 assert(res.status === 200 && /application\/xml/.test(res.headers.get('content-type') || ''), 'GET /sitemap.xml => 200 application/xml');
 const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
@@ -44,6 +46,34 @@ assert(custom.includes('/san-pham/binh-a-b'), 'Sản phẩm không có slug dùn
 assert(first.data.slug === 'binh-co2-5kg-mt5' && second.data.slug === 'binh-co2-5kg-mt5-2' && third.data.slug === 'binh-co2-5kg-mt5-3', `Tạo sản phẩm trùng tên => slug được đánh số (${first.data.slug}, ${second.data.slug}, ${third.data.slug})`);
 assert(resaved.data.slug === 'binh-co2-5kg-mt5', 'Lưu lại chính sản phẩm đó không làm đổi slug');
 assert(clash.data.slug !== second.data.slug && clash.data.slug.startsWith('binh-co2-5kg-mt5'), `Sửa slug trùng sản phẩm khác => tự đổi (${clash.data.slug})`);
+
+// Bài viết tạo động qua API (tin-tuc) phải hành xử như sản phẩm: slug duy nhất, vào sitemap khi đã đăng, nháp thì không
+const art1 = await api('POST', '/api/articles', { title: 'Hướng dẫn dùng bình CO2 5kg', status: 'published', thumbnail: '/uploads/1700000000000-0123456789abcdef.jpg' });
+const art2 = await api('POST', '/api/articles', { title: 'Hướng dẫn dùng bình CO2 5kg', status: 'published' });
+const draft = await api('POST', '/api/articles', { title: 'Bai nhap bi mat', status: 'draft', seoTitle: 'TIEU-DE-NHAP-BI-MAT' });
+const sitemap2 = await (await fetch(`http://127.0.0.1:${port}/sitemap.xml`)).text();
+const locs2 = [...sitemap2.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+assert(art1.data.slug === 'huong-dan-dung-binh-co2-5kg' && art2.data.slug === 'huong-dan-dung-binh-co2-5kg-1', `Bài viết trùng tiêu đề => slug đánh số (${art1.data.slug}, ${art2.data.slug})`);
+assert(locs2.includes(`https://pcccphatantam.com/tin-tuc/${art1.data.slug}`) && locs2.includes(`https://pcccphatantam.com/tin-tuc/${art2.data.slug}`), 'Bài viết mới đăng có trong sitemap');
+assert(new RegExp(`/tin-tuc/${art1.data.slug}</loc>\\s*<lastmod>\\d{4}-\\d{2}-\\d{2}</lastmod>`).test(sitemap2), 'Bài viết có lastmod theo ngày cập nhật thật');
+assert(sitemap2.includes('<image:loc>https://pcccphatantam.com/uploads/1700000000000-0123456789abcdef.jpg</image:loc>'), 'Ảnh đại diện /uploads của bài viết thành URL tuyệt đối trong sitemap');
+assert(!locs2.some((l) => l.includes(draft.data.slug)), 'Bài nháp không có trong sitemap');
+const toggled = await api('PATCH', `/api/articles/${draft.data.id}/toggle`);
+const sitemap3 = await (await fetch(`http://127.0.0.1:${port}/sitemap.xml`)).text();
+assert(toggled.data.status === 'published' && sitemap3.includes(`/tin-tuc/${draft.data.slug}</loc>`), 'Chuyển nháp -> đã đăng thì bài xuất hiện trong sitemap');
+await api('PATCH', `/api/articles/${draft.data.id}/toggle`);
+const sitemap4 = await (await fetch(`http://127.0.0.1:${port}/sitemap.xml`)).text();
+assert(!sitemap4.includes(`/tin-tuc/${draft.data.slug}</loc>`), 'Chuyển lại thành nháp thì bài biến khỏi sitemap');
+if (fs.existsSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist', 'index.html'))) {
+  const draftHtml = await (await fetch(`http://127.0.0.1:${port}/tin-tuc/${draft.data.slug}`)).text();
+  assert(!draftHtml.includes('TIEU-DE-NHAP-BI-MAT') && !draftHtml.includes('Bai nhap bi mat'), 'Trang HTML của bài nháp không lộ tiêu đề/SEO');
+  const pubHtml = await (await fetch(`http://127.0.0.1:${port}/tin-tuc/${art1.data.slug}`)).text();
+  assert(pubHtml.includes('Hướng dẫn dùng bình CO2 5kg'), 'Trang bài đã đăng có SEO riêng');
+} else {
+  console.log('  ℹ️ Bỏ qua kiểm tra HTML SEO (chưa có thư mục dist; chạy npm run build để kiểm tra)');
+}
+
+server.close();
 
 console.log(failed ? `\n❌ ${failed} test thất bại` : '\n✅ Tất cả đạt');
 process.exit(failed ? 1 : 0);
