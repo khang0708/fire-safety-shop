@@ -1827,6 +1827,49 @@ app.get('/api/health', (req, res) => {
 // ----------------------------------------------------
 // 11. PHỤC VỤ GIAO DIỆN FRONTEND & SPA ROUTING (VPS / DOCKER / SEO SSR)
 // ----------------------------------------------------
+// ----------------------------------------------------
+// SITEMAP ĐỘNG: /sitemap.xml được sinh từ dữ liệu thật (trang chủ, tin tức, bài viết đã đăng, sản phẩm)
+// nên luôn đúng với website; đăng ký TRƯỚC express.static.
+// ----------------------------------------------------
+const SITE_ORIGIN = 'https://pcccphatantam.com';
+
+export const buildSitemapXml = ({ products = [], articles = [], origin = SITE_ORIGIN }) => {
+  const toDate = (value) => {
+    const t = Date.parse(value);
+    return Number.isNaN(t) ? null : new Date(t).toISOString().slice(0, 10);
+  };
+  const urls = [];
+  const add = (loc, { lastmod, changefreq, priority }) => urls.push({ loc: `${origin}${loc}`, lastmod: toDate(lastmod), changefreq, priority });
+
+  const published = articles.filter((a) => a && a.slug && (a.status || 'published') === 'published');
+  const latest = (items, field) => items.map((i) => Date.parse(i[field])).filter(Number.isFinite).sort((a, b) => b - a)[0];
+
+  add('/', { lastmod: latest([...published, ...products], 'updatedAt'), changefreq: 'daily', priority: '1.0' });
+  add('/tin-tuc', { lastmod: latest(published, 'updatedAt'), changefreq: 'daily', priority: '0.8' });
+  for (const p of products) {
+    const slug = p.slug || slugifyVietnamese(p.name) || p.id;
+    if (!slug) continue;
+    add(`/san-pham/${encodeURIComponent(slug)}`, { lastmod: p.updatedAt, changefreq: 'weekly', priority: '0.9' });
+  }
+  for (const a of published) {
+    add(`/tin-tuc/${encodeURIComponent(a.slug)}`, { lastmod: a.updatedAt || a.publishedAt, changefreq: 'monthly', priority: '0.7' });
+  }
+
+  const body = urls
+    .map((u) => `  <url>\n    <loc>${escapeAttr(u.loc)}</loc>${u.lastmod ? `\n    <lastmod>${u.lastmod}</lastmod>` : ''}\n    <changefreq>${u.changefreq}</changefreq>\n    <priority>${u.priority}</priority>\n  </url>`)
+    .join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`;
+};
+
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const [products, articles] = await Promise.all([readJson('products.json'), readJson('articles.json')]);
+    res.type('application/xml').set('Cache-Control', 'public, max-age=3600').send(buildSitemapXml({ products: products || [], articles: articles || [] }));
+  } catch (error) {
+    res.status(500).type('text/plain').send('Không tạo được sitemap');
+  }
+});
+
 const distPath = path.join(__dirname, '../dist');
 if (fs.existsSync(distPath)) {
   // index:false — để "/" đi qua handler SSR bên dưới (inject SEO), không bị static trả index.html gốc
