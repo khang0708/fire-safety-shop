@@ -9,6 +9,15 @@ const server = app.listen(0);
 const port = server.address().port;
 const res = await fetch(`http://127.0.0.1:${port}/sitemap.xml`);
 const redirect = await fetch(`http://127.0.0.1:${port}/san-pham`, { redirect: 'manual' });
+
+// Slug sản phẩm phải duy nhất khi tạo/sửa qua API
+const login = await (await fetch(`http://127.0.0.1:${port}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'admin', password: process.env.ADMIN_PASSWORD }) })).json();
+const api = (method, url, body) => fetch(`http://127.0.0.1:${port}${url}`, { method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${login.token}` }, body: JSON.stringify(body) }).then((r) => r.json());
+const first = await api('POST', '/api/products', { name: 'Bình CO2 5kg MT5', price: 1000 });
+const second = await api('POST', '/api/products', { name: 'Bình CO2 5kg MT5', price: 1000 });
+const third = await api('POST', '/api/products', { name: 'Bình CO2 5kg MT5', price: 1000 });
+const resaved = await api('PUT', `/api/products/${first.data.id}`, { name: 'Bình CO2 5kg MT5' });
+const clash = await api('PUT', `/api/products/${third.data.id}`, { name: 'Bình CO2 5kg MT5', slug: second.data.slug });
 const xml = await res.text();
 server.close();
 
@@ -31,6 +40,10 @@ const custom = buildSitemapXml({
 });
 assert(!custom.includes('/tin-tuc/nhap') && custom.includes('/tin-tuc/dang') && custom.includes('<lastmod>2026-05-01</lastmod>'), 'Bỏ bài nháp, giữ lastmod của bài đã đăng');
 assert(custom.includes('/san-pham/binh-a-b'), 'Sản phẩm không có slug dùng slug sinh từ tên');
+
+assert(first.data.slug === 'binh-co2-5kg-mt5' && second.data.slug === 'binh-co2-5kg-mt5-2' && third.data.slug === 'binh-co2-5kg-mt5-3', `Tạo sản phẩm trùng tên => slug được đánh số (${first.data.slug}, ${second.data.slug}, ${third.data.slug})`);
+assert(resaved.data.slug === 'binh-co2-5kg-mt5', 'Lưu lại chính sản phẩm đó không làm đổi slug');
+assert(clash.data.slug !== second.data.slug && clash.data.slug.startsWith('binh-co2-5kg-mt5'), `Sửa slug trùng sản phẩm khác => tự đổi (${clash.data.slug})`);
 
 console.log(failed ? `\n❌ ${failed} test thất bại` : '\n✅ Tất cả đạt');
 process.exit(failed ? 1 : 0);

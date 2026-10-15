@@ -449,11 +449,21 @@ app.get('/api/products', async (req, res) => {
 });
 
 // POST /api/products (Thêm mẫu hoa mới)
+// Slug sản phẩm là một phần của URL /san-pham/:slug nên phải duy nhất: trùng thì thêm hậu tố -2, -3...
+// (bỏ qua chính sản phẩm đang sửa). Trang SSR chỉ mở được sản phẩm đầu tiên khớp slug.
+const uniqueProductSlug = (slug, products, selfId = null) => {
+  const base = slug || 'san-pham';
+  const taken = new Set(products.filter((p) => p.id !== selfId).map((p) => String(p.slug || '').toLowerCase()));
+  let candidate = base;
+  for (let n = 2; taken.has(candidate.toLowerCase()); n++) candidate = `${base}-${n}`;
+  return candidate;
+};
+
 app.post('/api/products', requireAdminAuth, async (req, res) => {
   try {
     const products = (await readJson('products.json')) || [];
     const productName = req.body.name || 'Thiết Bị PCCC';
-    const productSlug = req.body.slug ? slugifyVietnamese(req.body.slug) : slugifyVietnamese(productName);
+    const productSlug = uniqueProductSlug(req.body.slug ? slugifyVietnamese(req.body.slug) : slugifyVietnamese(productName), products, req.body.id || null);
     const categories = await loadCategories();
     const categoryError = checkProductCategory(req.body.category, categories);
     if (categoryError) return res.status(400).json({ success: false, message: categoryError });
@@ -500,7 +510,7 @@ app.put('/api/products/:id', requireAdminAuth, async (req, res) => {
     let index = products.findIndex(p => p.id === id);
 
     const fallbackSlug = req.body.name ? slugifyVietnamese(req.body.name) : (index !== -1 ? (products[index].slug || slugifyVietnamese(products[index].name)) : id);
-    const cleanSlug = req.body.slug ? slugifyVietnamese(req.body.slug) : fallbackSlug;
+    const cleanSlug = uniqueProductSlug(req.body.slug ? slugifyVietnamese(req.body.slug) : fallbackSlug, products, id);
 
     if (index === -1) {
       // Nếu sản phẩm chưa có trong file products.json nhưng được sửa
