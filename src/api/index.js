@@ -222,178 +222,26 @@ export const sendZaloZnsApi = async (payload) => {
   return res;
 };
 
-export const escapeTelegramHtml = (str) => {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-};
-
-export const sendTelegramOrderNotificationApi = async (botToken, chatId, order) => {
-  const token = (botToken || '').trim().replace(/^bot/i, '');
-  const targetChatId = String(chatId || '').trim();
-
-  if (!token || !targetChatId || !order) {
-    return { success: false, reason: 'Missing token or chatId' };
-  }
-
-  let itemsListText = '';
-  if (Array.isArray(order.items) && order.items.length > 0) {
-    itemsListText = '\n📋 <b>Chi tiết sản phẩm & quà kèm:</b>\n' +
-      order.items.map((it, idx) => `  ${idx + 1}. ${escapeTelegramHtml(it.name)} (<b>${Number(it.price || 0).toLocaleString('vi-VN')}đ</b>)`).join('\n') + '\n';
-  }
-
-  const anonymousNotice = order.isAnonymous ? ' <i>(🕵️ Đơn gửi ẩn danh bí mật)</i>' : '';
-
-  const htmlMessage = `🧯 <b>CÓ ĐƠN ĐẶT THIẾT BỊ PCCC MỚI!</b> (#${escapeTelegramHtml(order.orderCode || order.id)})\n\n` +
-    `🏢 <b>Cơ sở / Người đặt:</b> ${escapeTelegramHtml(order.customerName || 'Khách hàng')}${anonymousNotice}\n` +
-    `📞 <b>Hotline / SĐT:</b> ${escapeTelegramHtml(order.customerPhone || 'Chưa cung cấp')}\n` +
-    `🧯 <b>Thiết bị chính:</b> ${escapeTelegramHtml(order.productName || 'Thiết bị PCCC kiểm định')}\n` +
-    itemsListText +
-    `💰 <b>Tổng thanh toán:</b> <b>${Number(order.totalAmount || 0).toLocaleString('vi-VN')}đ</b>\n` +
-    `⏱️ <b>Phương thức giao:</b> ${escapeTelegramHtml(order.deliverySlot || 'Trong ngày')}\n` +
-    `📍 <b>Người nhận thiết bị:</b> ${escapeTelegramHtml(order.receiverName || '')} (${escapeTelegramHtml(order.receiverPhone || '')})\n` +
-    `🏠 <b>Địa chỉ nghiệm thu:</b> ${escapeTelegramHtml(order.receiverAddress || 'Chưa cung cấp')}\n` +
-    `📋 <b>Yêu cầu kỹ thuật:</b> <i>"${escapeTelegramHtml(order.cardMessage || 'TCVN 3890:2023 - Tem BCA')}"</i>\n\n` +
-    `👉 <i>FLAMEGUARD PRO: Hãy mở Admin để đo kiểm áp suất vạch xanh và dán tem xuất kho!</i>`;
-
-  try {
-    const tgUrl = `https://api.telegram.org/bot${token}/sendMessage`;
-    const res = await fetch(tgUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: targetChatId,
-        text: htmlMessage,
-        parse_mode: 'HTML'
-      })
-    });
-    const data = await res.json();
-    return { success: Boolean(data && data.ok), data: data?.result };
-  } catch (err) {
-    console.warn('Browser direct Telegram failed, attempting proxy fallback:', err.message);
-    try {
-      return await request('/notifications/telegram-test', {
-        method: 'POST',
-        body: JSON.stringify({ botToken: token, chatId: targetChatId, testOrder: order })
-      });
-    } catch (proxyErr) {
-      return { success: false, error: err.message };
-    }
-  }
+// Token Telegram nằm ở máy chủ: trình duyệt KHÔNG gọi api.telegram.org và không giữ token đầy đủ.
+// `botToken` chỉ được gửi khi admin vừa dán token mới; để trống (hoặc bản che) thì máy chủ dùng token đã lưu.
+const sendableToken = (botToken) => {
+  const value = (botToken || '').trim().replace(/^bot/i, '');
+  return value && !value.includes('...') ? value : undefined;
 };
 
 export const sendTelegramTestApi = async (botToken, chatId, testOrder) => {
-  const token = (botToken || '').trim().replace(/^bot/i, '');
   const targetChatId = String(chatId || '').trim();
-
-  if (!token || !targetChatId) {
-    throw new Error('Vui lòng nhập đầy đủ cả Bot Token và Chat ID');
-  }
-
-  // Thử gửi trực tiếp qua Telegram OpenAPI từ trình duyệt
-  const order = testOrder || {
-    orderCode: 'FB-TEST-2026',
-    customerName: 'Anh Hoàng Nam',
-    productName: 'Bó Hoa Juliet Nắng Ban Mai',
-    totalAmount: 850000,
-    deliverySlot: 'Hỏa tốc 60 phút',
-    receiverAddress: 'Khu công nghệ cao TP. Thủ Đức'
-  };
-
-  const htmlMessage = `🧯 <b>CÓ ĐƠN ĐẶT THIẾT BỊ PCCC!</b> (#${escapeTelegramHtml(order.orderCode)})\n\n` +
-    `🏢 <b>Cơ sở:</b> ${escapeTelegramHtml(order.customerName)}\n` +
-    `🧯 <b>Thiết bị:</b> ${escapeTelegramHtml(order.productName)}\n` +
-    `💰 <b>Tổng tiền:</b> ${Number(order.totalAmount).toLocaleString('vi-VN')}đ\n` +
-    `⏱️ <b>Tiến độ:</b> ${escapeTelegramHtml(order.deliverySlot)}\n` +
-    `📍 <b>Địa chỉ:</b> ${escapeTelegramHtml(order.receiverAddress)}\n\n` +
-    `👉 <i>FLAMEGUARD PRO: Sẵn sàng đo kiểm áp suất vạch xanh & xuất xưởng!</i>`;
-
-  try {
-    const tgUrl = `https://api.telegram.org/bot${token}/sendMessage`;
-    const res = await fetch(tgUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: targetChatId,
-        text: htmlMessage,
-        parse_mode: 'HTML'
-      })
-    });
-
-    const data = await res.json();
-    if (!data.ok) {
-      if (data.error_code === 401 || data.description?.includes('Unauthorized')) {
-        throw new Error('Bot Token không hợp lệ (401 Unauthorized): Chuỗi Token bị sai ký tự hoặc đã bị thu hồi. Hãy mở @BotFather gõ /mybots -> chọn bot -> API Token và copy lại.');
-      }
-      if (data.description?.includes('bot was blocked') || data.description?.includes('chat not found')) {
-        throw new Error('Bạn chưa bấm START vào bot! Hãy mở Telegram, tìm đúng bot của bạn và bấm START trước nhé.');
-      }
-      throw new Error(`Lỗi từ Telegram: ${data.description}`);
-    }
-
-    return { success: true, message: '🎉 Thành công! Bot vừa gửi tin nhắn thông báo đến Telegram của bạn!', data: data.result };
-  } catch (err) {
-    // Nếu lỗi mạng direct, gọi fallback qua backend proxy
-    try {
-      return await request('/notifications/telegram-test', {
-        method: 'POST',
-        body: JSON.stringify({ botToken: token, chatId: targetChatId, testOrder: order })
-      });
-    } catch (proxyErr) {
-      throw new Error(err.message || proxyErr.message);
-    }
-  }
+  return await request('/notifications/telegram-test', {
+    method: 'POST',
+    body: JSON.stringify({ botToken: sendableToken(botToken), chatId: targetChatId || undefined, testOrder })
+  });
 };
 
 export const getTelegramChatIdAutoApi = async (botToken) => {
-  const token = (botToken || '').trim().replace(/^bot/i, '');
-  if (!token) {
-    throw new Error('Vui lòng dán chuỗi Bot Token vào ô trước khi dò tìm');
-  }
-
-  try {
-    const updatesUrl = `https://api.telegram.org/bot${token}/getUpdates`;
-    const res = await fetch(updatesUrl);
-    const data = await res.json();
-
-    if (!data.ok) {
-      if (data.error_code === 401 || data.description?.includes('Unauthorized')) {
-        throw new Error('Bot Token không hợp lệ (401 Unauthorized). Hãy kiểm tra lại chuỗi Token từ @BotFather.');
-      }
-      throw new Error(`Lỗi kết nối Telegram: ${data.description}`);
-    }
-
-    const updates = data.result || [];
-    if (updates.length === 0) {
-      throw new Error('Chưa có tin nhắn nào đến bot! Hãy mở Telegram, tìm bot của bạn, bấm START (hoặc gửi chữ "Hi") rồi bấm lại nút này nhé.');
-    }
-
-    const lastUpdate = updates[updates.length - 1];
-    const message = lastUpdate.message || lastUpdate.channel_post || lastUpdate.callback_query?.message;
-
-    if (!message || !message.chat) {
-      throw new Error('Không tìm thấy thông tin chat. Hãy gửi 1 tin nhắn bất kỳ đến bot.');
-    }
-
-    return {
-      success: true,
-      chatId: String(message.chat.id),
-      senderName: message.from?.first_name || message.chat?.first_name || 'Bạn',
-      message: `Đã tìm thấy Chat ID: ${message.chat.id}`
-    };
-  } catch (err) {
-    try {
-      return await request('/notifications/telegram-get-chat-id', {
-        method: 'POST',
-        body: JSON.stringify({ botToken: token })
-      });
-    } catch (proxyErr) {
-      throw new Error(err.message || proxyErr.message);
-    }
-  }
+  return await request('/notifications/telegram-get-chat-id', {
+    method: 'POST',
+    body: JSON.stringify({ botToken: sendableToken(botToken) })
+  });
 };
 
 // ----------------------------------------------------
@@ -492,9 +340,11 @@ export const checkHealthApi = async () => {
 // 10. FACEBOOK MESSENGER API
 // ----------------------------------------------------
 export const sendFacebookTestApi = async (fbConfig) => {
+  // Page Access Token chỉ gửi khi admin vừa dán token mới; ô trống/bản che => máy chủ dùng token đã lưu
+  const token = (fbConfig?.pageAccessToken || '').trim();
   const res = await request('/facebook/test-connection', {
     method: 'POST',
-    body: JSON.stringify(fbConfig)
+    body: JSON.stringify({ ...fbConfig, pageAccessToken: token && !token.includes('...') ? token : undefined })
   });
   return res;
 };
