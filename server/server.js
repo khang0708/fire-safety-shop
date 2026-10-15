@@ -1932,7 +1932,8 @@ if (fs.existsSync(distPath)) {
       if (newsDetailMatch) {
         const slug = newsDetailMatch[1];
         const articles = (await readJson('articles.json')) || [];
-        const article = articles.find(a => a.slug === slug || a.id === slug);
+        // Bài nháp không được lộ tiêu đề/mô tả/ảnh qua HTML SEO (API cũng trả 404 cho bài nháp với người ngoài)
+        const article = articles.find(a => (a.slug === slug || a.id === slug) && a.status !== 'draft');
 
         if (article) {
           const seoTitle = article.seoTitle || `${article.title} | ${brand.brandName || 'FLAMEGUARD PRO'}`;
