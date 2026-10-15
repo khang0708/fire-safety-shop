@@ -18,8 +18,6 @@ import {
   updateOrderStatusApi,
   fetchInventoryApi,
   checkHealthApi,
-  sendTelegramTestApi,
-  sendTelegramOrderNotificationApi,
   fetchSettingsApi,
   saveSettingsApi,
   fetchDiscountsApi,
@@ -216,6 +214,8 @@ if (typeof localStorage !== 'undefined') {
       'flora_products', 'flora_orders', 'flora_admin_user',
       'flora_deleted_product_ids', 'flora_settings_updated_at',
       'flora_shop_zalo_phone', 'flora_tg_token', 'flora_tg_chat_id',
+      // Token Telegram từng được lưu ở trình duyệt: nay chỉ nằm ở máy chủ nên xóa bản cũ
+      'flameguard_tg_token',
       'flora_sound_enabled', 'flora_shipping_settings', 'flora_facebook_settings'
     ];
     legacyKeys.forEach(k => {
@@ -283,9 +283,8 @@ export const ShopProvider = ({ children }) => {
   });
   const [zaloModeType, setZaloModeType] = useState('personal');
 
-  const [telegramBotToken, setTelegramBotTokenState] = useState(() => {
-    return localStorage.getItem('flameguard_tg_token') || '';
-  });
+  // Chỉ là bản CHE do máy chủ trả cho admin (không có giá trị đầy đủ, không lưu localStorage)
+  const [telegramBotToken, setTelegramBotTokenState] = useState('');
   const [telegramChatId, setTelegramChatIdState] = useState(() => {
     return localStorage.getItem('flameguard_tg_chat_id') || '';
   });
@@ -367,10 +366,12 @@ export const ShopProvider = ({ children }) => {
   };
 
   const setTelegramBotToken = (val) => {
+    // Ô trống hoặc bản che (có "...") nghĩa là giữ token đã lưu trên máy chủ: không gửi, không ghi đè
+    const next = (val || '').trim();
+    if (!next || next.includes('...')) return;
     const now = updateSettingsTimestamp();
-    setTelegramBotTokenState(val);
-    localStorage.setItem('flameguard_tg_token', val);
-    saveSettingsApi({ telegramBotToken: val, updatedAt: now }).catch(() => {});
+    setTelegramBotTokenState(next.length > 8 ? `${next.slice(0, 6)}...${next.slice(-4)}` : '********');
+    saveSettingsApi({ telegramBotToken: next, updatedAt: now }).catch(() => {});
   };
 
   const setTelegramChatId = (val) => {
@@ -1235,8 +1236,7 @@ export const ShopProvider = ({ children }) => {
             if (typeof localStorage !== 'undefined') localStorage.setItem('flameguard_shop_zalo_phone', apiSettings.shopZaloPhone);
           }
           if (apiSettings.telegramBotToken) {
-            setTelegramBotTokenState(apiSettings.telegramBotToken);
-            if (typeof localStorage !== 'undefined') localStorage.setItem('flameguard_tg_token', apiSettings.telegramBotToken);
+            setTelegramBotTokenState(apiSettings.telegramBotToken); // bản che do máy chủ trả cho admin
           }
           if (apiSettings.telegramChatId) {
             setTelegramChatIdState(apiSettings.telegramChatId);
@@ -1268,7 +1268,6 @@ export const ShopProvider = ({ children }) => {
           if (adminToken) {
             const localSettingsPayload = {
               shopZaloPhone: typeof localStorage !== 'undefined' ? localStorage.getItem('flameguard_shop_zalo_phone') : undefined,
-              telegramBotToken: typeof localStorage !== 'undefined' ? localStorage.getItem('flameguard_tg_token') : undefined,
               telegramChatId: typeof localStorage !== 'undefined' ? localStorage.getItem('flameguard_tg_chat_id') : undefined,
               shippingSettings: shippingSettings,
               facebookSettings: facebookSettings,
@@ -1774,9 +1773,6 @@ export const ShopProvider = ({ children }) => {
 
   // Khách tạo đơn hàng mới -> Lưu API & Kích hoạt thông báo đa kênh
   const submitOrder = async (orderData) => {
-    const token = telegramBotToken || localStorage.getItem('flameguard_tg_token');
-    const chatId = telegramChatId || localStorage.getItem('flameguard_tg_chat_id');
-
     // Tạo danh sách items chi tiết bao gồm size, wrapper, add-ons
     const formattedItems = cart.map(i => {
       const sizeText = i.size?.name ? ` [Size: ${i.size.name}]` : '';
@@ -1821,17 +1817,13 @@ export const ShopProvider = ({ children }) => {
       discountAmount: discountAmount,
       proofPhotoUrl: null,
       catalogSamplePhoto: cart[0]?.image || '/images/abc-powder-4kg.jpg',
-      items: formattedItems,
-      telegramBotToken: token,
-      telegramChatId: chatId
+      items: formattedItems
     };
 
     let newOrder = null;
-    let serverSentTelegram = false;
     try {
       const res = await createOrderApi(orderPayload);
       newOrder = res?.data || res;
-      serverSentTelegram = Boolean(res?.telegramSent);
     } catch (e) {
       const newOrderCode = `FG-${Math.floor(10000 + Math.random() * 90000)}`;
       newOrder = {
@@ -1846,12 +1838,7 @@ export const ShopProvider = ({ children }) => {
       };
     }
 
-    // Cơ chế Hybrid: Nếu Server Node.js không gửi được (DNS/Proxy/Offline), Trình duyệt Client tự động gửi trực tiếp
-    if (!serverSentTelegram && token && chatId) {
-      sendTelegramOrderNotificationApi(token, chatId, newOrder).catch((err) => {
-        console.warn('Client Telegram notification attempt:', err.message);
-      });
-    }
+    // Thông báo Telegram do máy chủ gửi (token chỉ nằm ở máy chủ); trình duyệt không gọi Telegram trực tiếp
 
     setOrders(prev => {
       const exists = prev.some(o => o.id === newOrder.id || o.orderCode === newOrder.orderCode);

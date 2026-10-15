@@ -938,10 +938,20 @@ app.patch('/api/orders/:id/status', requireAdminAuth, async (req, res) => {
 // 3. TELEGRAM BOT NOTIFICATION WEBHOOK & AUTO-DETECT CHAT ID
 // ----------------------------------------------------
 
+// Token Telegram chỉ nằm ở máy chủ. Trình duyệt admin chỉ thấy bản che (ví dụ 123456...abcd) nên khi form gửi lên ô trống hoặc bản che
+// thì dùng token đã lưu trong cài đặt (hoặc biến môi trường); chỉ khi admin dán token MỚI thì dùng giá trị đó.
+const isNewTokenInput = (value) => typeof value === 'string' && value.trim() !== '' && !value.includes('...');
+const resolveTelegramCredentials = async (body = {}) => {
+  const settings = (await readJson('settings.json')) || {};
+  const botToken = isNewTokenInput(body.botToken) ? body.botToken : (settings.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN || '');
+  const chatId = body.chatId ? body.chatId : (settings.telegramChatId || process.env.TELEGRAM_CHAT_ID || '');
+  return { botToken, chatId };
+};
+
 // Endpoint tự động tìm Chat ID từ Bot Token 1-Chạm!
 app.post('/api/notifications/telegram-get-chat-id', requireAdminAuth, async (req, res) => {
   try {
-    const rawToken = req.body.botToken;
+    const { botToken: rawToken } = await resolveTelegramCredentials(req.body || {});
     if (!rawToken) {
       return res.status(400).json({ success: false, message: 'Vui lòng dán chuỗi Bot Token vào ô trên trước khi bấm dò tìm' });
     }
@@ -998,7 +1008,8 @@ app.post('/api/notifications/telegram-get-chat-id', requireAdminAuth, async (req
 // Endpoint test gửi thông báo đơn hàng qua Telegram
 app.post('/api/notifications/telegram-test', requireAdminAuth, async (req, res) => {
   try {
-    const { botToken, chatId, testOrder } = req.body;
+    const { testOrder } = req.body || {};
+    const { botToken, chatId } = await resolveTelegramCredentials(req.body || {});
     if (!botToken || !chatId) {
       return res.status(400).json({ success: false, message: 'Vui lòng cung cấp đầy đủ cả Bot Token và Chat ID' });
     }
@@ -1278,8 +1289,9 @@ app.get('/api/settings', async (req, res) => {
       hasFacebookPageToken: Boolean(settings.facebookSettings?.pageAccessToken)
     };
 
+    // Ngay cả admin cũng không nhận token Telegram đầy đủ: chỉ bản che. Muốn đổi thì dán token mới (POST /api/settings).
     const safeSettings = isAdmin
-      ? { ...settings, ...flags }
+      ? { ...settings, telegramBotToken: maskSecret(settings.telegramBotToken), ...flags }
       : { ...redactSecrets(settings), ...flags };
 
     res.json({ success: true, data: safeSettings });

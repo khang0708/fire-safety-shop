@@ -174,7 +174,31 @@ assert(publicSettings.json?.data?.facebookSettings?.pageId === 'trang-test', 'Tr
 assert(publicSettings.json?.data?.brandSettings?.brandName === 'Shop Test', 'Thông tin thương hiệu công khai vẫn được trả');
 
 const adminSettings = await call('GET', '/api/settings', { token });
-assert(adminSettings.text.includes('SECRET-TELEGRAM-TOKEN-XYZ'), 'Admin vẫn xem được token đầy đủ để cấu hình');
+assert(!adminSettings.text.includes('SECRET-TELEGRAM-TOKEN-XYZ'), 'Ngay cả admin cũng không nhận token Telegram đầy đủ');
+assert(adminSettings.json?.data?.telegramBotToken === '123456...-XYZ' && adminSettings.json?.data?.hasTelegramToken === true, 'Admin chỉ nhận bản che của token Telegram và cờ hasTelegramToken');
+
+// Token Telegram chỉ dùng ở máy chủ: kiểm tra bằng cách chặn lời gọi tới api.telegram.org
+const telegramCalls = [];
+const realFetch = globalThis.fetch;
+globalThis.fetch = async (url, options) => {
+  if (String(url).startsWith('https://api.telegram.org/')) {
+    telegramCalls.push(String(url));
+    return new Response(JSON.stringify({ ok: true, result: { message_id: 1 } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }
+  return realFetch(url, options);
+};
+await call('POST', '/api/settings', { token, body: { telegramChatId: '555666777' } });
+const testMasked = await call('POST', '/api/notifications/telegram-test', { token, body: { botToken: adminSettings.json.data.telegramBotToken, chatId: '' } });
+assert(testMasked.status === 200 && telegramCalls.at(-1)?.includes('SECRET-TELEGRAM-TOKEN-XYZ'), 'Test Telegram với ô token là bản che => máy chủ dùng token đã lưu', telegramCalls.join(','));
+const testNew = await call('POST', '/api/notifications/telegram-test', { token, body: { botToken: '999999:MOI-DAN-VAO', chatId: '123' } });
+assert(testNew.status === 200 && telegramCalls.at(-1)?.includes('999999:MOI-DAN-VAO'), 'Dán token mới => máy chủ dùng token mới');
+const saveMasked = await call('POST', '/api/settings', { token, body: { telegramBotToken: adminSettings.json.data.telegramBotToken } });
+const afterMasked = await call('GET', '/api/settings', { token });
+const testAfter = await call('POST', '/api/notifications/telegram-test', { token, body: {} });
+assert(saveMasked.status === 200 && testAfter.status === 200 && telegramCalls.at(-1)?.includes('SECRET-TELEGRAM-TOKEN-XYZ'), 'Lưu lại bản che không ghi đè token thật', afterMasked.text.slice(0, 80));
+const noAuthTest = await call('POST', '/api/notifications/telegram-test', { body: {} });
+assert(noAuthTest.status === 401, 'Test Telegram cần quyền admin');
+globalThis.fetch = realFetch;
 
 // ----------------------------------------------------
 console.log('\n6️⃣ ĐÁNH GIÁ CÔNG KHAI: CHỈ NHẬN TRƯỜNG HỢP LỆ:');

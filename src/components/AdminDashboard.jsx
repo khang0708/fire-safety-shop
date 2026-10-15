@@ -2431,11 +2431,15 @@ export const AdminDashboard = ({ onBackToStore, adminUser, onLogout }) => {
                       <span className="text-[11px] text-gray-700 font-bold block mb-1">Telegram Bot Token:</span>
                       <input
                         type="text"
+                        autoComplete="off"
                         value={inputBotToken}
                         onChange={(e) => setInputBotToken(e.target.value)}
                         placeholder="VD: 7123456789:AAHk_XYZ..."
                         className="w-full p-2.5 rounded-xl border border-gray-300 focus:outline-none font-mono text-[11px]"
                       />
+                      <p className="text-[10px] text-gray-500 mt-1">
+                        🔒 Token chỉ được lưu ở máy chủ và luôn hiển thị dạng che. Để nguyên ô này để giữ token hiện tại; dán token mới rồi bấm Lưu để thay.
+                      </p>
                     </div>
 
                     <div>
