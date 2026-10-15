@@ -449,11 +449,21 @@ app.get('/api/products', async (req, res) => {
 });
 
 // POST /api/products (Thêm mẫu hoa mới)
+// Slug sản phẩm là một phần của URL /san-pham/:slug nên phải duy nhất: trùng thì thêm hậu tố -2, -3...
+// (bỏ qua chính sản phẩm đang sửa). Trang SSR chỉ mở được sản phẩm đầu tiên khớp slug.
+const uniqueProductSlug = (slug, products, selfId = null) => {
+  const base = slug || 'san-pham';
+  const taken = new Set(products.filter((p) => p.id !== selfId).map((p) => String(p.slug || '').toLowerCase()));
+  let candidate = base;
+  for (let n = 2; taken.has(candidate.toLowerCase()); n++) candidate = `${base}-${n}`;
+  return candidate;
+};
+
 app.post('/api/products', requireAdminAuth, async (req, res) => {
   try {
     const products = (await readJson('products.json')) || [];
     const productName = req.body.name || 'Thiết Bị PCCC';
-    const productSlug = req.body.slug ? slugifyVietnamese(req.body.slug) : slugifyVietnamese(productName);
+    const productSlug = uniqueProductSlug(req.body.slug ? slugifyVietnamese(req.body.slug) : slugifyVietnamese(productName), products, req.body.id || null);
     const categories = await loadCategories();
     const categoryError = checkProductCategory(req.body.category, categories);
     if (categoryError) return res.status(400).json({ success: false, message: categoryError });
@@ -500,7 +510,7 @@ app.put('/api/products/:id', requireAdminAuth, async (req, res) => {
     let index = products.findIndex(p => p.id === id);
 
     const fallbackSlug = req.body.name ? slugifyVietnamese(req.body.name) : (index !== -1 ? (products[index].slug || slugifyVietnamese(products[index].name)) : id);
-    const cleanSlug = req.body.slug ? slugifyVietnamese(req.body.slug) : fallbackSlug;
+    const cleanSlug = uniqueProductSlug(req.body.slug ? slugifyVietnamese(req.body.slug) : fallbackSlug, products, id);
 
     if (index === -1) {
       // Nếu sản phẩm chưa có trong file products.json nhưng được sửa
@@ -1827,6 +1837,71 @@ app.get('/api/health', (req, res) => {
 // ----------------------------------------------------
 // 11. PHỤC VỤ GIAO DIỆN FRONTEND & SPA ROUTING (VPS / DOCKER / SEO SSR)
 // ----------------------------------------------------
+// ----------------------------------------------------
+// SITEMAP ĐỘNG: /sitemap.xml được sinh từ dữ liệu thật (trang chủ, tin tức, bài viết đã đăng, sản phẩm)
+// nên luôn đúng với website; đăng ký TRƯỚC express.static.
+// ----------------------------------------------------
+const SITE_ORIGIN = 'https://pcccphatantam.com';
+
+export const buildSitemapXml = ({ products = [], articles = [], origin = SITE_ORIGIN }) => {
+  const toDate = (value) => {
+    const t = Date.parse(value);
+    return Number.isNaN(t) ? null : new Date(t).toISOString().slice(0, 10);
+  };
+  // Ảnh trong sitemap phải là URL tuyệt đối http(s); bỏ ảnh nhúng base64 hoặc đường dẫn lạ
+  const absoluteImage = (src) => {
+    if (typeof src !== 'string' || !src) return null;
+    if (/^https?:\/\//i.test(src)) return src;
+    return src.startsWith('/') && !src.startsWith('//') ? `${origin}${src}` : null;
+  };
+  const urls = [];
+  const add = (loc, { lastmod, changefreq, priority, image }) =>
+    urls.push({ loc: `${origin}${loc}`, lastmod: toDate(lastmod), changefreq, priority, image: absoluteImage(image) });
+
+  const published = articles.filter((a) => a && a.slug && (a.status || 'published') === 'published');
+  const latest = (items, field) => items.map((i) => Date.parse(i[field])).filter(Number.isFinite).sort((a, b) => b - a)[0];
+
+  add('/', { lastmod: latest([...published, ...products], 'updatedAt'), changefreq: 'daily', priority: '1.0' });
+  add('/tin-tuc', { lastmod: latest(published, 'updatedAt'), changefreq: 'daily', priority: '0.8' });
+  const seen = new Set();
+  for (const p of products) {
+    // Cùng cách chọn slug với trang /san-pham/:slug (SSR) để URL trong sitemap luôn mở đúng trang
+    const slug = p.slug || slugifyVietnamese(p.name) || p.id;
+    if (!slug || seen.has(slug)) continue;
+    seen.add(slug);
+    add(`/san-pham/${encodeURIComponent(slug)}`, { lastmod: p.updatedAt, changefreq: 'weekly', priority: '0.9', image: p.image });
+  }
+  for (const a of published) {
+    add(`/tin-tuc/${encodeURIComponent(a.slug)}`, { lastmod: a.updatedAt || a.publishedAt, changefreq: 'monthly', priority: '0.7', image: a.thumbnail });
+  }
+
+  const body = urls
+    .map((u) => [
+      '  <url>',
+      `    <loc>${escapeAttr(u.loc)}</loc>`,
+      u.lastmod ? `    <lastmod>${u.lastmod}</lastmod>` : null,
+      `    <changefreq>${u.changefreq}</changefreq>`,
+      `    <priority>${u.priority}</priority>`,
+      u.image ? `    <image:image><image:loc>${escapeAttr(u.image)}</image:loc></image:image>` : null,
+      '  </url>'
+    ].filter(Boolean).join('\n'))
+    .join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${body}\n</urlset>\n`;
+};
+
+// /san-pham (không kèm sản phẩm) không phải trang riêng: giao diện chỉ hiện trang chủ => chuyển hướng vĩnh viễn tới danh mục
+// để công cụ tìm kiếm không coi đó là trang trùng lặp.
+app.get(['/san-pham', '/san-pham/'], (req, res) => res.redirect(301, '/#catalog'));
+
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const [products, articles] = await Promise.all([readJson('products.json'), readJson('articles.json')]);
+    res.type('application/xml').set('Cache-Control', 'public, max-age=3600').send(buildSitemapXml({ products: products || [], articles: articles || [] }));
+  } catch (error) {
+    res.status(500).type('text/plain').send('Không tạo được sitemap');
+  }
+});
+
 const distPath = path.join(__dirname, '../dist');
 if (fs.existsSync(distPath)) {
   // index:false — để "/" đi qua handler SSR bên dưới (inject SEO), không bị static trả index.html gốc
