@@ -1220,7 +1220,8 @@ export const ShopProvider = ({ children }) => {
 
       if (apiInventory?.length > 0) setInventory(apiInventory);
       if (apiDiscounts?.length > 0) setDiscounts(apiDiscounts);
-      if (apiReviews?.length > 0) setReviews(apiReviews);
+      // Danh sách rỗng từ máy chủ là hợp lệ (đã xóa/ẩn hết đánh giá): chỉ bỏ qua khi không gọi được máy chủ (null)
+      if (Array.isArray(apiReviews)) setReviews(apiReviews);
       if (Array.isArray(apiArticles) && apiArticles.length > 0) {
         setArticlesState(apiArticles);
         if (typeof localStorage !== 'undefined') {
