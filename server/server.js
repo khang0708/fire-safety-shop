@@ -1124,8 +1124,10 @@ app.get('/api/discounts', async (req, res) => {
 app.get('/api/reviews', async (req, res) => {
   try {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    const reviews = await readJson('reviews.json');
-    res.json({ success: true, data: reviews });
+    const reviews = (await readJson('reviews.json')) || [];
+    // Đánh giá đang bị ẩn chỉ admin mới thấy (để duyệt/hiện lại); người ngoài không nhận dữ liệu của đánh giá đã ẩn
+    const visible = getRequestAdmin(req) ? reviews : reviews.filter((r) => r.isVisible !== false);
+    res.json({ success: true, data: visible });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -1165,6 +1167,37 @@ app.post('/api/reviews', reviewCreateLimiter, async (req, res) => {
     reviews.unshift(newReview);
     await writeJson('reviews.json', reviews);
     res.status(201).json({ success: true, data: newReview });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// PATCH /api/reviews/:id/toggle (admin): ẩn/hiện đánh giá ngoài website
+app.patch('/api/reviews/:id/toggle', requireAdminAuth, async (req, res) => {
+  try {
+    const reviews = (await readJson('reviews.json')) || [];
+    const index = reviews.findIndex((r) => r.id === req.params.id);
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy đánh giá' });
+    }
+    reviews[index] = { ...reviews[index], isVisible: reviews[index].isVisible === false };
+    await writeJson('reviews.json', reviews);
+    res.json({ success: true, data: reviews[index] });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// DELETE /api/reviews/:id (admin): xóa vĩnh viễn một đánh giá
+app.delete('/api/reviews/:id', requireAdminAuth, async (req, res) => {
+  try {
+    const reviews = (await readJson('reviews.json')) || [];
+    const remaining = reviews.filter((r) => r.id !== req.params.id);
+    if (remaining.length === reviews.length) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy đánh giá' });
+    }
+    await writeJson('reviews.json', remaining);
+    res.json({ success: true, message: 'Đã xóa đánh giá' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

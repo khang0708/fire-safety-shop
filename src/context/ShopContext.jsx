@@ -1220,7 +1220,8 @@ export const ShopProvider = ({ children }) => {
 
       if (apiInventory?.length > 0) setInventory(apiInventory);
       if (apiDiscounts?.length > 0) setDiscounts(apiDiscounts);
-      if (apiReviews?.length > 0) setReviews(apiReviews);
+      // Danh sách rỗng từ máy chủ là hợp lệ (đã xóa/ẩn hết đánh giá): chỉ bỏ qua khi không gọi được máy chủ (null)
+      if (Array.isArray(apiReviews)) setReviews(apiReviews);
       if (Array.isArray(apiArticles) && apiArticles.length > 0) {
         setArticlesState(apiArticles);
         if (typeof localStorage !== 'undefined') {
@@ -1762,20 +1763,23 @@ export const ShopProvider = ({ children }) => {
     }
   };
 
+  // Ẩn/hiện & xóa đánh giá phải được máy chủ lưu thành công thì mới đổi trên màn hình; nếu không, F5 sẽ hiện lại như cũ
   const toggleReview = async (reviewId) => {
     try {
       const saved = await toggleReviewApi(reviewId);
       setReviews(prev => prev.map(r => r.id === reviewId ? saved : r));
     } catch (e) {
-      setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, isVisible: !r.isVisible } : r));
+      showToast(`Không đổi được trạng thái đánh giá: ${e.message || 'lỗi máy chủ'}. Hãy đăng nhập lại và thử lại.`);
     }
   };
 
   const deleteReview = async (reviewId) => {
     try {
       await deleteReviewApi(reviewId);
-    } catch (e) {}
-    setReviews(prev => prev.filter(r => r.id !== reviewId));
+      setReviews(prev => prev.filter(r => r.id !== reviewId));
+    } catch (e) {
+      showToast(`Không xóa được đánh giá: ${e.message || 'lỗi máy chủ'}. Hãy đăng nhập lại và thử lại.`);
+    }
   };
 
   // Khách tạo đơn hàng mới -> Lưu API & Kích hoạt thông báo đa kênh
