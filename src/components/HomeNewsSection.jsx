@@ -109,7 +109,12 @@ export const HomeNewsSection = () => {
 
                   {/* Title */}
                   <h3 className="font-heading font-bold text-slate-900 text-base group-hover:text-red-600 transition-colors line-clamp-2 leading-snug">
-                    {article.title}
+                    <a
+                      href={`/tin-tuc/${article.slug}`}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigateTo(`/tin-tuc/${article.slug}`); }}
+                    >
+                      {article.title}
+                    </a>
                   </h3>
 
                   {/* Excerpt */}

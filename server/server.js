@@ -1954,6 +1954,50 @@ app.get('/sitemap.xml', async (req, res) => {
   }
 });
 
+// ----------------------------------------------------
+// NỘI DUNG DỰ PHÒNG CHO CÔNG CỤ TÌM KIẾM
+// Website là ứng dụng React nên HTML ban đầu rỗng (<div id="root"></div>) và các liên kết chỉ xuất hiện sau khi chạy JS.
+// Máy chủ chèn sẵn nội dung văn bản + liên kết <a href> thật vào #root: bot đọc được tiêu đề, mô tả, giá và đi tiếp tới
+// mọi sản phẩm/bài viết ngay cả khi chưa render JS. React sẽ thay thế toàn bộ phần này khi tải xong (không ảnh hưởng người dùng).
+// ----------------------------------------------------
+const productSlugOf = (p) => p.slug || slugifyVietnamese(p.name) || p.id;
+const rootWith = (html, inner) => html.replace('<div id="root"></div>', () => `<div id="root">${inner}</div>`);
+
+const buildRootFallback = (kind, { brand = {}, products = [], articles = [], product = null, article = null }) => {
+  const e = escapeAttr;
+  const brandName = e(brand.brandName || 'FLAMEGUARD PRO');
+  const published = articles.filter((a) => a && a.slug && a.status !== 'draft');
+  const productList = products
+    .filter((p) => p && p.name && productSlugOf(p))
+    .map((p) => `<li><a href="/san-pham/${encodeURIComponent(productSlugOf(p))}">${e(p.name)}</a>${p.subtitle ? ` - ${e(p.subtitle)}` : ''}</li>`)
+    .join('');
+  const articleList = published
+    .map((a) => `<li><a href="/tin-tuc/${encodeURIComponent(a.slug)}">${e(a.title)}</a>${a.excerpt ? ` - ${e(a.excerpt)}` : ''}</li>`)
+    .join('');
+
+  if (kind === 'home') {
+    return `<main><h1>${brandName} - ${e(brand.brandSlogan || 'Thiết bị PCCC chuẩn kiểm định')}</h1>`
+      + (brand.seoDescription ? `<p>${e(brand.seoDescription)}</p>` : '')
+      + `<nav><h2>Sản phẩm</h2><ul>${productList}</ul><h2><a href="/tin-tuc">Tin tức &amp; cẩm nang PCCC</a></h2><ul>${articleList}</ul></nav></main>`;
+  }
+  if (kind === 'news') {
+    return `<main><h1>Tin tức &amp; cẩm nang PCCC - ${brandName}</h1><ul>${articleList}</ul><p><a href="/">Trang chủ</a></p></main>`;
+  }
+  if (kind === 'product' && product) {
+    return `<main><h1>${e(product.name)}</h1>`
+      + (product.subtitle ? `<p>${e(product.subtitle)}</p>` : '')
+      + (product.meaning ? `<p>${e(product.meaning)}</p>` : '')
+      + (Number(product.price) > 0 ? `<p>Giá: ${Number(product.price).toLocaleString('vi-VN')}đ</p>` : '')
+      + (product.image ? `<img src="${e(product.image)}" alt="${e(product.name)}" width="400" height="400">` : '')
+      + `<nav><a href="/">${brandName}</a> · <a href="/tin-tuc">Tin tức PCCC</a></nav><h2>Sản phẩm khác</h2><ul>${productList}</ul></main>`;
+  }
+  if (kind === 'article' && article) {
+    return `<main><article><h1>${e(article.title)}</h1>${article.excerpt ? `<p>${e(article.excerpt)}</p>` : ''}${sanitizeHtml(article.content || '')}</article>`
+      + `<nav><a href="/">${brandName}</a> · <a href="/tin-tuc">Tin tức PCCC</a></nav><h2>Bài viết khác</h2><ul>${articleList}</ul></main>`;
+  }
+  return '';
+};
+
 const distPath = path.join(__dirname, '../dist');
 if (fs.existsSync(distPath)) {
   // index:false — để "/" đi qua handler SSR bên dưới (inject SEO), không bị static trả index.html gốc
@@ -1978,6 +2022,17 @@ if (fs.existsSync(distPath)) {
       let html = fs.readFileSync(indexPath, 'utf-8');
       const settings = (await readJson('settings.json')) || {};
       const brand = settings.brandSettings || {};
+      let notFoundDetail = false; // trang chi tiết có slug không tồn tại: trả mã 404 thật thay vì 200 (tránh "soft 404")
+      let rootInjected = false;
+
+      if (req.path === '/') {
+        html = rootWith(html, buildRootFallback('home', {
+          brand,
+          products: (await readJson('products.json')) || [],
+          articles: (await readJson('articles.json')) || []
+        }));
+        rootInjected = true;
+      }
 
       // 1. Kiểm tra trang chi tiết tin tức: /tin-tuc/:slug
       const newsDetailMatch = req.path.match(/^\/tin-tuc\/([a-zA-Z0-9_-]+)/);
@@ -2038,8 +2093,10 @@ if (fs.existsSync(distPath)) {
           };
 
           html = html.replace('</head>', () => `<script type="application/ld+json">${jsonLdSafe(articleSchema)}</script>\n</head>`);
+          html = rootWith(html, buildRootFallback('article', { brand, articles, article }));
           return res.send(html);
         }
+        notFoundDetail = true;
       }
 
       // 2. Kiểm tra trang chi tiết sản phẩm: /san-pham/:idOrSlug (Hỗ trợ SEO & Chạy Ads Facebook, Google, Zalo)
@@ -2109,8 +2166,10 @@ if (fs.existsSync(distPath)) {
           };
 
           html = html.replace('</head>', () => `<script type="application/ld+json">${jsonLdSafe(productSchema)}</script>\n</head>`);
+          html = rootWith(html, buildRootFallback('product', { brand, products, product }));
           return res.send(html);
         }
+        notFoundDetail = true;
       }
 
       // 3. Kiểm tra trang trung tâm tin tức: /tin-tuc
@@ -2127,6 +2186,7 @@ if (fs.existsSync(distPath)) {
         html = html.replace(/(<meta\s+name=["']twitter:description["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(newsDesc)}${b}`);
         html = html.replace(/(<meta\s+property=["']og:url["']\s+content=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(newsUrl)}${b}`);
         html = html.replace(/(<link\s+rel=["']canonical["']\s+href=["']).*?(["'])/i, (_m, a, b) => `${a}${escapeAttr(newsUrl)}${b}`);
+        html = rootWith(html, buildRootFallback('news', { brand, articles: (await readJson('articles.json')) || [] }));
         return res.send(html);
       }
 
@@ -2157,6 +2217,14 @@ if (fs.existsSync(distPath)) {
           setMeta(metaRe('property', 'og:image:secure_url'), img);
           setMeta(metaRe('name', 'twitter:image'), img);
         }
+        res.setHeader('Cache-Control', 'no-cache');
+        return res.status(notFoundDetail ? 404 : 200).send(html);
+      }
+      if (notFoundDetail) {
+        res.setHeader('Cache-Control', 'no-cache');
+        return res.status(404).send(html);
+      }
+      if (rootInjected) {
         res.setHeader('Cache-Control', 'no-cache');
         return res.send(html);
       }
