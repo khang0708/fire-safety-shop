@@ -168,7 +168,12 @@ export const NewsListPage = () => {
                     onClick={() => navigateTo(`/tin-tuc/${featuredArticle.slug}`)}
                     className="text-lg sm:text-2xl font-bold text-slate-900 group-hover:text-red-600 transition-colors line-clamp-2 cursor-pointer font-heading"
                   >
-                    {featuredArticle.title}
+                    <a
+                      href={`/tin-tuc/${featuredArticle.slug}`}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigateTo(`/tin-tuc/${featuredArticle.slug}`); }}
+                    >
+                      {featuredArticle.title}
+                    </a>
                   </h2>
 
                   <p className="text-xs sm:text-sm text-slate-600 line-clamp-3 leading-relaxed">
@@ -244,7 +249,12 @@ export const NewsListPage = () => {
                     </div>
 
                     <h3 className="font-bold text-slate-900 text-sm sm:text-base group-hover:text-red-600 transition-colors line-clamp-2 leading-snug font-heading">
-                      {article.title}
+                      <a
+                        href={`/tin-tuc/${article.slug}`}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigateTo(`/tin-tuc/${article.slug}`); }}
+                      >
+                        {article.title}
+                      </a>
                     </h3>
 
                     <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">

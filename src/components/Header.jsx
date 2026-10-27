@@ -86,8 +86,9 @@ export const Header = () => {
               <span>📐 Danh Mục TCVN 3890</span>
             </button>
 
-            <button
-              onClick={() => navigateTo('/tin-tuc')}
+            <a
+              href="/tin-tuc"
+              onClick={(e) => { e.preventDefault(); navigateTo('/tin-tuc'); }}
               className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
                 currentPath.startsWith('/tin-tuc')
                   ? 'bg-red-600 text-white border border-red-500 shadow-xs'
@@ -96,7 +97,7 @@ export const Header = () => {
               title="Cẩm nang an toàn & Tin tức PCCC chuẩn TCVN 3890"
             >
               <span>📰 Cẩm Nang & Tin Tức</span>
-            </button>
+            </a>
           </div>
 
         </div>
@@ -271,8 +272,9 @@ export const Header = () => {
           })}
 
           {/* Tab Cẩm Nang & Tin Tức PCCC */}
-          <button
-            onClick={() => navigateTo('/tin-tuc')}
+          <a
+            href="/tin-tuc"
+            onClick={(e) => { e.preventDefault(); navigateTo('/tin-tuc'); }}
             className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-bold transition-all whitespace-nowrap shrink-0 cursor-pointer ${
               currentPath.startsWith('/tin-tuc')
                 ? 'bg-red-600 text-white shadow-xs'
@@ -281,7 +283,7 @@ export const Header = () => {
           >
             <span>📰</span>
             <span>Tin Tức & Cẩm Nang PCCC</span>
-          </button>
+          </a>
         </div>
       </div>
 

@@ -67,6 +67,19 @@ assert(!sitemap4.includes(`/tin-tuc/${draft.data.slug}</loc>`), 'Chuyển lại 
 if (fs.existsSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist', 'index.html'))) {
   const draftHtml = await (await fetch(`http://127.0.0.1:${port}/tin-tuc/${draft.data.slug}`)).text();
   assert(!draftHtml.includes('TIEU-DE-NHAP-BI-MAT') && !draftHtml.includes('Bai nhap bi mat'), 'Trang HTML của bài nháp không lộ tiêu đề/SEO');
+  // Nội dung dự phòng cho bot: HTML ban đầu có văn bản và liên kết thật, không chỉ <div id="root"></div>
+  const homeHtml = await (await fetch(`http://127.0.0.1:${port}/`)).text();
+  assert(/<div id="root"><main><h1>/.test(homeHtml) && homeHtml.includes('href="/san-pham/binh-chua-chay-bot-abc-4kg-mfzl4"') && homeHtml.includes(`href="/tin-tuc/${art1.data.slug}"`), 'Trang chủ có sẵn liên kết <a href> tới sản phẩm và bài viết trong HTML ban đầu');
+  assert(!homeHtml.includes(draft.data.slug), 'Liên kết dự phòng không chứa bài nháp');
+  const prodRes = await fetch(`http://127.0.0.1:${port}/san-pham/binh-chua-chay-bot-abc-4kg-mfzl4`);
+  const prodHtml = await prodRes.text();
+  assert(prodRes.status === 200 && /<main><h1>[^<]*MFZL4/i.test(prodHtml), 'Trang sản phẩm có h1 và nội dung trong HTML ban đầu');
+  const newsListHtml = await (await fetch(`http://127.0.0.1:${port}/tin-tuc`)).text();
+  assert(newsListHtml.includes(`href="/tin-tuc/${art1.data.slug}"`), 'Trang /tin-tuc có sẵn liên kết tới các bài viết');
+  const missingProd = await fetch(`http://127.0.0.1:${port}/san-pham/khong-ton-tai-xyz`);
+  const missingNews = await fetch(`http://127.0.0.1:${port}/tin-tuc/khong-ton-tai-xyz`);
+  const draftPage = await fetch(`http://127.0.0.1:${port}/tin-tuc/${draft.data.slug}`);
+  assert(missingProd.status === 404 && missingNews.status === 404 && draftPage.status === 404, 'Sản phẩm/bài viết không tồn tại (hoặc là bản nháp) trả mã 404 thật, không phải 200 (soft 404)');
   const pubHtml = await (await fetch(`http://127.0.0.1:${port}/tin-tuc/${art1.data.slug}`)).text();
   assert(pubHtml.includes('Hướng dẫn dùng bình CO2 5kg'), 'Trang bài đã đăng có SEO riêng');
 } else {
